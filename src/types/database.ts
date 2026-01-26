@@ -10,69 +10,69 @@
  * For now, these are manually maintained to match the schema.
  */
 
-// =============================================================================
-// Table Row Types
-// =============================================================================
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
-/**
- * Tenant represents an organization/account using the platform.
- * Each tenant has multiple users (profiles) and owns all their data.
- */
-export interface Tenant {
-  id: string
-  name: string
-  created_at: string
-  updated_at: string
-}
-
-/**
- * Profile represents a user's profile data.
- * Linked to auth.users via id (1:1 relationship).
- * Linked to tenants via tenant_id (many:1 relationship).
- */
-export interface Profile {
-  id: string
-  tenant_id: string
-  full_name: string | null
-  created_at: string
-  updated_at: string
-}
-
-// =============================================================================
-// Database Schema Type for Supabase Client
-// =============================================================================
-
-/**
- * Database schema type following Supabase TypeScript patterns.
- * Use with createClient<Database>() for fully typed Supabase operations.
- *
- * Row: The shape of data returned from SELECT queries
- * Insert: The shape of data for INSERT operations (auto-generated fields optional)
- * Update: The shape of data for UPDATE operations (all fields optional except constraints)
- */
-export interface Database {
+export type Database = {
   public: {
     Tables: {
       tenants: {
-        Row: Tenant
-        Insert: Omit<Tenant, 'id' | 'created_at' | 'updated_at'> & {
+        Row: {
+          id: string
+          name: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
           id?: string
+          name: string
           created_at?: string
           updated_at?: string
         }
-        Update: Partial<Omit<Tenant, 'id' | 'created_at' | 'updated_at'>> & {
+        Update: {
+          id?: string
+          name?: string
+          created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       profiles: {
-        Row: Profile
-        Insert: Omit<Profile, 'created_at' | 'updated_at'> & {
+        Row: {
+          id: string
+          tenant_id: string
+          full_name: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          tenant_id: string
+          full_name?: string | null
           created_at?: string
           updated_at?: string
         }
-        Update: Partial<Omit<Profile, 'id' | 'tenant_id' | 'created_at' | 'updated_at'>> & {
+        Update: {
+          id?: string
+          tenant_id?: string
+          full_name?: string | null
+          created_at?: string
           updated_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: 'profiles_tenant_id_fkey'
+            columns: ['tenant_id']
+            isOneToOne: false
+            referencedRelation: 'tenants'
+            referencedColumns: ['id']
+          }
+        ]
       }
     }
     Views: {
@@ -80,7 +80,7 @@ export interface Database {
     }
     Functions: {
       get_tenant_id: {
-        Args: Record<string, never>
+        Args: Record<PropertyKey, never>
         Returns: string
       }
     }
@@ -96,6 +96,19 @@ export interface Database {
 // =============================================================================
 // Helper Types
 // =============================================================================
+
+/**
+ * Tenant represents an organization/account using the platform.
+ * Each tenant has multiple users (profiles) and owns all their data.
+ */
+export type Tenant = Database['public']['Tables']['tenants']['Row']
+
+/**
+ * Profile represents a user's profile data.
+ * Linked to auth.users via id (1:1 relationship).
+ * Linked to tenants via tenant_id (many:1 relationship).
+ */
+export type Profile = Database['public']['Tables']['profiles']['Row']
 
 /**
  * Helper type to extract table row types
