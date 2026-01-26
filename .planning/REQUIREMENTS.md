@@ -104,47 +104,47 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase ? | Pending |
-| AUTH-02 | Phase ? | Pending |
-| AUTH-03 | Phase ? | Pending |
-| DATA-01 | Phase ? | Pending |
-| DATA-02 | Phase ? | Pending |
-| DATA-03 | Phase ? | Pending |
-| DATA-04 | Phase ? | Pending |
-| DATA-05 | Phase ? | Pending |
-| DATA-06 | Phase ? | Pending |
-| CONF-01 | Phase ? | Pending |
-| CONF-02 | Phase ? | Pending |
-| CONF-03 | Phase ? | Pending |
-| CONF-04 | Phase ? | Pending |
-| CONF-05 | Phase ? | Pending |
-| CHAT-01 | Phase ? | Pending |
-| CHAT-02 | Phase ? | Pending |
-| CHAT-03 | Phase ? | Pending |
-| CHAT-04 | Phase ? | Pending |
-| CHAT-05 | Phase ? | Pending |
-| CHAT-06 | Phase ? | Pending |
-| CHAT-07 | Phase ? | Pending |
-| DEPLOY-01 | Phase ? | Pending |
-| DEPLOY-02 | Phase ? | Pending |
-| DEPLOY-03 | Phase ? | Pending |
-| DEPLOY-04 | Phase ? | Pending |
-| DASH-01 | Phase ? | Pending |
-| DASH-02 | Phase ? | Pending |
-| DASH-03 | Phase ? | Pending |
-| DASH-04 | Phase ? | Pending |
-| DASH-05 | Phase ? | Pending |
-| DASH-06 | Phase ? | Pending |
-| INFRA-01 | Phase ? | Pending |
-| INFRA-02 | Phase ? | Pending |
-| INFRA-03 | Phase ? | Pending |
-| INFRA-04 | Phase ? | Pending |
+| AUTH-01 | Phase 1 | Pending |
+| AUTH-02 | Phase 1 | Pending |
+| AUTH-03 | Phase 1 | Pending |
+| DATA-01 | Phase 2 | Pending |
+| DATA-02 | Phase 2 | Pending |
+| DATA-03 | Phase 2 | Pending |
+| DATA-04 | Phase 2 | Pending |
+| DATA-05 | Phase 2 | Pending |
+| DATA-06 | Phase 2 | Pending |
+| CONF-01 | Phase 5 | Pending |
+| CONF-02 | Phase 5 | Pending |
+| CONF-03 | Phase 5 | Pending |
+| CONF-04 | Phase 5 | Pending |
+| CONF-05 | Phase 5 | Pending |
+| CHAT-01 | Phase 3 | Pending |
+| CHAT-02 | Phase 3 | Pending |
+| CHAT-03 | Phase 7 | Pending |
+| CHAT-04 | Phase 7 | Pending |
+| CHAT-05 | Phase 7 | Pending |
+| CHAT-06 | Phase 3 | Pending |
+| CHAT-07 | Phase 8 | Pending |
+| DEPLOY-01 | Phase 6 | Pending |
+| DEPLOY-02 | Phase 6 | Pending |
+| DEPLOY-03 | Phase 4 | Pending |
+| DEPLOY-04 | Phase 6 | Pending |
+| DASH-01 | Phase 4 | Pending |
+| DASH-02 | Phase 9 | Pending |
+| DASH-03 | Phase 9 | Pending |
+| DASH-04 | Phase 7 | Pending |
+| DASH-05 | Phase 7 | Pending |
+| DASH-06 | Phase 7 | Pending |
+| INFRA-01 | Phase 1 | Pending |
+| INFRA-02 | Phase 2 | Pending |
+| INFRA-03 | Phase 9 | Pending |
+| INFRA-04 | Phase 9 | Pending |
 
 **Coverage:**
 - v1 requirements: 34 total
-- Mapped to phases: 0
-- Unmapped: 34 ⚠️
+- Mapped to phases: 34
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-01-26*
-*Last updated: 2026-01-26 after initial definition*
+*Last updated: 2026-01-26 after roadmap creation*
