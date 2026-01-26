@@ -31,12 +31,17 @@ This roadmap delivers an embeddable AI chatbot platform where businesses train c
   2. User can log in and access their dashboard
   3. User session persists across browser refresh without re-login
   4. User cannot see or access another user's data (tenant isolation verified)
-**Plans**: TBD
+**Plans**: 6 plans
 
 Plans:
-- [ ] 01-01: TBD
+- [ ] 01-01-PLAN.md — Initialize Next.js 15 project and create Supabase client utilities
+- [ ] 01-02-PLAN.md — Create database schema for multi-tenant auth with RLS
+- [ ] 01-03-PLAN.md — Create middleware for session refresh and DAL for auth checks
+- [ ] 01-04-PLAN.md — Implement signup flow with tenant creation and email confirmation
+- [ ] 01-05-PLAN.md — Implement login, protected dashboard, and logout
+- [ ] 01-06-PLAN.md — Verify complete auth flow end-to-end (checkpoint)
 
-**Research flag**: LOW - standard multi-tenant SaaS patterns
+**Research flag**: COMPLETE - see 01-RESEARCH.md
 
 ---
 
@@ -193,7 +198,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Authentication | 0/? | Not started | - |
+| 1. Foundation & Authentication | 0/6 | Planning complete | - |
 | 2. Document Ingestion | 0/? | Not started | - |
 | 3. RAG Core | 0/? | Not started | - |
 | 4. Dashboard Foundation | 0/? | Not started | - |
