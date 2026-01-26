@@ -1,13 +1,14 @@
 /**
  * Login Server Action
  *
- * Handles user authentication using Supabase Auth signInWithPassword.
+ * Handles user authentication using NextAuth Credentials provider.
  * On success, redirects to /dashboard.
  */
 'use server'
 
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { signIn } from '@/lib/auth'
+import { AuthError } from 'next-auth'
 import { z } from 'zod'
 
 /**
@@ -30,7 +31,7 @@ const loginSchema = z.object({
  *
  * Flow:
  * 1. Validate input with zod
- * 2. Authenticate with Supabase Auth signInWithPassword
+ * 2. Authenticate with NextAuth signIn
  * 3. Redirect to /dashboard on success
  * 4. Return error message on failure
  */
@@ -55,23 +56,22 @@ export async function login(
 
   const { email, password } = validatedFields.data
 
-  const supabase = await createClient()
-
-  // Authenticate with Supabase
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
-
-  if (error) {
-    // Return user-friendly error messages
-    if (error.message.includes('Invalid login credentials')) {
-      return { error: 'Invalid email or password' }
+  try {
+    await signIn('credentials', {
+      email,
+      password,
+      redirect: false,
+    })
+  } catch (error) {
+    if (error instanceof AuthError) {
+      switch (error.type) {
+        case 'CredentialsSignin':
+          return { error: 'Invalid email or password' }
+        default:
+          return { error: 'Something went wrong. Please try again.' }
+      }
     }
-    if (error.message.includes('Email not confirmed')) {
-      return { error: 'Please verify your email before signing in' }
-    }
-    return { error: error.message }
+    throw error
   }
 
   // Success - redirect to dashboard

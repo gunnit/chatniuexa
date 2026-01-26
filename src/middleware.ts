@@ -1,24 +1,47 @@
 /**
- * Root Middleware - Session Refresh
+ * Root Middleware - NextAuth Session Protection
  *
- * This middleware runs on every page navigation and API call (except static assets).
- * It calls updateSession which:
- * 1. Validates the JWT with Supabase Auth servers (using getUser())
- * 2. Refreshes tokens if needed
- * 3. Sets updated cookies on the response
- *
- * CRITICAL: The updateSession function uses getUser() internally (not getSession)
- * to validate the JWT with Supabase Auth servers. This is the secure pattern.
- *
- * @see https://supabase.com/docs/guides/auth/server-side/nextjs
+ * This middleware runs on protected routes and redirects unauthenticated users to login.
+ * Public routes (login, signup, landing) are accessible without authentication.
  */
 
-import { type NextRequest } from 'next/server'
-import { updateSession } from '@/lib/supabase/middleware'
+import { auth } from '@/lib/auth'
+import { NextResponse } from 'next/server'
 
-export async function middleware(request: NextRequest) {
-  return await updateSession(request)
-}
+// Routes that don't require authentication
+const publicRoutes = ['/', '/login', '/signup', '/signup/check-email', '/auth/error']
+
+// Routes that start with these prefixes are public
+const publicPrefixes = ['/api/auth']
+
+export default auth((req) => {
+  const { nextUrl } = req
+  const isLoggedIn = !!req.auth
+
+  // Check if the current path is public
+  const isPublicRoute = publicRoutes.includes(nextUrl.pathname)
+  const isPublicPrefix = publicPrefixes.some((prefix) =>
+    nextUrl.pathname.startsWith(prefix)
+  )
+
+  // Allow public routes
+  if (isPublicRoute || isPublicPrefix) {
+    // Redirect logged-in users away from auth pages
+    if (isLoggedIn && (nextUrl.pathname === '/login' || nextUrl.pathname === '/signup')) {
+      return NextResponse.redirect(new URL('/dashboard', nextUrl))
+    }
+    return NextResponse.next()
+  }
+
+  // Redirect unauthenticated users to login
+  if (!isLoggedIn) {
+    const loginUrl = new URL('/login', nextUrl)
+    loginUrl.searchParams.set('callbackUrl', nextUrl.pathname)
+    return NextResponse.redirect(loginUrl)
+  }
+
+  return NextResponse.next()
+})
 
 export const config = {
   matcher: [

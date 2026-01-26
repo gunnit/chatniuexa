@@ -9,15 +9,12 @@
  * - verifySession: Redirects to /login if not authenticated. Use in protected pages.
  * - getUser: Returns user or null without redirect. Use for optional auth checks.
  *
- * Both functions use getUser() (not getSession()) for secure JWT validation
- * with Supabase Auth servers.
- *
- * @see https://nextjs.org/docs/app/building-your-application/data-fetching/patterns#data-access-layer
+ * Uses NextAuth auth() function for session validation.
  */
 
 import { cache } from 'react'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { auth } from '@/lib/auth'
 
 /**
  * Session data returned by verifySession
@@ -32,7 +29,7 @@ export interface SessionData {
 /**
  * Verify user session and redirect to login if not authenticated.
  *
- * Uses cache() to ensure only one database call per request, even if
+ * Uses cache() to ensure only one auth check per request, even if
  * multiple components call verifySession().
  *
  * @returns SessionData with userId, email, and tenantId
@@ -49,43 +46,24 @@ export interface SessionData {
  * ```
  */
 export const verifySession = cache(async (): Promise<SessionData> => {
-  const supabase = await createClient()
+  const session = await auth()
 
-  // CRITICAL: Use getUser() not getSession() for server-side validation
-  // getUser() validates the JWT with Supabase Auth servers
-  // getSession() only checks JWT format/expiry and can be spoofed
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
-
-  if (error || !user) {
+  if (!session?.user) {
     redirect('/login')
   }
 
-  // Get tenant_id from profile
-  // The profile is created automatically via database trigger when user signs up
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('tenant_id')
-    .eq('id', user.id)
-    .single<{ tenant_id: string }>()
-
-  // profile may be null if database trigger hasn't run yet
-  const tenantId = profile?.tenant_id ?? null
-
   return {
     isAuth: true,
-    userId: user.id,
-    email: user.email,
-    tenantId,
+    userId: session.user.id,
+    email: session.user.email ?? undefined,
+    tenantId: session.user.tenantId ?? null,
   }
 })
 
 /**
  * Get current user without redirect.
  *
- * Uses cache() to ensure only one database call per request, even if
+ * Uses cache() to ensure only one auth check per request, even if
  * multiple components call getUser().
  *
  * @returns User object if authenticated, null otherwise
@@ -100,9 +78,6 @@ export const verifySession = cache(async (): Promise<SessionData> => {
  * ```
  */
 export const getUser = cache(async () => {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  return user
+  const session = await auth()
+  return session?.user ?? null
 })

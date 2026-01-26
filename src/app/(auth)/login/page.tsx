@@ -9,6 +9,7 @@
 'use client'
 
 import { useActionState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { login } from './actions'
 
@@ -18,6 +19,8 @@ const initialState = {
 
 export default function LoginPage() {
   const [state, formAction, pending] = useActionState(login, initialState)
+  const searchParams = useSearchParams()
+  const justRegistered = searchParams.get('registered') === 'true'
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -35,6 +38,13 @@ export default function LoginPage() {
         </div>
 
         <form action={formAction} className="mt-8 space-y-6">
+          {justRegistered && (
+            <div className="rounded-md bg-green-50 p-4">
+              <div className="text-sm text-green-700">
+                Account created successfully! Please sign in.
+              </div>
+            </div>
+          )}
           {state.error && (
             <div className="rounded-md bg-red-50 p-4">
               <div className="text-sm text-red-700">{state.error}</div>

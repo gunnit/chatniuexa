@@ -2,18 +2,15 @@
  * Signup Server Action
  *
  * Handles user registration with tenant creation and profile linking.
- * Implements full rollback on failure: if profile creation fails,
- * both tenant and auth user are deleted.
- *
- * IMPORTANT: Requires SUPABASE_SERVICE_ROLE_KEY for admin operations.
+ * Uses Prisma for database operations and bcrypt for password hashing.
+ * Implements full rollback on failure.
  */
 'use server'
 
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
-import { createServerClient } from '@supabase/ssr'
+import { prisma } from '@/lib/db'
+import bcrypt from 'bcryptjs'
 import { z } from 'zod'
-import type { Database } from '@/types/database'
 
 /**
  * State returned by the signup action
@@ -32,40 +29,13 @@ const signupSchema = z.object({
 })
 
 /**
- * Create an admin Supabase client with service role key
- * Used for operations that need elevated privileges (like deleting users)
- */
-function createAdminClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error('Missing Supabase URL or service role key')
-  }
-
-  return createServerClient<Database>(supabaseUrl, serviceRoleKey, {
-    cookies: {
-      getAll() {
-        return []
-      },
-      setAll() {
-        // No cookies needed for admin client
-      },
-    },
-  })
-}
-
-/**
  * Signup server action
  *
  * Flow:
  * 1. Validate input with zod
- * 2. Create tenant for the new user
- * 3. Create auth user with Supabase Auth
- * 4. If auth fails, rollback tenant
- * 5. Create profile linking user to tenant
- * 6. If profile fails, rollback tenant AND delete auth user
- * 7. Redirect to check-email page on success
+ * 2. Check if email already exists
+ * 3. Create tenant, user, and profile in a transaction
+ * 4. Redirect to login page on success
  */
 export async function signup(
   prevState: SignupState,
@@ -90,68 +60,51 @@ export async function signup(
 
   const { fullName, email, password } = validatedFields.data
 
-  const supabase = await createClient()
-
-  // Step 1: Create tenant
-  // We create the tenant first because the profile needs tenant_id
-  const { data: tenant, error: tenantError } = await supabase
-    .from('tenants')
-    .insert({ name: `${fullName}'s Organization` })
-    .select()
-    .single()
-
-  if (tenantError || !tenant) {
-    console.error('Failed to create tenant:', tenantError)
-    return { error: 'Failed to create organization. Please try again.' }
-  }
-
-  // Step 2: Create auth user
-  const { data: authData, error: authError } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        full_name: fullName,
-        tenant_id: tenant.id,
-      },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || ''}/auth/confirm`,
-    },
+  // Check if user already exists
+  const existingUser = await prisma.user.findUnique({
+    where: { email },
   })
 
-  if (authError || !authData.user) {
-    // Rollback: Delete the tenant we just created
-    console.error('Auth signup failed, rolling back tenant:', authError)
-    await supabase.from('tenants').delete().eq('id', tenant.id)
-    return { error: authError?.message || 'Failed to create account. Please try again.' }
+  if (existingUser) {
+    return { error: 'An account with this email already exists.' }
   }
 
-  // Step 3: Create profile linking user to tenant
-  const { error: profileError } = await supabase.from('profiles').insert({
-    id: authData.user.id,
-    tenant_id: tenant.id,
-    full_name: fullName,
-  })
+  // Hash password
+  const hashedPassword = await bcrypt.hash(password, 12)
 
-  if (profileError) {
-    // CRITICAL: Full rollback - delete tenant AND auth user
-    console.error('Profile creation failed, rolling back:', profileError)
+  try {
+    // Create tenant, user, and profile in a transaction
+    await prisma.$transaction(async (tx) => {
+      // Create tenant
+      const tenant = await tx.tenant.create({
+        data: {
+          name: `${fullName}'s Organization`,
+        },
+      })
 
-    // Delete tenant
-    await supabase.from('tenants').delete().eq('id', tenant.id)
+      // Create user with hashed password
+      const user = await tx.user.create({
+        data: {
+          email,
+          name: fullName,
+          password: hashedPassword,
+        },
+      })
 
-    // Delete auth user using admin client
-    try {
-      const adminClient = createAdminClient()
-      await adminClient.auth.admin.deleteUser(authData.user.id)
-    } catch (adminError) {
-      console.error('Failed to delete auth user during rollback:', adminError)
-      // We still return an error to the user, but the orphaned auth user
-      // may need manual cleanup
-    }
-
-    return { error: 'Failed to complete registration. Please try again.' }
+      // Create profile linking user to tenant
+      await tx.profile.create({
+        data: {
+          userId: user.id,
+          tenantId: tenant.id,
+          fullName,
+        },
+      })
+    })
+  } catch (error) {
+    console.error('Signup transaction failed:', error)
+    return { error: 'Failed to create account. Please try again.' }
   }
 
-  // Success - redirect to check-email page
-  redirect('/signup/check-email')
+  // Success - redirect to login page (no email verification for now)
+  redirect('/login?registered=true')
 }
