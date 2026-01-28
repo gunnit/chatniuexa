@@ -1,9 +1,3 @@
-/**
- * Logout Button Component
- *
- * Client component that provides logout functionality.
- * Uses form action to call the logout server action.
- */
 'use client'
 
 import { logout } from '@/app/(auth)/logout/actions'
@@ -13,9 +7,12 @@ export function LogoutButton() {
     <form action={logout}>
       <button
         type="submit"
-        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 rounded-lg hover:text-slate-900 hover:bg-slate-100/80 transition-all"
       >
-        Sign out
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+        </svg>
+        Logout
       </button>
     </form>
   )

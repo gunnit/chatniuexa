@@ -1,0 +1,266 @@
+import { prisma } from '@/lib/db'
+import { parseDocument } from './parser'
+import { chunkText } from './chunker'
+import { generateEmbeddings } from './embeddings'
+import { EMBEDDING_DIMENSIONS } from '@/lib/openai'
+
+interface ProcessFileInput {
+  dataSourceId: string
+  buffer: Buffer
+  mimeType: string
+  fileName: string
+}
+
+interface ProcessUrlInput {
+  dataSourceId: string
+  url: string
+  content: string
+  title?: string
+}
+
+/**
+ * Process a file data source: parse, chunk, embed, and store
+ */
+export async function processFile({
+  dataSourceId,
+  buffer,
+  mimeType,
+  fileName,
+}: ProcessFileInput): Promise<void> {
+  try {
+    // Update status to processing
+    await prisma.dataSource.update({
+      where: { id: dataSourceId },
+      data: { status: 'PROCESSING' },
+    })
+
+    // Parse the document
+    const parsed = await parseDocument(buffer, mimeType)
+
+    // Create document record
+    const document = await prisma.document.create({
+      data: {
+        dataSourceId,
+        title: parsed.metadata.title || fileName,
+        content: parsed.content,
+        metadata: parsed.metadata,
+      },
+    })
+
+    // Chunk the content
+    const chunks = chunkText(parsed.content)
+
+    if (chunks.length > 0) {
+      // Generate embeddings for all chunks
+      const embeddings = await generateEmbeddings(chunks.map((c) => c.content))
+
+      // Store chunks (without embeddings first - Prisma doesn't support vector type)
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i]
+        const embedding = embeddings[i]
+
+        // Create chunk
+        const chunkRecord = await prisma.chunk.create({
+          data: {
+            documentId: document.id,
+            content: chunk.content,
+            chunkIndex: chunk.index,
+            tokens: chunk.tokens,
+          },
+        })
+
+        // Store embedding using raw SQL (pgvector)
+        await prisma.$executeRawUnsafe(
+          `UPDATE chunks SET embedding = $1::vector WHERE id = $2`,
+          `[${embedding.join(',')}]`,
+          chunkRecord.id
+        )
+      }
+    }
+
+    // Mark as complete
+    await prisma.dataSource.update({
+      where: { id: dataSourceId },
+      data: {
+        status: 'COMPLETE',
+        lastSyncAt: new Date(),
+      },
+    })
+  } catch (error) {
+    // Mark as failed
+    await prisma.dataSource.update({
+      where: { id: dataSourceId },
+      data: {
+        status: 'FAILED',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+    })
+    throw error
+  }
+}
+
+/**
+ * Process a URL data source (content already crawled)
+ */
+export async function processUrl({
+  dataSourceId,
+  url,
+  content,
+  title,
+}: ProcessUrlInput): Promise<void> {
+  try {
+    // Update status to processing
+    await prisma.dataSource.update({
+      where: { id: dataSourceId },
+      data: { status: 'PROCESSING' },
+    })
+
+    // Create document record
+    const document = await prisma.document.create({
+      data: {
+        dataSourceId,
+        title: title || url,
+        content,
+        metadata: { sourceUrl: url },
+      },
+    })
+
+    // Chunk the content
+    const chunks = chunkText(content)
+
+    if (chunks.length > 0) {
+      // Generate embeddings for all chunks
+      const embeddings = await generateEmbeddings(chunks.map((c) => c.content))
+
+      // Store chunks with embeddings
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i]
+        const embedding = embeddings[i]
+
+        const chunkRecord = await prisma.chunk.create({
+          data: {
+            documentId: document.id,
+            content: chunk.content,
+            chunkIndex: chunk.index,
+            tokens: chunk.tokens,
+          },
+        })
+
+        // Store embedding using raw SQL (pgvector)
+        await prisma.$executeRawUnsafe(
+          `UPDATE chunks SET embedding = $1::vector WHERE id = $2`,
+          `[${embedding.join(',')}]`,
+          chunkRecord.id
+        )
+      }
+    }
+
+    // Mark as complete
+    await prisma.dataSource.update({
+      where: { id: dataSourceId },
+      data: {
+        status: 'COMPLETE',
+        lastSyncAt: new Date(),
+      },
+    })
+  } catch (error) {
+    await prisma.dataSource.update({
+      where: { id: dataSourceId },
+      data: {
+        status: 'FAILED',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+    })
+    throw error
+  }
+}
+
+/**
+ * Re-process a URL data source (delete existing and re-crawl)
+ */
+export async function resyncUrl(dataSourceId: string): Promise<void> {
+  const dataSource = await prisma.dataSource.findUnique({
+    where: { id: dataSourceId },
+  })
+
+  if (!dataSource || dataSource.type !== 'URL' || !dataSource.sourceUrl) {
+    throw new Error('Invalid URL data source')
+  }
+
+  // Delete existing documents (cascades to chunks)
+  await prisma.document.deleteMany({
+    where: { dataSourceId },
+  })
+
+  // Reset status
+  await prisma.dataSource.update({
+    where: { id: dataSourceId },
+    data: {
+      status: 'PENDING',
+      error: null,
+    },
+  })
+
+  // Trigger re-crawl (this would typically call the crawler)
+  // For now, return and let the calling code handle crawling
+}
+
+/**
+ * Search for similar chunks using vector similarity
+ */
+export async function searchSimilarChunks(
+  tenantId: string,
+  embedding: number[],
+  limit: number = 5,
+  minSimilarity: number = 0.7
+): Promise<
+  Array<{
+    id: string
+    content: string
+    similarity: number
+    documentId: string
+    dataSourceId: string
+  }>
+> {
+  const embeddingStr = `[${embedding.join(',')}]`
+
+  const results = await prisma.$queryRawUnsafe<
+    Array<{
+      id: string
+      content: string
+      similarity: number
+      documentId: string
+      dataSourceId: string
+    }>
+  >(
+    `
+    SELECT
+      c.id,
+      c.content,
+      1 - (c.embedding <=> $1::vector) as similarity,
+      c."documentId",
+      d."dataSourceId"
+    FROM chunks c
+    JOIN documents d ON c."documentId" = d.id
+    JOIN data_sources ds ON d."dataSourceId" = ds.id
+    WHERE ds."tenantId" = $2
+      AND ds.status = 'COMPLETE'
+      AND c.embedding IS NOT NULL
+      AND 1 - (c.embedding <=> $1::vector) >= $3
+    ORDER BY c.embedding <=> $1::vector
+    LIMIT $4
+    `,
+    embeddingStr,
+    tenantId,
+    minSimilarity,
+    limit
+  )
+
+  return results.map((r) => ({
+    id: r.id,
+    content: r.content,
+    similarity: r.similarity,
+    documentId: r.documentId,
+    dataSourceId: r.dataSourceId,
+  }))
+}

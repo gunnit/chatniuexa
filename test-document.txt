@@ -1,0 +1,35 @@
+niuexa.ai Test Document
+
+Welcome to niuexa.ai - Your AI-Powered Chatbot Platform
+
+About Our Service
+niuexa.ai provides businesses with intelligent chatbot solutions that can be embedded on any website. Our chatbots are trained on your custom data sources to provide accurate, contextual responses to your customers.
+
+Key Features:
+1. Custom Training - Upload documents (PDF, DOCX, TXT) or provide URLs to train your chatbot
+2. Easy Integration - Simple widget that can be added to any website
+3. Analytics Dashboard - Track conversations, popular questions, and user satisfaction
+4. Multiple Chatbots - Create different chatbots for different purposes
+
+Pricing Plans:
+- Starter: $29/month - 1 chatbot, 1000 messages
+- Professional: $99/month - 5 chatbots, 10,000 messages
+- Enterprise: Custom pricing - Unlimited chatbots and messages
+
+Support:
+For technical support, please contact support@niuexa.ai
+Business hours: Monday-Friday, 9am-5pm EST
+
+Frequently Asked Questions:
+
+Q: How do I add my chatbot to my website?
+A: Simply copy the embed code from your dashboard and paste it into your website's HTML.
+
+Q: What file formats are supported for training?
+A: We support PDF, DOCX, DOC, and TXT files up to 10MB each.
+
+Q: How long does it take to train a chatbot?
+A: Training typically completes within a few minutes, depending on the size of your data.
+
+Q: Can I update my chatbot's knowledge base?
+A: Yes! You can add new documents or URLs at any time to keep your chatbot up to date.

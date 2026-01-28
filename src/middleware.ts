@@ -26,7 +26,7 @@ export default auth((req) => {
 
   // Allow public routes
   if (isPublicRoute || isPublicPrefix) {
-    // Redirect logged-in users away from auth pages
+    // Redirect logged-in users away from auth pages to dashboard
     if (isLoggedIn && (nextUrl.pathname === '/login' || nextUrl.pathname === '/signup')) {
       return NextResponse.redirect(new URL('/dashboard', nextUrl))
     }

@@ -2,7 +2,7 @@
  * Login Server Action
  *
  * Handles user authentication using NextAuth Credentials provider.
- * On success, redirects to /dashboard.
+ * On success, redirects to the dashboard.
  */
 'use server'
 
@@ -32,7 +32,7 @@ const loginSchema = z.object({
  * Flow:
  * 1. Validate input with zod
  * 2. Authenticate with NextAuth signIn
- * 3. Redirect to /dashboard on success
+ * 3. Redirect to dashboard on success
  * 4. Return error message on failure
  */
 export async function login(

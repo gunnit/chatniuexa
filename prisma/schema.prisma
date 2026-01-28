@@ -2,8 +2,12 @@
 // NextAuth + Multi-tenant architecture
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
+
+// Enable pgvector extension for embeddings
+// Run: CREATE EXTENSION IF NOT EXISTS vector;
 
 datasource db {
   provider = "postgresql"
@@ -87,7 +91,9 @@ model Tenant {
   updatedAt DateTime @updatedAt
 
   // Relations
-  profiles Profile[]
+  profiles    Profile[]
+  dataSources DataSource[]
+  chatbots    Chatbot[]
 
   @@map("tenants")
 }
@@ -106,4 +112,202 @@ model Profile {
 
   @@index([tenantId])
   @@map("profiles")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Document Ingestion Models (Phase 2)
+// ─────────────────────────────────────────────────────────────
+
+enum DataSourceType {
+  FILE
+  URL
+}
+
+enum DataSourceStatus {
+  PENDING
+  PROCESSING
+  COMPLETE
+  FAILED
+}
+
+model DataSource {
+  id        String           @id @default(cuid())
+  tenantId  String
+  type      DataSourceType
+  status    DataSourceStatus @default(PENDING)
+  name      String           // Display name (filename or URL title)
+
+  // For FILE type
+  fileName  String?
+  fileType  String?          // MIME type: application/pdf, text/plain, etc.
+  fileSize  Int?             // Size in bytes
+  fileUrl   String?          // Storage URL (e.g., S3, Vercel Blob)
+
+  // For URL type
+  sourceUrl String?          // Original URL to crawl
+
+  // Processing info
+  error     String?          // Error message if failed
+  lastSyncAt DateTime?       // When last synced (for URL re-crawl)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  documents Document[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("data_sources")
+}
+
+model Document {
+  id           String   @id @default(cuid())
+  dataSourceId String
+  title        String?
+  content      String   @db.Text  // Full extracted text
+  metadata     Json?              // Additional metadata (page count, etc.)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  dataSource DataSource @relation(fields: [dataSourceId], references: [id], onDelete: Cascade)
+  chunks     Chunk[]
+
+  @@index([dataSourceId])
+  @@map("documents")
+}
+
+model Chunk {
+  id         String   @id @default(cuid())
+  documentId String
+  content    String   @db.Text           // Chunk text
+  chunkIndex Int                         // Order within document
+  tokens     Int?                        // Token count
+
+  // Vector embedding stored via raw SQL (pgvector)
+  // embedding vector(1536)  -- Added via migration
+
+  createdAt  DateTime @default(now())
+
+  // Relations
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@map("chunks")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Chatbot & Conversation Models (Phase 3)
+// ─────────────────────────────────────────────────────────────
+
+model Chatbot {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  description String?
+
+  // Configuration
+  systemPrompt String?  @db.Text  // Custom instructions
+  temperature  Float    @default(0.7)
+  model        String   @default("gpt-4o-mini")
+
+  // Widget customization (Phase 5)
+  primaryColor   String?  @default("#3B82F6")
+  welcomeMessage String?  @default("Hello! How can I help you?")
+  showBranding   Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  conversations Conversation[]
+
+  @@index([tenantId])
+  @@map("chatbots")
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  chatbotId String
+  sessionId String   // Anonymous session identifier
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  chatbot  Chatbot   @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@index([chatbotId])
+  @@index([sessionId])
+  @@map("conversations")
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+}
+
+model Message {
+  id             String      @id @default(cuid())
+  conversationId String
+  role           MessageRole
+  content        String      @db.Text
+
+  // For assistant messages: sources used
+  sources        Json?       // Array of { chunkId, content, similarity, documentTitle }
+
+  createdAt      DateTime    @default(now())
+
+  // Relations
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@map("messages")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Analytics & Usage Models (Phase 9)
+// ─────────────────────────────────────────────────────────────
+
+model UsageLog {
+  id        String   @id @default(cuid())
+  tenantId  String
+  chatbotId String?
+  type      String   // 'chat', 'embedding', 'crawl'
+  tokens    Int      @default(0)
+  cost      Float    @default(0)  // Estimated cost in USD
+
+  createdAt DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([chatbotId])
+  @@index([createdAt])
+  @@map("usage_logs")
+}
+
+model UsageLimit {
+  id            String   @id @default(cuid())
+  tenantId      String   @unique
+
+  // Limits
+  monthlyTokenLimit  Int      @default(100000)    // Tokens per month
+  dailyMessageLimit  Int      @default(1000)      // Messages per day
+  monthlyCostLimit   Float    @default(10.0)      // USD per month
+
+  // Current usage (reset monthly/daily)
+  currentMonthTokens  Int      @default(0)
+  currentMonthCost    Float    @default(0)
+  currentDayMessages  Int      @default(0)
+  lastDayReset        DateTime @default(now())
+  lastMonthReset      DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("usage_limits")
 }
