@@ -47,7 +47,7 @@ export async function generateChatResponse(
     model = 'gpt-4o-mini',
     temperature = 0.7,
     maxSources = 5,
-    minSimilarity = 0.5, // Lowered from 0.7 for better recall
+    minSimilarity = 0.2, // Lowered to 0.2 for multilingual content recall
   } = options
 
   const openai = getOpenAI()
@@ -181,7 +181,7 @@ export async function prepareStreamingContext(
     minSimilarity?: number
   } = {}
 ): Promise<{ context: string; streamingContext: StreamingChatContext }> {
-  const { maxSources = 5, minSimilarity = 0.5 } = options // Lowered from 0.7 for better recall
+  const { maxSources = 5, minSimilarity = 0.2 } = options // Lowered to 0.2 for multilingual content recall
 
   const openai = getOpenAI()
 

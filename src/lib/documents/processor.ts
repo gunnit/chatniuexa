@@ -212,7 +212,7 @@ export async function searchSimilarChunks(
   tenantId: string,
   embedding: number[],
   limit: number = 5,
-  minSimilarity: number = 0.5 // Lowered from 0.7 for better recall
+  minSimilarity: number = 0.2 // Lowered to 0.2 for multilingual content recall
 ): Promise<
   Array<{
     id: string
