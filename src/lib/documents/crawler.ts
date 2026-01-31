@@ -21,22 +21,45 @@ export async function crawlUrl(url: string): Promise<CrawlResult> {
 }
 
 async function crawlWithFirecrawl(url: string): Promise<CrawlResult> {
-  const app = new FirecrawlApp({
-    apiKey: process.env.FIRECRAWL_API_KEY!,
-  })
+  const apiKey = process.env.FIRECRAWL_API_KEY
 
-  const result = await app.scrape(url, {
-    formats: ['markdown'],
-  }) as { success: boolean; markdown?: string; metadata?: { title?: string; sourceURL?: string }; error?: string }
+  // Log API key presence (not the key itself for security)
+  console.log('Firecrawl API key configured:', apiKey ? `yes (${apiKey.substring(0, 5)}...)` : 'NO - MISSING!')
 
-  if (!result.success) {
-    throw new Error(`Firecrawl error: ${result.error || 'Unknown error'}`)
+  if (!apiKey) {
+    throw new Error('Firecrawl error: FIRECRAWL_API_KEY environment variable is not set')
   }
 
-  return {
-    content: result.markdown || '',
-    title: result.metadata?.title || url,
-    url: result.metadata?.sourceURL || url,
+  const app = new FirecrawlApp({ apiKey })
+
+  try {
+    console.log('Calling Firecrawl scrapeUrl for:', url)
+    const result = await app.scrapeUrl(url, {
+      formats: ['markdown'],
+    })
+
+    console.log('Firecrawl response success:', result.success)
+
+    if (!result.success) {
+      console.error('Firecrawl scrape failed. Full response:', JSON.stringify(result, null, 2))
+      const errorMessage = (result as { error?: string }).error || 'Scrape returned success=false'
+      throw new Error(`Firecrawl error: ${errorMessage}`)
+    }
+
+    return {
+      content: result.markdown || '',
+      title: result.metadata?.title || url,
+      url: result.metadata?.sourceURL || url,
+    }
+  } catch (error) {
+    // Log full error for debugging
+    console.error('Firecrawl exception for URL:', url)
+    console.error('Error details:', error instanceof Error ? error.message : JSON.stringify(error))
+
+    if (error instanceof Error) {
+      throw new Error(`Firecrawl error: ${error.message}`)
+    }
+    throw new Error(`Firecrawl error: ${JSON.stringify(error)}`)
   }
 }
 
