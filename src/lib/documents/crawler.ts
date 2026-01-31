@@ -33,8 +33,8 @@ async function crawlWithFirecrawl(url: string): Promise<CrawlResult> {
   const app = new FirecrawlApp({ apiKey })
 
   try {
-    console.log('Calling Firecrawl scrapeUrl for:', url)
-    const result = await app.scrapeUrl(url, {
+    console.log('Calling Firecrawl scrape for:', url)
+    const result = await app.scrape(url, {
       formats: ['markdown'],
     })
 
@@ -46,10 +46,13 @@ async function crawlWithFirecrawl(url: string): Promise<CrawlResult> {
       throw new Error(`Firecrawl error: ${errorMessage}`)
     }
 
+    // Response structure: { success: true, data: { markdown, metadata, ... } }
+    const data = (result as { data?: { markdown?: string; metadata?: { title?: string; sourceURL?: string } } }).data
+
     return {
-      content: result.markdown || '',
-      title: result.metadata?.title || url,
-      url: result.metadata?.sourceURL || url,
+      content: data?.markdown || '',
+      title: data?.metadata?.title || url,
+      url: data?.metadata?.sourceURL || url,
     }
   } catch (error) {
     // Log full error for debugging
