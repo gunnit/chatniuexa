@@ -20,11 +20,14 @@ export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
     return []
   }
 
+  console.log(`Generating embeddings for ${texts.length} chunks using ${EMBEDDING_MODEL}`)
+
   const BATCH_SIZE = 100 // Process in batches to avoid rate limits
   const embeddings: number[][] = []
 
   for (let i = 0; i < texts.length; i += BATCH_SIZE) {
     const batch = texts.slice(i, i + BATCH_SIZE)
+    console.log(`Processing embedding batch ${i / BATCH_SIZE + 1}, size: ${batch.length}`)
     const response = await openai.embeddings.create({
       model: EMBEDDING_MODEL,
       input: batch,
@@ -33,8 +36,10 @@ export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
     // Sort by index to maintain order
     const sorted = response.data.sort((a, b) => a.index - b.index)
     embeddings.push(...sorted.map((d) => d.embedding))
+    console.log(`Batch complete, got ${sorted.length} embeddings`)
   }
 
+  console.log(`Generated ${embeddings.length} embeddings successfully`)
   return embeddings
 }
 

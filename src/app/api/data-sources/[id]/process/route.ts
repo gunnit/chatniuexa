@@ -43,6 +43,12 @@ export async function POST(
   }
 
   try {
+    // Delete existing documents/chunks first (for re-processing)
+    await prisma.document.deleteMany({
+      where: { dataSourceId: id },
+    })
+    console.log(`Deleted existing documents for data source ${id}`)
+
     // Crawl the URL
     const crawlResult = await crawlUrl(dataSource.sourceUrl)
 

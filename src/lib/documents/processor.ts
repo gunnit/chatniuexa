@@ -212,7 +212,7 @@ export async function searchSimilarChunks(
   tenantId: string,
   embedding: number[],
   limit: number = 5,
-  minSimilarity: number = 0.7
+  minSimilarity: number = 0.5 // Lowered from 0.7 for better recall
 ): Promise<
   Array<{
     id: string
@@ -223,6 +223,23 @@ export async function searchSimilarChunks(
   }>
 > {
   const embeddingStr = `[${embedding.join(',')}]`
+
+  // Debug: Count chunks for this tenant
+  const chunkCount = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+    `SELECT COUNT(*) as count FROM chunks c
+     JOIN documents d ON c."documentId" = d.id
+     JOIN data_sources ds ON d."dataSourceId" = ds.id
+     WHERE ds."tenantId" = $1 AND ds.status = 'COMPLETE'`,
+    tenantId
+  )
+  const embeddingCount = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+    `SELECT COUNT(*) as count FROM chunks c
+     JOIN documents d ON c."documentId" = d.id
+     JOIN data_sources ds ON d."dataSourceId" = ds.id
+     WHERE ds."tenantId" = $1 AND ds.status = 'COMPLETE' AND c.embedding IS NOT NULL`,
+    tenantId
+  )
+  console.log(`RAG Search: tenant=${tenantId}, total chunks=${chunkCount[0]?.count}, with embeddings=${embeddingCount[0]?.count}, minSimilarity=${minSimilarity}`)
 
   const results = await prisma.$queryRawUnsafe<
     Array<{
@@ -255,6 +272,8 @@ export async function searchSimilarChunks(
     minSimilarity,
     limit
   )
+
+  console.log(`RAG Search results: found ${results.length} chunks`, results.map(r => ({ id: r.id, similarity: r.similarity, preview: r.content.substring(0, 50) })))
 
   return results.map((r) => ({
     id: r.id,
