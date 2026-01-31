@@ -34,25 +34,18 @@ async function crawlWithFirecrawl(url: string): Promise<CrawlResult> {
 
   try {
     console.log('Calling Firecrawl scrape for:', url)
-    const result = await app.scrape(url, {
+    // SDK returns Document directly with markdown, metadata properties
+    // Throws an error on failure (doesn't return success: false)
+    const doc = await app.scrape(url, {
       formats: ['markdown'],
     })
 
-    console.log('Firecrawl response success:', result.success)
-
-    if (!result.success) {
-      console.error('Firecrawl scrape failed. Full response:', JSON.stringify(result, null, 2))
-      const errorMessage = (result as { error?: string }).error || 'Scrape returned success=false'
-      throw new Error(`Firecrawl error: ${errorMessage}`)
-    }
-
-    // Response structure: { success: true, data: { markdown, metadata, ... } }
-    const data = (result as { data?: { markdown?: string; metadata?: { title?: string; sourceURL?: string } } }).data
+    console.log('Firecrawl scrape completed for:', url)
 
     return {
-      content: data?.markdown || '',
-      title: data?.metadata?.title || url,
-      url: data?.metadata?.sourceURL || url,
+      content: doc.markdown || '',
+      title: doc.metadata?.title || url,
+      url: doc.metadata?.sourceURL || url,
     }
   } catch (error) {
     // Log full error for debugging
