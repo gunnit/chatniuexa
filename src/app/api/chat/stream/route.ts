@@ -129,6 +129,7 @@ export async function POST(request: NextRequest) {
 
     // Create a TransformStream to capture the full response for saving
     let fullContent = ''
+    let savedMessageId: string | null = null
     const transformStream = new TransformStream({
       transform(chunk, controller) {
         // Pass through the chunk
@@ -150,10 +151,10 @@ export async function POST(request: NextRequest) {
           }
         }
       },
-      async flush() {
+      async flush(controller) {
         // Save the assistant message after stream completes
         if (fullContent) {
-          await prisma.message.create({
+          const savedMessage = await prisma.message.create({
             data: {
               conversationId: conversation!.id,
               role: 'ASSISTANT',
@@ -161,6 +162,11 @@ export async function POST(request: NextRequest) {
               sources: streamingContext.sources as object[],
             },
           })
+          savedMessageId = savedMessage.id
+
+          // Send messageId event before [DONE]
+          const encoder = new TextEncoder()
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ messageId: savedMessageId })}\n\n`))
         }
       },
     })

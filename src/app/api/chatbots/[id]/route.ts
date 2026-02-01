@@ -32,13 +32,14 @@ export async function GET(
 // PATCH /api/chatbots/[id] - Update a chatbot
 const updateChatbotSchema = z.object({
   name: z.string().min(1).optional(),
-  description: z.string().optional(),
-  systemPrompt: z.string().optional(),
+  description: z.string().nullish(),
+  systemPrompt: z.string().nullish(),
   temperature: z.number().min(0).max(2).optional(),
   model: z.string().optional(),
-  primaryColor: z.string().optional(),
-  welcomeMessage: z.string().optional(),
+  primaryColor: z.string().nullish(),
+  welcomeMessage: z.string().nullish(),
   showBranding: z.boolean().optional(),
+  suggestedPrompts: z.array(z.string()).max(4).optional(),
 })
 
 export async function PATCH(

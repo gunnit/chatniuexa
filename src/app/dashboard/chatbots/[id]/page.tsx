@@ -13,6 +13,7 @@ interface Chatbot {
   primaryColor: string | null
   welcomeMessage: string | null
   showBranding: boolean
+  suggestedPrompts: string[]
 }
 
 export default function ChatbotConfigPage({
@@ -37,6 +38,8 @@ export default function ChatbotConfigPage({
   const [primaryColor, setPrimaryColor] = useState('#6366f1')
   const [welcomeMessage, setWelcomeMessage] = useState('')
   const [showBranding, setShowBranding] = useState(true)
+  const [suggestedPrompts, setSuggestedPrompts] = useState<string[]>([])
+  const [newPrompt, setNewPrompt] = useState('')
 
   useEffect(() => {
     fetch(`/api/chatbots/${chatbotId}`)
@@ -56,6 +59,7 @@ export default function ChatbotConfigPage({
           setPrimaryColor(c.primaryColor || '#6366f1')
           setWelcomeMessage(c.welcomeMessage || 'Hello! How can I help you?')
           setShowBranding(c.showBranding)
+          setSuggestedPrompts(c.suggestedPrompts || [])
         }
       })
       .catch((err) => {
@@ -75,13 +79,14 @@ export default function ChatbotConfigPage({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name,
-          description: description || null,
-          systemPrompt: systemPrompt || null,
+          description: description || undefined,
+          systemPrompt: systemPrompt || undefined,
           temperature,
           model,
-          primaryColor,
-          welcomeMessage,
+          primaryColor: primaryColor || undefined,
+          welcomeMessage: welcomeMessage || undefined,
           showBranding,
+          suggestedPrompts,
         }),
       })
 
@@ -356,6 +361,59 @@ export default function ChatbotConfigPage({
                 <label htmlFor="showBranding" className="text-sm text-slate-700">
                   Show &quot;Powered by niuexa.ai&quot; branding
                 </label>
+              </div>
+
+              {/* Suggested Prompts */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Quick Reply Suggestions</label>
+                <p className="text-sm text-slate-500 mb-3">
+                  Add up to 4 quick reply buttons that appear when users first open the widget
+                </p>
+                <div className="space-y-2 mb-3">
+                  {suggestedPrompts.map((prompt, index) => (
+                    <div key={index} className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl">
+                      <span className="flex-1 text-sm text-slate-700">{prompt}</span>
+                      <button
+                        onClick={() => setSuggestedPrompts(suggestedPrompts.filter((_, i) => i !== index))}
+                        className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                {suggestedPrompts.length < 4 && (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newPrompt}
+                      onChange={(e) => setNewPrompt(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && newPrompt.trim()) {
+                          e.preventDefault()
+                          setSuggestedPrompts([...suggestedPrompts, newPrompt.trim()])
+                          setNewPrompt('')
+                        }
+                      }}
+                      className="flex-1 px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm"
+                      placeholder="e.g., What services do you offer?"
+                    />
+                    <button
+                      onClick={() => {
+                        if (newPrompt.trim()) {
+                          setSuggestedPrompts([...suggestedPrompts, newPrompt.trim()])
+                          setNewPrompt('')
+                        }
+                      }}
+                      disabled={!newPrompt.trim()}
+                      className="px-4 py-2.5 rounded-xl bg-indigo-50 text-indigo-600 font-medium hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Add
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Preview */}

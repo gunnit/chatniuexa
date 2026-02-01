@@ -215,9 +215,10 @@ model Chatbot {
   model        String   @default("gpt-4o-mini")
 
   // Widget customization (Phase 5)
-  primaryColor   String?  @default("#3B82F6")
-  welcomeMessage String?  @default("Hello! How can I help you?")
-  showBranding   Boolean  @default(true)
+  primaryColor     String?  @default("#3B82F6")
+  welcomeMessage   String?  @default("Hello! How can I help you?")
+  showBranding     Boolean  @default(true)
+  suggestedPrompts String[] @default([])  // Quick reply suggestions
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -260,6 +261,9 @@ model Message {
 
   // For assistant messages: sources used
   sources        Json?       // Array of { chunkId, content, similarity, documentTitle }
+
+  // User feedback
+  reaction       String?     // 'up' or 'down' - user reaction to this message
 
   createdAt      DateTime    @default(now())
 

@@ -34,6 +34,7 @@ export async function GET(
         welcomeMessage: true,
         primaryColor: true,
         showBranding: true,
+        suggestedPrompts: true,
       },
     })
 
