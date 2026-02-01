@@ -70,11 +70,17 @@ export async function processFile({
         })
 
         // Store embedding using raw SQL (pgvector)
-        await prisma.$executeRawUnsafe(
-          `UPDATE chunks SET embedding = $1::vector WHERE id = $2`,
-          `[${embedding.join(',')}]`,
-          chunkRecord.id
-        )
+        try {
+          const result = await prisma.$executeRawUnsafe(
+            `UPDATE chunks SET embedding = $1::vector WHERE id = $2`,
+            `[${embedding.join(',')}]`,
+            chunkRecord.id
+          )
+          console.log(`Stored embedding for chunk ${chunkRecord.id}, result: ${result}`)
+        } catch (embeddingError) {
+          console.error(`Failed to store embedding for chunk ${chunkRecord.id}:`, embeddingError)
+          throw new Error(`Failed to store embedding: ${embeddingError instanceof Error ? embeddingError.message : 'Unknown error'}. Make sure pgvector extension is installed.`)
+        }
       }
     }
 
@@ -147,11 +153,17 @@ export async function processUrl({
         })
 
         // Store embedding using raw SQL (pgvector)
-        await prisma.$executeRawUnsafe(
-          `UPDATE chunks SET embedding = $1::vector WHERE id = $2`,
-          `[${embedding.join(',')}]`,
-          chunkRecord.id
-        )
+        try {
+          const result = await prisma.$executeRawUnsafe(
+            `UPDATE chunks SET embedding = $1::vector WHERE id = $2`,
+            `[${embedding.join(',')}]`,
+            chunkRecord.id
+          )
+          console.log(`Stored embedding for chunk ${chunkRecord.id}, result: ${result}`)
+        } catch (embeddingError) {
+          console.error(`Failed to store embedding for chunk ${chunkRecord.id}:`, embeddingError)
+          throw new Error(`Failed to store embedding: ${embeddingError instanceof Error ? embeddingError.message : 'Unknown error'}. Make sure pgvector extension is installed.`)
+        }
       }
     }
 
