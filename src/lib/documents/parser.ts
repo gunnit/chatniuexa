@@ -15,10 +15,33 @@ export interface ParsedDocument {
  */
 export async function parsePdf(buffer: Buffer): Promise<ParsedDocument> {
   // Dynamic import to avoid build issues with pdf-parse
+  // pdf-parse v2.x has a different module structure that varies based on bundler
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pdfModule = await import('pdf-parse') as any
-  const pdf = pdfModule.default || pdfModule
-  const data = await pdf(buffer)
+
+  // Handle various possible export structures from pdf-parse
+  let pdfParse: (buffer: Buffer) => Promise<{ text: string; numpages: number; info?: { Title?: string; Author?: string } }>
+
+  if (typeof pdfModule === 'function') {
+    pdfParse = pdfModule
+  } else if (typeof pdfModule.default === 'function') {
+    pdfParse = pdfModule.default
+  } else if (typeof pdfModule.default?.default === 'function') {
+    pdfParse = pdfModule.default.default
+  } else if (pdfModule.default && typeof pdfModule.default === 'object') {
+    // Some bundlers wrap the module, look for the function in properties
+    const keys = Object.keys(pdfModule.default)
+    const funcKey = keys.find(k => typeof pdfModule.default[k] === 'function')
+    if (funcKey) {
+      pdfParse = pdfModule.default[funcKey]
+    } else {
+      throw new Error(`pdf-parse module structure not recognized: ${JSON.stringify(Object.keys(pdfModule.default))}`)
+    }
+  } else {
+    throw new Error(`pdf-parse module structure not recognized: ${JSON.stringify(Object.keys(pdfModule))}`)
+  }
+
+  const data = await pdfParse(buffer)
   return {
     content: data.text,
     metadata: {
