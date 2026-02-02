@@ -338,9 +338,9 @@
 
     /* Quick reply suggestions */
     .widget-suggestions {
-      padding: 8px 16px;
-      background: #f8fafc;
-      border-bottom: 1px solid #e5e7eb;
+      padding: 10px 16px;
+      background: white;
+      border-top: 1px solid #e5e7eb;
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
@@ -349,10 +349,10 @@
     .suggestion-chip {
       display: inline-flex;
       align-items: center;
-      padding: 8px 14px;
-      background: white;
+      padding: 10px 16px;
+      background: #f3f4f6;
       border: 1px solid #e5e7eb;
-      border-radius: 20px;
+      border-radius: 24px;
       font-size: 13px;
       color: #374151;
       cursor: pointer;
@@ -361,8 +361,9 @@
     }
 
     .suggestion-chip:hover {
-      background: #f3f4f6;
+      background: #e5e7eb;
       border-color: #d1d5db;
+      color: #1f2937;
     }
 
     .widget-suggestions.hidden {
@@ -585,8 +586,8 @@
         </button>
         <button class="widget-close" id="widget-close">&times;</button>
       </div>
-      <div class="widget-suggestions" id="widget-suggestions"></div>
       <div class="widget-messages" id="widget-messages"></div>
+      <div class="widget-suggestions" id="widget-suggestions"></div>
       <div class="widget-input">
         <form id="widget-form">
           <input type="text" id="widget-input" placeholder="Type a message..." autocomplete="off" />
