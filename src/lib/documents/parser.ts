@@ -11,40 +11,12 @@ export interface ParsedDocument {
 
 /**
  * Parse a PDF file and extract text content
- * Note: pdf-parse has issues with Next.js build, using dynamic import
+ * Using pdf-parse v1.x with dynamic import for Next.js compatibility
  */
 export async function parsePdf(buffer: Buffer): Promise<ParsedDocument> {
   // Dynamic import to avoid build issues with pdf-parse
-  // pdf-parse v2.x exports PDFParse class instead of a default function
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const pdfModule = await import('pdf-parse') as any
-
-  // pdf-parse v2.x uses PDFParse class with options
-  if (pdfModule.PDFParse) {
-    const parser = new pdfModule.PDFParse({ verbosity: 0 })
-    const result = await parser.parseBuffer(buffer)
-    return {
-      content: result.text || '',
-      metadata: {
-        pageCount: result.pages?.length || result.numpages,
-        title: result.info?.Title,
-        author: result.info?.Author,
-      },
-    }
-  }
-
-  // Fallback for pdf-parse v1.x style (default export is a function)
-  let pdfParse: (buffer: Buffer) => Promise<{ text: string; numpages: number; info?: { Title?: string; Author?: string } }>
-
-  if (typeof pdfModule === 'function') {
-    pdfParse = pdfModule
-  } else if (typeof pdfModule.default === 'function') {
-    pdfParse = pdfModule.default
-  } else if (typeof pdfModule.default?.default === 'function') {
-    pdfParse = pdfModule.default.default
-  } else {
-    throw new Error(`pdf-parse module structure not recognized. Available exports: ${JSON.stringify(Object.keys(pdfModule))}`)
-  }
+  const pdfParse = (await import('pdf-parse')).default as any
 
   const data = await pdfParse(buffer)
   return {
