@@ -19,9 +19,9 @@ export async function parsePdf(buffer: Buffer): Promise<ParsedDocument> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pdfModule = await import('pdf-parse') as any
 
-  // pdf-parse v2.x uses PDFParse class
+  // pdf-parse v2.x uses PDFParse class with options
   if (pdfModule.PDFParse) {
-    const parser = new pdfModule.PDFParse()
+    const parser = new pdfModule.PDFParse({ verbosity: 0 })
     const result = await parser.parseBuffer(buffer)
     return {
       content: result.text || '',
