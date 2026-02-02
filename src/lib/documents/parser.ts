@@ -15,11 +15,25 @@ export interface ParsedDocument {
  */
 export async function parsePdf(buffer: Buffer): Promise<ParsedDocument> {
   // Dynamic import to avoid build issues with pdf-parse
-  // pdf-parse v2.x has a different module structure that varies based on bundler
+  // pdf-parse v2.x exports PDFParse class instead of a default function
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pdfModule = await import('pdf-parse') as any
 
-  // Handle various possible export structures from pdf-parse
+  // pdf-parse v2.x uses PDFParse class
+  if (pdfModule.PDFParse) {
+    const parser = new pdfModule.PDFParse()
+    const result = await parser.parseBuffer(buffer)
+    return {
+      content: result.text || '',
+      metadata: {
+        pageCount: result.pages?.length || result.numpages,
+        title: result.info?.Title,
+        author: result.info?.Author,
+      },
+    }
+  }
+
+  // Fallback for pdf-parse v1.x style (default export is a function)
   let pdfParse: (buffer: Buffer) => Promise<{ text: string; numpages: number; info?: { Title?: string; Author?: string } }>
 
   if (typeof pdfModule === 'function') {
@@ -28,17 +42,8 @@ export async function parsePdf(buffer: Buffer): Promise<ParsedDocument> {
     pdfParse = pdfModule.default
   } else if (typeof pdfModule.default?.default === 'function') {
     pdfParse = pdfModule.default.default
-  } else if (pdfModule.default && typeof pdfModule.default === 'object') {
-    // Some bundlers wrap the module, look for the function in properties
-    const keys = Object.keys(pdfModule.default)
-    const funcKey = keys.find(k => typeof pdfModule.default[k] === 'function')
-    if (funcKey) {
-      pdfParse = pdfModule.default[funcKey]
-    } else {
-      throw new Error(`pdf-parse module structure not recognized: ${JSON.stringify(Object.keys(pdfModule.default))}`)
-    }
   } else {
-    throw new Error(`pdf-parse module structure not recognized: ${JSON.stringify(Object.keys(pdfModule))}`)
+    throw new Error(`pdf-parse module structure not recognized. Available exports: ${JSON.stringify(Object.keys(pdfModule))}`)
   }
 
   const data = await pdfParse(buffer)
