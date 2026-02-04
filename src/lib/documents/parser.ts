@@ -11,29 +11,20 @@ export interface ParsedDocument {
 
 /**
  * Parse a PDF file and extract text content
- * Using pdf-parse v2.x with PDFParse class
+ * Using pdf-parse v1.x simple function API
  */
 export async function parsePdf(buffer: Buffer): Promise<ParsedDocument> {
   // Dynamic import to avoid build issues with pdf-parse
-  const { PDFParse } = await import('pdf-parse')
+  const pdfParse = (await import('pdf-parse')).default
 
-  // Convert Buffer to Uint8Array and create parser with data
-  const uint8Array = new Uint8Array(buffer)
-  const parser = new PDFParse({ data: uint8Array })
-
-  // Get text and info from the PDF
-  const textResult = await parser.getText()
-  const infoResult = await parser.getInfo()
-
-  // Clean up
-  await parser.destroy()
+  const result = await pdfParse(buffer)
 
   return {
-    content: textResult.text,
+    content: result.text,
     metadata: {
-      pageCount: textResult.pages?.length ?? infoResult.total,
-      title: infoResult.info?.Title,
-      author: infoResult.info?.Author,
+      pageCount: result.numpages,
+      title: result.info?.Title,
+      author: result.info?.Author,
     },
   }
 }
