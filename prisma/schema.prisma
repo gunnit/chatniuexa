@@ -212,7 +212,7 @@ model Chatbot {
   // Configuration
   systemPrompt String?  @db.Text  // Custom instructions
   temperature  Float    @default(0.7)
-  model        String   @default("gpt-4o-mini")
+  model        String   @default("gpt-5-mini")
 
   // Widget customization (Phase 5)
   primaryColor     String?  @default("#3B82F6")

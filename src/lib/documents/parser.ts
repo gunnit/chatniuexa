@@ -11,20 +11,29 @@ export interface ParsedDocument {
 
 /**
  * Parse a PDF file and extract text content
- * Using pdf-parse v1.x with dynamic import for Next.js compatibility
+ * Using pdf-parse v2.x with PDFParse class
  */
 export async function parsePdf(buffer: Buffer): Promise<ParsedDocument> {
   // Dynamic import to avoid build issues with pdf-parse
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const pdfParse = (await import('pdf-parse')).default as any
+  const { PDFParse } = await import('pdf-parse')
 
-  const data = await pdfParse(buffer)
+  // Convert Buffer to Uint8Array and create parser with data
+  const uint8Array = new Uint8Array(buffer)
+  const parser = new PDFParse({ data: uint8Array })
+
+  // Get text and info from the PDF
+  const textResult = await parser.getText()
+  const infoResult = await parser.getInfo()
+
+  // Clean up
+  await parser.destroy()
+
   return {
-    content: data.text,
+    content: textResult.text,
     metadata: {
-      pageCount: data.numpages,
-      title: data.info?.Title,
-      author: data.info?.Author,
+      pageCount: textResult.pages?.length ?? infoResult.total,
+      title: infoResult.info?.Title,
+      author: infoResult.info?.Author,
     },
   }
 }

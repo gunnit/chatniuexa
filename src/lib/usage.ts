@@ -1,10 +1,14 @@
 import { prisma } from '@/lib/db'
 
-// Approximate cost per 1K tokens (in USD)
+// Approximate cost per 1K tokens (in USD) - Updated for GPT-5 family (Feb 2026)
+// Prices are averaged between input/output costs
 const COST_PER_1K_TOKENS = {
+  'gpt-5.2': 0.003,        // Latest flagship model
+  'gpt-5-mini': 0.001,     // Fast & affordable
+  'gpt-5-nano': 0.0002,    // Budget option
+  // Legacy models (deprecated Feb 13, 2026)
   'gpt-4o': 0.005,
   'gpt-4o-mini': 0.00015,
-  'gpt-3.5-turbo': 0.0005,
   'text-embedding-3-small': 0.00002,
 }
 

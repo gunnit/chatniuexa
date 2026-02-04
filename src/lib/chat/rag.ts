@@ -44,7 +44,7 @@ export async function generateChatResponse(
 ): Promise<ChatResponse> {
   const {
     systemPrompt = DEFAULT_SYSTEM_PROMPT,
-    model = 'gpt-4o-mini',
+    model = 'gpt-5-mini',
     temperature = 0.7,
     maxSources = 5,
     minSimilarity = 0.2, // Lowered to 0.2 for multilingual content recall
@@ -269,7 +269,7 @@ export async function generateStreamingChatResponse(
 ): Promise<ReadableStream<Uint8Array>> {
   const {
     systemPrompt = DEFAULT_SYSTEM_PROMPT,
-    model = 'gpt-4o-mini',
+    model = 'gpt-5-mini',
     temperature = 0.7,
   } = options
 

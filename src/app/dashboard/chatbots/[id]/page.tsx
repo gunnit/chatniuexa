@@ -16,6 +16,96 @@ interface Chatbot {
   suggestedPrompts: string[]
 }
 
+// Instruction templates for common chatbot use cases
+const INSTRUCTION_TEMPLATES = [
+  {
+    id: 'custom',
+    name: 'Custom',
+    description: 'Write your own instructions from scratch',
+    prompt: '',
+  },
+  {
+    id: 'customer-support',
+    name: 'Customer Support',
+    description: 'Empathetic, solution-focused support agent',
+    prompt: `You are a friendly and helpful customer support agent. Your goal is to assist customers with their questions and issues.
+
+Guidelines:
+- Be empathetic and patient with customers
+- Apologize for any inconvenience when appropriate
+- Provide clear, step-by-step solutions
+- If you don't know the answer, admit it honestly and offer to escalate
+- Always maintain a professional yet warm tone
+- Ask clarifying questions if the issue is unclear
+
+When handling complaints, acknowledge the customer's frustration before offering solutions.`,
+  },
+  {
+    id: 'sales-assistant',
+    name: 'Sales Assistant',
+    description: 'Helpful guide for product questions and purchases',
+    prompt: `You are a knowledgeable sales assistant. Your goal is to help customers find the right products and answer their questions.
+
+Guidelines:
+- Be enthusiastic but not pushy
+- Focus on understanding customer needs before making recommendations
+- Highlight relevant features and benefits
+- Be honest about limitations or when a product might not be the best fit
+- Offer comparisons when helpful
+- Guide customers toward making informed decisions
+
+Never pressure customers or make false claims about products.`,
+  },
+  {
+    id: 'faq-bot',
+    name: 'FAQ Bot',
+    description: 'Direct, accurate answers with source citations',
+    prompt: `You are a helpful FAQ assistant. Your role is to provide accurate, concise answers to frequently asked questions.
+
+Guidelines:
+- Give direct answers without unnecessary preamble
+- Keep responses concise and to the point
+- When information comes from specific sources, mention them
+- If a question falls outside your knowledge, say so clearly
+- For complex topics, break down the answer into digestible parts
+- Suggest related questions the user might find helpful
+
+Prioritize accuracy over comprehensiveness.`,
+  },
+  {
+    id: 'technical-support',
+    name: 'Technical Support',
+    description: 'Patient, step-by-step troubleshooting guide',
+    prompt: `You are a patient technical support specialist. Your goal is to help users troubleshoot and resolve technical issues.
+
+Guidelines:
+- Start with the simplest solutions first
+- Provide clear, numbered step-by-step instructions
+- Explain technical concepts in plain language
+- Ask diagnostic questions to narrow down the issue
+- Verify each step before moving to the next
+- Offer preventive tips when relevant
+
+Never assume the user's technical skill level. Adapt your explanations based on their responses.`,
+  },
+  {
+    id: 'lead-qualifier',
+    name: 'Lead Qualifier',
+    description: 'Gathers information to qualify potential customers',
+    prompt: `You are a friendly assistant helping to understand visitor needs. Your goal is to gather information to connect them with the right solutions.
+
+Guidelines:
+- Start with open-ended questions about their needs
+- Gather key information: company size, industry, timeline, budget range
+- Be conversational, not interrogative
+- Explain why you're asking certain questions
+- Summarize what you've learned before offering next steps
+- Offer to connect them with a human representative when appropriate
+
+Focus on being helpful rather than sales-focused.`,
+  },
+] as const
+
 export default function ChatbotConfigPage({
   params,
 }: {
@@ -34,12 +124,13 @@ export default function ChatbotConfigPage({
   const [description, setDescription] = useState('')
   const [systemPrompt, setSystemPrompt] = useState('')
   const [temperature, setTemperature] = useState(0.7)
-  const [model, setModel] = useState('gpt-4o-mini')
+  const [model, setModel] = useState('gpt-5-mini')
   const [primaryColor, setPrimaryColor] = useState('#6366f1')
   const [welcomeMessage, setWelcomeMessage] = useState('')
   const [showBranding, setShowBranding] = useState(true)
   const [suggestedPrompts, setSuggestedPrompts] = useState<string[]>([])
   const [newPrompt, setNewPrompt] = useState('')
+  const [selectedTemplate, setSelectedTemplate] = useState('custom')
 
   useEffect(() => {
     fetch(`/api/chatbots/${chatbotId}`)
@@ -291,9 +382,9 @@ export default function ChatbotConfigPage({
                   onChange={(e) => setModel(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                 >
-                  <option value="gpt-4o-mini">GPT-4o Mini (Fast & Affordable)</option>
-                  <option value="gpt-4o">GPT-4o (Most Capable)</option>
-                  <option value="gpt-3.5-turbo">GPT-3.5 Turbo (Budget)</option>
+                  <option value="gpt-5-mini">GPT-5 Mini (Fast & Affordable)</option>
+                  <option value="gpt-5.2">GPT-5.2 (Most Capable)</option>
+                  <option value="gpt-5-nano">GPT-5 Nano (Budget)</option>
                 </select>
               </div>
 
@@ -316,14 +407,85 @@ export default function ChatbotConfigPage({
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">System Prompt / Instructions</label>
+
+                {/* Template Selector */}
+                <div className="mb-4">
+                  <label className="block text-xs font-medium text-slate-500 mb-2">Start from a template</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {INSTRUCTION_TEMPLATES.map((template) => (
+                      <button
+                        key={template.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedTemplate(template.id)
+                          if (template.id !== 'custom') {
+                            setSystemPrompt(template.prompt)
+                          }
+                        }}
+                        className={`p-3 rounded-xl text-left transition-all border ${
+                          selectedTemplate === template.id
+                            ? 'bg-indigo-50 border-indigo-300 ring-2 ring-indigo-500/20'
+                            : 'bg-slate-50 border-slate-200 hover:border-slate-300 hover:bg-slate-100'
+                        }`}
+                      >
+                        <div className={`text-sm font-medium ${
+                          selectedTemplate === template.id ? 'text-indigo-700' : 'text-slate-700'
+                        }`}>
+                          {template.name}
+                        </div>
+                        <div className="text-xs text-slate-500 mt-0.5 line-clamp-1">
+                          {template.description}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Textarea */}
                 <textarea
                   value={systemPrompt}
-                  onChange={(e) => setSystemPrompt(e.target.value)}
-                  rows={6}
+                  onChange={(e) => {
+                    setSystemPrompt(e.target.value)
+                    setSelectedTemplate('custom')
+                  }}
+                  rows={8}
                   className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-mono text-sm"
                   placeholder="You are a helpful assistant that..."
                 />
-                <p className="text-sm text-slate-500 mt-2">Define the chatbot&apos;s personality, tone, and behavior</p>
+
+                {/* Enhanced Tips */}
+                <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                  <div className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                    <div className="flex-1">
+                      <h4 className="text-sm font-semibold text-amber-800 mb-2">Tips for Better Instructions</h4>
+                      <ul className="text-sm text-amber-700 space-y-1.5">
+                        <li className="flex items-start gap-2">
+                          <span className="text-amber-500 mt-1">•</span>
+                          <span><strong>Define persona:</strong> Start with &quot;You are...&quot; to set the bot&apos;s identity</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-amber-500 mt-1">•</span>
+                          <span><strong>Set the tone:</strong> Specify if responses should be formal, casual, friendly, or professional</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-amber-500 mt-1">•</span>
+                          <span><strong>Add boundaries:</strong> List topics to avoid or redirect (e.g., &quot;Don&apos;t discuss competitors&quot;)</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-amber-500 mt-1">•</span>
+                          <span><strong>Handle unknowns:</strong> Define what to say when the bot doesn&apos;t know an answer</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-amber-500 mt-1">•</span>
+                          <span><strong>Keep it focused:</strong> Shorter, clearer instructions often work better than long ones</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
