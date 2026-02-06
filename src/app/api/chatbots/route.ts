@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { z } from 'zod'
+import { getPlanLimits, type PlanId } from '@/lib/plans'
 
 // GET /api/chatbots - List all chatbots for the tenant
 export async function GET() {
@@ -41,6 +42,26 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Check chatbot limit against plan
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: session.user.tenantId },
+      select: { plan: true },
+    })
+    const planLimits = getPlanLimits((tenant?.plan || 'free') as PlanId)
+    const chatbotCount = await prisma.chatbot.count({
+      where: { tenantId: session.user.tenantId },
+    })
+    if (chatbotCount >= planLimits.maxChatbots) {
+      return NextResponse.json(
+        {
+          error: 'Chatbot limit reached',
+          message: `Your ${tenant?.plan || 'free'} plan allows up to ${planLimits.maxChatbots} chatbot${planLimits.maxChatbots === 1 ? '' : 's'}. Upgrade your plan to create more.`,
+          upgrade: true,
+        },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json()
     const data = createChatbotSchema.parse(body)
 

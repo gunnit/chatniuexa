@@ -177,8 +177,8 @@ export default function AnalyticsPage() {
           <div className="h-8 bg-slate-200 rounded w-48 animate-pulse mb-2" />
           <div className="h-4 bg-slate-100 rounded w-64 animate-pulse" />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-          {[...Array(4)].map((_, i) => (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
+          {[...Array(3)].map((_, i) => (
             <div key={i} className="bg-white rounded-2xl border border-slate-200/60 p-6 animate-pulse">
               <div className="h-4 bg-slate-200 rounded w-24 mb-3" />
               <div className="h-8 bg-slate-100 rounded w-20" />
@@ -205,7 +205,6 @@ export default function AnalyticsPage() {
   }
 
   const tokenUsagePercent = (stats.usage.currentMonthTokens / stats.limits.monthlyTokenLimit) * 100
-  const costUsagePercent = (stats.usage.currentMonthCost / stats.limits.monthlyCostLimit) * 100
   const messageUsagePercent = (stats.usage.currentDayMessages / stats.limits.dailyMessageLimit) * 100
 
   const summaryStats = [
@@ -232,24 +231,13 @@ export default function AnalyticsPage() {
       ),
     },
     {
-      name: 'Month Tokens',
-      value: stats.usage.currentMonthTokens.toLocaleString(),
+      name: 'Messages Today',
+      value: stats.usage.currentDayMessages.toLocaleString(),
       color: 'from-blue-500 to-cyan-500',
       bgColor: 'bg-blue-50',
       icon: (
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-        </svg>
-      ),
-    },
-    {
-      name: 'Month Cost',
-      value: `$${stats.usage.currentMonthCost.toFixed(2)}`,
-      color: 'from-orange-500 to-amber-500',
-      bgColor: 'bg-orange-50',
-      icon: (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
         </svg>
       ),
     },
@@ -263,14 +251,6 @@ export default function AnalyticsPage() {
       percent: tokenUsagePercent,
       color: tokenUsagePercent >= 90 ? 'from-red-500 to-red-600' : tokenUsagePercent >= 70 ? 'from-amber-500 to-amber-600' : 'from-blue-500 to-indigo-500',
       bgColor: 'bg-blue-100',
-    },
-    {
-      name: 'Monthly Cost',
-      current: `$${stats.usage.currentMonthCost.toFixed(2)}`,
-      limit: `$${stats.limits.monthlyCostLimit.toFixed(2)}`,
-      percent: costUsagePercent,
-      color: costUsagePercent >= 90 ? 'from-red-500 to-red-600' : costUsagePercent >= 70 ? 'from-amber-500 to-amber-600' : 'from-emerald-500 to-teal-500',
-      bgColor: 'bg-emerald-100',
     },
     {
       name: 'Daily Messages',
@@ -290,7 +270,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8 stagger-children">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8 stagger-children">
         {summaryStats.map((stat) => (
           <div
             key={stat.name}
@@ -408,7 +388,6 @@ export default function AnalyticsPage() {
                       <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Type</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Requests</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Tokens</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Cost</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -419,9 +398,6 @@ export default function AnalyticsPage() {
                         </td>
                         <td className="px-6 py-4 text-slate-600">{item.count.toLocaleString()}</td>
                         <td className="px-6 py-4 text-slate-600">{item.totalTokens.toLocaleString()}</td>
-                        <td className="px-6 py-4">
-                          <span className="font-medium text-slate-900">${item.totalCost.toFixed(4)}</span>
-                        </td>
                       </tr>
                     ))}
                   </tbody>

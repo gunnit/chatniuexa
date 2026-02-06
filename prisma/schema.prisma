@@ -87,13 +87,15 @@ model VerificationToken {
 model Tenant {
   id        String   @id @default(cuid())
   name      String
+  plan      String   @default("free") // free, pro, business
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  profiles    Profile[]
-  dataSources DataSource[]
-  chatbots    Chatbot[]
+  profiles      Profile[]
+  dataSources   DataSource[]
+  chatbots      Chatbot[]
+  subscriptions Subscription[]
 
   @@map("tenants")
 }
@@ -112,6 +114,37 @@ model Profile {
 
   @@index([tenantId])
   @@map("profiles")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Subscription Model (PayPal Billing)
+// ─────────────────────────────────────────────────────────────
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  SUSPENDED
+  EXPIRED
+}
+
+model Subscription {
+  id                    String             @id @default(cuid())
+  tenantId              String
+  planId                String             // 'pro' or 'business'
+  paypalSubscriptionId  String             @unique
+  status                SubscriptionStatus @default(ACTIVE)
+  currentPeriodStart    DateTime
+  currentPeriodEnd      DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([paypalSubscriptionId])
+  @@map("subscriptions")
 }
 
 // ─────────────────────────────────────────────────────────────
