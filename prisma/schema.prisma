@@ -121,6 +121,7 @@ model Profile {
 // ─────────────────────────────────────────────────────────────
 
 enum SubscriptionStatus {
+  PENDING
   ACTIVE
   CANCELLED
   SUSPENDED

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/db'
 import { createSubscription } from '@/lib/paypal'
 import { z } from 'zod'
 
@@ -21,12 +22,24 @@ export async function POST(request: NextRequest) {
     const returnUrl = `${appUrl}/dashboard/billing/success?plan=${plan}`
     const cancelUrl = `${appUrl}/dashboard/billing/cancelled`
 
-    const { approveUrl } = await createSubscription(
+    const { subscriptionId, approveUrl } = await createSubscription(
       plan,
       session.user.email,
       returnUrl,
       cancelUrl
     )
+
+    // Save subscription record so the webhook can find and activate it
+    await prisma.subscription.create({
+      data: {
+        tenantId: session.user.tenantId,
+        planId: plan,
+        paypalSubscriptionId: subscriptionId,
+        status: 'PENDING',
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: new Date(),
+      },
+    })
 
     return NextResponse.json({ approveUrl })
   } catch (error) {

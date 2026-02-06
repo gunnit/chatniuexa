@@ -224,10 +224,7 @@ export async function POST(request: NextRequest) {
         { status: 400, headers: corsHeaders }
       )
     }
-    // Log error details in development only
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Error in streaming chat:', error)
-    }
+    console.error('Error in streaming chat:', error instanceof Error ? error.message : error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500, headers: corsHeaders }

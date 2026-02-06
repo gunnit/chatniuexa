@@ -33,18 +33,26 @@ function SuccessContent() {
 
   useEffect(() => {
     if (!subscriptionId) {
-      // PayPal may not have sent the webhook yet - just show success
       setStatus('success')
       return
     }
 
-    // Poll for subscription activation (webhook may take a moment)
-    const checkStatus = async () => {
+    let attempts = 0
+    const maxAttempts = 10
+
+    // Try to activate the subscription directly via PayPal check
+    const tryActivate = async () => {
+      attempts++
       try {
-        const res = await fetch('/api/billing/status')
+        const res = await fetch('/api/billing/activate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subscriptionId }),
+        })
+
         if (res.ok) {
           const data = await res.json()
-          if (data.plan !== 'free') {
+          if (data.activated) {
             setStatus('success')
             return
           }
@@ -53,19 +61,18 @@ function SuccessContent() {
         // ignore and retry
       }
 
-      // Retry after 2 seconds
-      setTimeout(checkStatus, 2000)
+      if (attempts < maxAttempts) {
+        setTimeout(tryActivate, 2000)
+      } else {
+        // Give up polling but show success (webhook may still activate later)
+        setStatus('success')
+      }
     }
 
-    // Start polling after a short delay to let webhook process
-    setTimeout(checkStatus, 3000)
+    // Start activation after a short delay
+    setTimeout(tryActivate, 2000)
 
-    // Set a timeout to stop polling and show success anyway
-    const timeout = setTimeout(() => {
-      setStatus((prev) => (prev === 'loading' ? 'success' : prev))
-    }, 15000)
-
-    return () => clearTimeout(timeout)
+    return () => { attempts = maxAttempts }
   }, [subscriptionId])
 
   if (status === 'loading') {
