@@ -9,7 +9,7 @@ import { auth } from '@/lib/auth'
 import { NextResponse } from 'next/server'
 
 // Routes that don't require authentication
-const publicRoutes = ['/', '/login', '/signup', '/signup/check-email', '/auth/error', '/widget.js']
+const publicRoutes = ['/', '/login', '/signup', '/signup/check-email', '/auth/error', '/widget.js', '/privacy', '/terms']
 
 // Routes that start with these prefixes are public
 const publicPrefixes = ['/api/auth', '/api/widget', '/api/chat']

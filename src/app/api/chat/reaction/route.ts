@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { getCorsHeaders } from '@/lib/cors'
 import { z } from 'zod'
 
 const reactionSchema = z.object({
@@ -7,22 +8,6 @@ const reactionSchema = z.object({
   reaction: z.enum(['up', 'down']),
   sessionId: z.string().min(1, 'Session ID is required'),
 })
-
-// CORS headers for widget - configurable origin
-const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS?.split(',') || ['*']
-
-function getCorsHeaders(origin?: string | null) {
-  const requestOrigin = origin || ''
-  const allowOrigin = allowedOrigins.includes('*') || allowedOrigins.includes(requestOrigin)
-    ? (allowedOrigins.includes('*') ? '*' : requestOrigin)
-    : ''
-
-  return {
-    'Access-Control-Allow-Origin': allowOrigin,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-  }
-}
 
 // Handle CORS preflight
 export async function OPTIONS(request: NextRequest) {

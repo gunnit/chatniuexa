@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { generateChatResponse } from '@/lib/chat/rag'
 import { logUsage } from '@/lib/usage'
+import { getCorsHeaders } from '@/lib/cors'
+import { rateLimit } from '@/lib/rate-limit'
 import { z } from 'zod'
 
 const chatSchema = z.object({
@@ -9,22 +11,6 @@ const chatSchema = z.object({
   sessionId: z.string().min(1, 'Session ID is required'),
   message: z.string().min(1, 'Message is required').max(4000, 'Message too long'),
 })
-
-// CORS headers for widget - configurable origin
-const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS?.split(',') || ['*']
-
-function getCorsHeaders(origin?: string | null) {
-  const requestOrigin = origin || ''
-  const allowOrigin = allowedOrigins.includes('*') || allowedOrigins.includes(requestOrigin)
-    ? (allowedOrigins.includes('*') ? '*' : requestOrigin)
-    : ''
-
-  return {
-    'Access-Control-Allow-Origin': allowOrigin,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-  }
-}
 
 // Handle CORS preflight
 export async function OPTIONS(request: NextRequest) {
@@ -34,6 +20,16 @@ export async function OPTIONS(request: NextRequest) {
 // POST /api/chat - Send a message and get a response
 export async function POST(request: NextRequest) {
   const corsHeaders = getCorsHeaders(request.headers.get('origin'))
+
+  // Rate limit by IP
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+  const rl = rateLimit(ip)
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429, headers: corsHeaders }
+    )
+  }
 
   try {
     const body = await request.json()
