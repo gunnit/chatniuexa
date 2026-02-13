@@ -17,7 +17,7 @@ export default function PrivacyPage() {
         <h1 className="text-3xl font-bold text-white mb-8">Privacy Policy</h1>
         <p className="text-sm text-slate-500 mb-8">Last updated: February 2026</p>
 
-        <div className="space-y-8 text-slate-400 leading-relaxed">
+        <div className="space-y-8 text-slate-300 leading-relaxed">
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">1. Information We Collect</h2>
             <p>When you create an account, we collect your name and email address. When you use our chatbot services, we collect conversation data between end-users and your chatbots, uploaded documents and URLs you provide as data sources, and usage metrics (message counts, token usage).</p>
@@ -52,6 +52,15 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold text-white mb-3">7. Contact</h2>
             <p>For privacy-related inquiries, please contact us at <a href="mailto:privacy@niuexa.ai" className="text-indigo-400 hover:text-indigo-300">privacy@niuexa.ai</a>.</p>
           </section>
+        </div>
+
+        <div className="mt-16 pt-8 border-t border-slate-800 flex items-center justify-between text-sm">
+          <Link href="/" className="text-slate-400 hover:text-white transition-colors">
+            &larr; Back to home
+          </Link>
+          <Link href="/terms" className="text-slate-400 hover:text-white transition-colors">
+            Terms of Service
+          </Link>
         </div>
       </main>
     </div>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import Image from 'next/image'
 
 interface UsageStats {
   limits: {
@@ -264,9 +265,18 @@ export default function AnalyticsPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900">Analytics & Usage</h1>
-        <p className="text-slate-500 mt-1">Monitor your chatbot performance and usage</p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Analytics & Usage</h1>
+          <p className="text-slate-500 mt-1">Monitor your chatbot performance and usage</p>
+        </div>
+        <Image
+          src="/images/illustration-analytics.png"
+          alt="Analytics"
+          width={120}
+          height={120}
+          className="hidden sm:block"
+        />
       </div>
 
       {/* Summary Stats */}
@@ -505,7 +515,7 @@ export default function AnalyticsPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-medium text-slate-900">{conv.chatbot.name}</span>
-                          <span className="text-xs text-slate-400">
+                          <span className="text-xs text-slate-500">
                             {conv.messageCount} messages
                           </span>
                           {conv.thumbsUp > 0 && (
@@ -528,7 +538,7 @@ export default function AnalyticsPage() {
                         <p className="text-sm text-slate-600 truncate">{conv.preview || 'No preview available'}</p>
                       </div>
                       <div className="flex items-center gap-3 flex-shrink-0">
-                        <span className="text-xs text-slate-400">{formatDate(conv.updatedAt)}</span>
+                        <span className="text-xs text-slate-500">{formatDate(conv.updatedAt)}</span>
                         <svg
                           className={`w-5 h-5 text-slate-400 transition-transform ${expandedConv === conv.id ? 'rotate-180' : ''}`}
                           fill="none"
@@ -557,7 +567,7 @@ export default function AnalyticsPage() {
                                 }`}
                               >
                                 <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                                <div className={`flex items-center gap-2 mt-1 text-xs ${msg.role === 'USER' ? 'text-white/70' : 'text-slate-400'}`}>
+                                <div className={`flex items-center gap-2 mt-1 text-xs ${msg.role === 'USER' ? 'text-white/70' : 'text-slate-500'}`}>
                                   <span>{formatTime(msg.createdAt)}</span>
                                   {msg.reaction && (
                                     <span className={`flex items-center gap-0.5 ${msg.reaction === 'up' ? 'text-emerald-400' : 'text-red-400'}`}>
@@ -584,7 +594,7 @@ export default function AnalyticsPage() {
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                           </svg>
                                           <span className="truncate">{source.documentTitle}</span>
-                                          <span className="text-slate-400">({Math.round(source.similarity * 100)}%)</span>
+                                          <span className="text-slate-500">({Math.round(source.similarity * 100)}%)</span>
                                         </div>
                                       ))}
                                     </div>

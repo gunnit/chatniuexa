@@ -313,7 +313,7 @@
       border: 1px solid #e5e7eb;
       border-radius: 6px;
       background: #f9fafb;
-      color: #6b7280;
+      color: #4b5563;
       cursor: pointer;
       transition: all 0.15s;
     }
@@ -410,7 +410,7 @@
     .typing-dot {
       width: 8px;
       height: 8px;
-      background: #6b7280;
+      background: #4b5563;
       border-radius: 50%;
       animation: typing 1.4s ease-in-out infinite;
     }
@@ -459,7 +459,7 @@
     }
 
     .widget-input input::placeholder {
-      color: #6b7280;
+      color: #4b5563;
     }
 
     .widget-input input:focus {
@@ -490,7 +490,7 @@
     }
 
     .widget-input button:disabled {
-      opacity: 0.5;
+      opacity: 0.6;
       cursor: not-allowed;
     }
 

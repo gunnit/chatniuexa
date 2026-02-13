@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 
 interface Chatbot {
   id: string
@@ -124,7 +125,7 @@ export default function ChatbotsPage() {
           </div>
           <h2 className="text-lg font-semibold text-slate-900">Create New Chatbot</h2>
         </div>
-        <form onSubmit={handleCreate} className="flex gap-3">
+        <form onSubmit={handleCreate} className="flex flex-col sm:flex-row gap-3">
           <input
             type="text"
             value={newName}
@@ -175,13 +176,15 @@ export default function ChatbotsPage() {
         ) : chatbots.length === 0 ? (
           <div className="col-span-full">
             <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-2xl border border-slate-200/60">
-              <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                </svg>
-              </div>
+              <Image
+                src="/images/illustration-empty.png"
+                alt="No chatbots yet"
+                width={180}
+                height={180}
+                className="mb-4"
+              />
               <h3 className="font-semibold text-slate-900 mb-1">No chatbots yet</h3>
-              <p className="text-sm text-slate-500">Create your first chatbot to get started</p>
+              <p className="text-sm text-slate-500">Create your first chatbot using the form above</p>
             </div>
           </div>
         ) : (

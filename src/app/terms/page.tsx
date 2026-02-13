@@ -17,7 +17,7 @@ export default function TermsPage() {
         <h1 className="text-3xl font-bold text-white mb-8">Terms of Service</h1>
         <p className="text-sm text-slate-500 mb-8">Last updated: February 2026</p>
 
-        <div className="space-y-8 text-slate-400 leading-relaxed">
+        <div className="space-y-8 text-slate-300 leading-relaxed">
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">1. Acceptance of Terms</h2>
             <p>By creating an account or using niuexa.ai services, you agree to these Terms of Service. If you do not agree, do not use the service.</p>
@@ -67,6 +67,15 @@ export default function TermsPage() {
             <h2 className="text-xl font-semibold text-white mb-3">10. Contact</h2>
             <p>For questions about these terms, contact us at <a href="mailto:legal@niuexa.ai" className="text-indigo-400 hover:text-indigo-300">legal@niuexa.ai</a>.</p>
           </section>
+        </div>
+
+        <div className="mt-16 pt-8 border-t border-slate-800 flex items-center justify-between text-sm">
+          <Link href="/" className="text-slate-400 hover:text-white transition-colors">
+            &larr; Back to home
+          </Link>
+          <Link href="/privacy" className="text-slate-400 hover:text-white transition-colors">
+            Privacy Policy
+          </Link>
         </div>
       </main>
     </div>

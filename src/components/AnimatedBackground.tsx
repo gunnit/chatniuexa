@@ -23,6 +23,15 @@ export function AnimatedBackground() {
           background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #2d3561 100%);
         }
 
+        .animated-bg::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: url('/images/hero-bg.png') center center / cover no-repeat;
+          opacity: 0.4;
+          mix-blend-mode: screen;
+        }
+
         .orb {
           position: absolute;
           border-radius: 50%;

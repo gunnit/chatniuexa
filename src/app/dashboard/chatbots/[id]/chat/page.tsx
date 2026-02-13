@@ -240,7 +240,7 @@ export default function ChatbotTestPage({
                 className={`max-w-[80%] rounded-2xl px-5 py-3.5 shadow-sm ${
                   message.role === 'user'
                     ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white'
-                    : 'bg-white border border-slate-200/60'
+                    : 'bg-white border border-slate-200/60 text-slate-900'
                 }`}
               >
                 <p className="whitespace-pre-wrap text-[15px] leading-relaxed">
@@ -261,7 +261,7 @@ export default function ChatbotTestPage({
                           className="text-xs p-2.5 rounded-lg bg-slate-50 border border-slate-100"
                         >
                           <span className="font-medium text-slate-700">{source.documentTitle}</span>
-                          <span className="text-slate-400 ml-2">
+                          <span className="text-slate-600 ml-2">
                             ({Math.round(source.similarity * 100)}% match)
                           </span>
                         </div>
@@ -277,9 +277,9 @@ export default function ChatbotTestPage({
             <div className="flex justify-start">
               <div className="bg-white border border-slate-200/60 rounded-2xl px-5 py-4 shadow-sm">
                 <div className="flex space-x-1.5">
-                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                 </div>
               </div>
             </div>
@@ -299,12 +299,12 @@ export default function ChatbotTestPage({
               onChange={(e) => setInput(e.target.value)}
               placeholder="Type a message..."
               disabled={loading}
-              className="flex-1 px-5 py-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all disabled:opacity-50"
+              className="flex-1 px-5 py-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all disabled:opacity-60"
             />
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="px-6 py-3.5 rounded-xl font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
+              className="px-6 py-3.5 rounded-xl font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
