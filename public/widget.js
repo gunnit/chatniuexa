@@ -44,6 +44,62 @@
     return '\u{1F4AC}';
   }
 
+  // Color utility functions
+  function hexToHSL(hex) {
+    hex = hex.replace('#', '');
+    var r = parseInt(hex.substring(0, 2), 16) / 255;
+    var g = parseInt(hex.substring(2, 4), 16) / 255;
+    var b = parseInt(hex.substring(4, 6), 16) / 255;
+    var max = Math.max(r, g, b), min = Math.min(r, g, b);
+    var h, s, l = (max + min) / 2;
+    if (max === min) { h = s = 0; }
+    else {
+      var d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+        case g: h = ((b - r) / d + 2) / 6; break;
+        case b: h = ((r - g) / d + 4) / 6; break;
+      }
+    }
+    return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+  }
+
+  function hslToHex(h, s, l) {
+    s /= 100; l /= 100;
+    var c = (1 - Math.abs(2 * l - 1)) * s;
+    var x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    var m = l - c / 2;
+    var r, g, b;
+    if (h < 60) { r = c; g = x; b = 0; }
+    else if (h < 120) { r = x; g = c; b = 0; }
+    else if (h < 180) { r = 0; g = c; b = x; }
+    else if (h < 240) { r = 0; g = x; b = c; }
+    else if (h < 300) { r = x; g = 0; b = c; }
+    else { r = c; g = 0; b = x; }
+    var toHex = function(v) { var hex = Math.round((v + m) * 255).toString(16); return hex.length === 1 ? '0' + hex : hex; };
+    return '#' + toHex(r) + toHex(g) + toHex(b);
+  }
+
+  function hexToRGBA(hex, alpha) {
+    hex = hex.replace('#', '');
+    var r = parseInt(hex.substring(0, 2), 16);
+    var g = parseInt(hex.substring(2, 4), 16);
+    var b = parseInt(hex.substring(4, 6), 16);
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+  }
+
+  function deriveThemeColors(primaryHex) {
+    var hsl = hexToHSL(primaryHex);
+    return {
+      gradient2: hslToHex((hsl.h + 12) % 360, hsl.s, Math.max(0, hsl.l - 8)),
+      glow: hexToRGBA(primaryHex, 0.35),
+      glowSubtle: hexToRGBA(primaryHex, 0.12),
+      shadowColor: hexToRGBA(primaryHex, 0.25),
+      bubbleGradient2: hslToHex((hsl.h + 8) % 360, hsl.s, Math.max(0, hsl.l - 6)),
+    };
+  }
+
   // Widget state
   let isOpen = false;
   let chatbot = null;
@@ -64,7 +120,9 @@
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
     .widget-button {
@@ -81,14 +139,19 @@
       justify-content: center;
       font-size: 26px;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-      transition: transform 0.2s, box-shadow 0.2s;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
       z-index: 999999;
       color: white;
+      animation: launcherEntry 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), launcherPulse 2s ease-in-out 1s 3;
+    }
+
+    .widget-button.open {
+      animation: none;
     }
 
     .widget-button:hover {
-      transform: scale(1.08);
-      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+      transform: scale(1.1);
+      box-shadow: 0 8px 28px var(--widget-shadow-color, rgba(0, 0, 0, 0.25));
     }
 
     .widget-button:active {
@@ -101,17 +164,37 @@
       display: block;
     }
 
+    @keyframes launcherEntry {
+      from {
+        opacity: 0;
+        transform: scale(0.5);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes launcherPulse {
+      0%, 100% {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      }
+      50% {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), 0 0 0 10px var(--widget-glow-color, rgba(59, 130, 246, 0.35));
+      }
+    }
+
     .widget-panel {
       position: fixed;
       bottom: 96px;
       right: 24px;
-      width: 380px;
+      width: 400px;
       max-width: calc(100vw - 48px);
-      height: 520px;
+      height: 540px;
       max-height: calc(100vh - 130px);
       background: white;
       border-radius: 20px;
-      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.18);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
       display: none;
       flex-direction: column;
       overflow: hidden;
@@ -120,33 +203,51 @@
 
     .widget-panel.open {
       display: flex;
-      animation: slideUp 0.25s ease-out;
+      animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     @keyframes slideUp {
       from {
         opacity: 0;
-        transform: translateY(16px);
+        transform: translateY(16px) scale(0.97);
       }
       to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
       }
     }
 
     .widget-header {
-      padding: 16px 20px;
+      padding: 18px 20px;
       color: white;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      min-height: 56px;
+      min-height: 60px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .widget-header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(rgba(255,255,255,0.12) 1px, transparent 1px);
+      background-size: 16px 16px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .widget-header > * {
+      position: relative;
+      z-index: 1;
     }
 
     .widget-header h3 {
       font-size: 16px;
-      font-weight: 600;
+      font-weight: 700;
+      letter-spacing: -0.01em;
       line-height: 1.3;
       flex: 1;
       margin: 0;
@@ -158,30 +259,58 @@
       color: white;
       font-size: 20px;
       cursor: pointer;
-      transition: background-color 0.2s;
+      transition: background-color 0.2s, transform 0.2s;
       width: 32px;
       height: 32px;
-      border-radius: 6px;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+      backdrop-filter: blur(4px);
     }
 
     .widget-close:hover {
       background: rgba(255, 255, 255, 0.25);
+      transform: scale(1.05);
     }
 
     .widget-messages {
       flex: 1;
       overflow-y: auto;
       padding: 16px;
-      background: #f8fafc;
+      background: linear-gradient(180deg, #f8f9fb, #f3f4f6);
+      scrollbar-width: thin;
+    }
+
+    .widget-messages::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .widget-messages::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .widget-messages::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 3px;
     }
 
     .message {
       margin-bottom: 16px;
       display: flex;
+      animation: messageSlideIn 0.3s ease-out;
+    }
+
+    @keyframes messageSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     .message:last-child {
@@ -203,16 +332,16 @@
 
     .message.assistant .message-content {
       background: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 16px 16px 16px 4px;
+      border: 1px solid #e8eaed;
+      border-radius: 20px 20px 20px 4px;
       color: #1f2937;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
     }
 
     .message.user .message-content {
       color: white;
-      border-radius: 16px 16px 4px 16px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      border-radius: 20px 20px 4px 20px;
+      box-shadow: 0 2px 8px var(--widget-shadow-color, rgba(0, 0, 0, 0.1));
     }
 
     .message-sources {
@@ -379,20 +508,22 @@
       display: inline-flex;
       align-items: center;
       padding: 10px 16px;
-      background: #f3f4f6;
-      border: 1px solid #e5e7eb;
+      background: white;
+      border: 1.5px solid #e2e5e9;
       border-radius: 24px;
       font-size: 13px;
       color: #374151;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: all 0.2s ease;
       white-space: nowrap;
     }
 
     .suggestion-chip:hover {
-      background: #e5e7eb;
-      border-color: #d1d5db;
-      color: #1f2937;
+      background: var(--widget-glow-subtle, rgba(59, 130, 246, 0.08));
+      border-color: var(--widget-primary-color, #3b82f6);
+      color: var(--widget-primary-color, #3b82f6);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px var(--widget-glow-subtle, rgba(59, 130, 246, 0.12));
     }
 
     .widget-suggestions.hidden {
@@ -406,18 +537,20 @@
       color: white;
       font-size: 14px;
       cursor: pointer;
-      transition: background-color 0.2s;
+      transition: background-color 0.2s, transform 0.2s;
       width: 32px;
       height: 32px;
-      border-radius: 6px;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+      backdrop-filter: blur(4px);
     }
 
     .widget-clear:hover {
       background: rgba(255, 255, 255, 0.25);
+      transform: scale(1.05);
     }
 
     .widget-clear svg {
@@ -430,16 +563,17 @@
       gap: 5px;
       padding: 14px 18px;
       background: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 16px 16px 16px 4px;
+      border: 1px solid #e8eaed;
+      border-radius: 20px 20px 20px 4px;
       width: fit-content;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      animation: messageSlideIn 0.3s ease-out;
     }
 
     .typing-dot {
       width: 8px;
       height: 8px;
-      background: #4b5563;
+      background: #9ca3af;
       border-radius: 50%;
       animation: typing 1.4s ease-in-out infinite;
     }
@@ -448,8 +582,8 @@
     .typing-dot:nth-child(3) { animation-delay: 0.4s; }
 
     @keyframes typing {
-      0%, 60%, 100% { transform: translateY(0); }
-      30% { transform: translateY(-4px); }
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+      30% { transform: translateY(-4px); opacity: 1; }
     }
 
     @keyframes blink {
@@ -478,44 +612,46 @@
     .widget-input input {
       flex: 1;
       padding: 12px 14px;
-      border: 2px solid #e5e7eb;
-      border-radius: 10px;
+      border: 1.5px solid #e2e5e9;
+      border-radius: 12px;
       font-size: 14px;
       outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
       color: #1f2937;
       background: #fafafa;
     }
 
     .widget-input input::placeholder {
-      color: #4b5563;
+      color: #9ca3af;
     }
 
     .widget-input input:focus {
       border-color: var(--widget-primary-color, #3b82f6);
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      box-shadow: 0 0 0 3px var(--widget-glow-subtle, rgba(59, 130, 246, 0.1));
       background: white;
     }
 
     .widget-input button {
       padding: 12px 20px;
       border: none;
-      border-radius: 10px;
+      border-radius: 12px;
       color: white;
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      transition: opacity 0.2s, transform 0.1s;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s;
       min-width: 70px;
+      box-shadow: 0 2px 8px var(--widget-shadow-color, rgba(0, 0, 0, 0.1));
     }
 
     .widget-input button:hover:not(:disabled) {
-      opacity: 0.9;
-      transform: translateY(-1px);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 14px var(--widget-shadow-color, rgba(0, 0, 0, 0.15));
     }
 
     .widget-input button:active:not(:disabled) {
-      transform: translateY(0);
+      transform: scale(0.97);
+      box-shadow: 0 1px 4px var(--widget-shadow-color, rgba(0, 0, 0, 0.1));
     }
 
     .widget-input button:disabled {
@@ -526,21 +662,21 @@
     .widget-branding {
       text-align: center;
       padding: 10px 16px;
-      background: #f3f4f6;
-      font-size: 12px;
-      color: #4b5563;
+      background: #fafbfc;
+      font-size: 11px;
+      color: #9ca3af;
       border-top: 1px solid #e5e7eb;
     }
 
     .widget-branding a {
-      color: #1f2937;
+      color: #6b7280;
       text-decoration: none;
-      font-weight: 500;
+      font-weight: 600;
     }
 
     .widget-branding a:hover {
       text-decoration: underline;
-      color: #111827;
+      color: #374151;
     }
 
     @media (max-width: 480px) {
@@ -553,7 +689,7 @@
         height: 100%;
         max-height: 100%;
         border-radius: 0;
-        animation: slideUpMobile 0.2s ease-out;
+        animation: slideUpMobile 0.35s cubic-bezier(0.16, 1, 0.3, 1);
       }
 
       @keyframes slideUpMobile {
@@ -581,7 +717,7 @@
       }
 
       .widget-input {
-        padding: 10px 12px 14px;
+        padding: 10px 12px max(14px, env(safe-area-inset-bottom));
       }
 
       .widget-input input {
@@ -765,9 +901,18 @@
 
       // Apply styling
       const color = chatbot.primaryColor || '#3B82F6';
-      toggleBtn.style.backgroundColor = color;
-      header.style.backgroundColor = color;
-      sendBtn.style.backgroundColor = color;
+      const theme = deriveThemeColors(color);
+
+      // Set CSS custom properties for use in stylesheet
+      widgetHTML.style.setProperty('--widget-primary-color', color);
+      widgetHTML.style.setProperty('--widget-glow-color', theme.glow);
+      widgetHTML.style.setProperty('--widget-glow-subtle', theme.glowSubtle);
+      widgetHTML.style.setProperty('--widget-shadow-color', theme.shadowColor);
+
+      // Apply gradient backgrounds
+      toggleBtn.style.background = 'linear-gradient(135deg, ' + color + ', ' + theme.gradient2 + ')';
+      header.style.background = 'linear-gradient(135deg, ' + color + ', ' + theme.gradient2 + ')';
+      sendBtn.style.background = 'linear-gradient(135deg, ' + color + ', ' + theme.gradient2 + ')';
 
       // Apply custom icon
       toggleBtn.innerHTML = getIconHTML(chatbot);
@@ -807,7 +952,13 @@
     // Use markdown for assistant, escape for user
     const renderedContent = role === 'assistant' ? parseMarkdown(content) : escapeHtml(content);
 
-    let html = `<div class="message-content"${role === 'user' && chatbot ? ` style="background-color: ${chatbot.primaryColor}"` : ''}>${renderedContent}`;
+    let userBubbleStyle = '';
+    if (role === 'user' && chatbot) {
+      var c = chatbot.primaryColor || '#3B82F6';
+      var t = deriveThemeColors(c);
+      userBubbleStyle = ' style="background: linear-gradient(135deg, ' + c + ', ' + t.bubbleGradient2 + ')"';
+    }
+    let html = `<div class="message-content"${userBubbleStyle}>${renderedContent}`;
 
     // Confidence indicator for assistant messages
     if (role === 'assistant' && confidence) {
@@ -1156,14 +1307,25 @@
   toggleBtn.addEventListener('click', () => {
     isOpen = !isOpen;
     panel.classList.toggle('open', isOpen);
-    toggleBtn.innerHTML = isOpen ? '\u2715' : getIconHTML(chatbot);
+    toggleBtn.classList.toggle('open', isOpen);
+    // Brief scale-down morph when swapping icon
+    toggleBtn.style.transform = 'scale(0.85)';
+    setTimeout(function() {
+      toggleBtn.innerHTML = isOpen ? '\u2715' : getIconHTML(chatbot);
+      toggleBtn.style.transform = '';
+    }, 150);
     if (isOpen) input.focus();
   });
 
   closeBtn.addEventListener('click', () => {
     isOpen = false;
     panel.classList.remove('open');
-    toggleBtn.innerHTML = getIconHTML(chatbot);
+    toggleBtn.classList.remove('open');
+    toggleBtn.style.transform = 'scale(0.85)';
+    setTimeout(function() {
+      toggleBtn.innerHTML = getIconHTML(chatbot);
+      toggleBtn.style.transform = '';
+    }, 150);
   });
 
   clearBtn.addEventListener('click', () => {
