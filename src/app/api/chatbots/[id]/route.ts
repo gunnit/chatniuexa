@@ -40,6 +40,9 @@ const updateChatbotSchema = z.object({
   welcomeMessage: z.string().nullish(),
   showBranding: z.boolean().optional(),
   suggestedPrompts: z.array(z.string()).max(4).optional(),
+  chatIconType: z.enum(['default', 'preset', 'custom']).optional(),
+  chatIconPreset: z.string().max(30).nullish(),
+  chatIconImage: z.string().max(50000).nullish(),
 })
 
 export async function PATCH(

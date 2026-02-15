@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Image from 'next/image'
 import SiteCrawlerModal from '@/components/SiteCrawlerModal'
 
 interface DataSource {
@@ -193,18 +192,9 @@ export default function DataSourcesPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Data Sources</h1>
-          <p className="text-slate-500 mt-1">Upload files or add URLs to train your chatbots</p>
-        </div>
-        <Image
-          src="/images/illustration-datasources.png"
-          alt="Data Sources"
-          width={120}
-          height={120}
-          className="hidden sm:block"
-        />
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-slate-900">Data Sources</h1>
+        <p className="text-slate-500 mt-1">Upload files or add URLs to train your chatbots</p>
       </div>
 
       {error && (

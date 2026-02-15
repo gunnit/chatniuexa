@@ -254,6 +254,11 @@ model Chatbot {
   showBranding     Boolean  @default(true)
   suggestedPrompts String[] @default([])  // Quick reply suggestions
 
+  // Chat icon customization
+  chatIconType   String?  @default("default")  // "default" | "preset" | "custom"
+  chatIconPreset String?                        // e.g. "headset", "robot", "help"
+  chatIconImage  String?  @db.Text              // base64 data URL (~2-8KB)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

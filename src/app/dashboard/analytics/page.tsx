@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import Image from 'next/image'
 
 interface UsageStats {
   limits: {
@@ -265,18 +264,9 @@ export default function AnalyticsPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Analytics & Usage</h1>
-          <p className="text-slate-500 mt-1">Monitor your chatbot performance and usage</p>
-        </div>
-        <Image
-          src="/images/illustration-analytics.png"
-          alt="Analytics"
-          width={120}
-          height={120}
-          className="hidden sm:block"
-        />
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-slate-900">Analytics & Usage</h1>
+        <p className="text-slate-500 mt-1">Monitor your chatbot performance and usage</p>
       </div>
 
       {/* Summary Stats */}

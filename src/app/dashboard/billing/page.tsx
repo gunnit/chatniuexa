@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Image from 'next/image'
 
 interface BillingStatus {
   plan: string
@@ -152,18 +151,9 @@ export default function BillingPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Billing & Plans</h1>
-          <p className="text-slate-500 mt-1">Manage your subscription and billing</p>
-        </div>
-        <Image
-          src="/images/illustration-upgrade.png"
-          alt="Upgrade your plan"
-          width={120}
-          height={120}
-          className="hidden sm:block"
-        />
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-slate-900">Billing & Plans</h1>
+        <p className="text-slate-500 mt-1">Manage your subscription and billing</p>
       </div>
 
       {/* Current Plan Banner */}

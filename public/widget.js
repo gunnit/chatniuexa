@@ -21,6 +21,29 @@
   // Generate session ID
   const sessionId = 'widget-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
 
+  // Preset icon SVGs
+  const PRESET_ICONS = {
+    headset: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>',
+    robot: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>',
+    help: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+    star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+    bolt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+    heart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
+    'message-circle': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>',
+  };
+
+  // Get icon HTML based on chatbot config
+  function getIconHTML(config) {
+    if (!config) return '\u{1F4AC}';
+    if (config.chatIconType === 'preset' && config.chatIconPreset && PRESET_ICONS[config.chatIconPreset]) {
+      return PRESET_ICONS[config.chatIconPreset];
+    }
+    if (config.chatIconType === 'custom' && config.chatIconImage) {
+      return '<img src="' + config.chatIconImage + '" alt="Chat" width="32" height="32" style="display:block;pointer-events:none;" onerror="this.parentElement.innerHTML=\'\u{1F4AC}\'">';
+    }
+    return '\u{1F4AC}';
+  }
+
   // Widget state
   let isOpen = false;
   let chatbot = null;
@@ -70,6 +93,12 @@
 
     .widget-button:active {
       transform: scale(1.02);
+    }
+
+    .widget-button img,
+    .widget-button svg {
+      pointer-events: none;
+      display: block;
     }
 
     .widget-panel {
@@ -740,6 +769,9 @@
       header.style.backgroundColor = color;
       sendBtn.style.backgroundColor = color;
 
+      // Apply custom icon
+      toggleBtn.innerHTML = getIconHTML(chatbot);
+
       title.textContent = chatbot.name;
 
       if (!chatbot.showBranding) {
@@ -1124,14 +1156,14 @@
   toggleBtn.addEventListener('click', () => {
     isOpen = !isOpen;
     panel.classList.toggle('open', isOpen);
-    toggleBtn.textContent = isOpen ? '✕' : '💬';
+    toggleBtn.innerHTML = isOpen ? '\u2715' : getIconHTML(chatbot);
     if (isOpen) input.focus();
   });
 
   closeBtn.addEventListener('click', () => {
     isOpen = false;
     panel.classList.remove('open');
-    toggleBtn.textContent = '💬';
+    toggleBtn.innerHTML = getIconHTML(chatbot);
   });
 
   clearBtn.addEventListener('click', () => {
