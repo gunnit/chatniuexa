@@ -181,7 +181,7 @@ Output ONLY the system prompt text. Do not include any preamble, explanation, or
       model: 'gpt-5-mini',
       messages: [{ role: 'user', content: metaPrompt }],
       temperature: 0.7,
-      max_tokens: 1000,
+      max_completion_tokens: 1000,
     })
 
     const enhancedInstructions = completion.choices[0]?.message?.content?.trim()

@@ -14,3 +14,7 @@
 - Next.js with App Router
 - Firecrawl for web page crawling
 - NextAuth for authentication
+
+## OpenAI API Rules
+- **ALWAYS** use `max_completion_tokens` instead of `max_tokens` — the latter is deprecated and fails on newer models (gpt-5-mini, o-series, etc.)
+- Use Context7 (`/websites/platform_openai`) to verify API parameters before writing OpenAI calls

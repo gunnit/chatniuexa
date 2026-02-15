@@ -135,7 +135,7 @@ export async function generateChatResponse(
     model,
     messages,
     temperature,
-    max_tokens: 1000,
+    max_completion_tokens: 1000,
   })
 
   const responseContent = completion.choices[0]?.message?.content || 'I apologize, but I was unable to generate a response.'
@@ -303,7 +303,7 @@ export async function generateStreamingChatResponse(
     model,
     messages,
     temperature,
-    max_tokens: 1000,
+    max_completion_tokens: 1000,
     stream: true,
   })
 
