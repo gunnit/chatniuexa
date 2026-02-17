@@ -37,7 +37,6 @@ export async function generateChatResponse(
   options: {
     systemPrompt?: string
     model?: string
-    temperature?: number
     maxSources?: number
     minSimilarity?: number
   } = {}
@@ -45,7 +44,6 @@ export async function generateChatResponse(
   const {
     systemPrompt = DEFAULT_SYSTEM_PROMPT,
     model = 'gpt-5-mini',
-    temperature = 0.7,
     maxSources = 5,
     minSimilarity = 0.2, // Lowered to 0.2 for multilingual content recall
   } = options
@@ -134,7 +132,6 @@ export async function generateChatResponse(
   const completion = await openai.chat.completions.create({
     model,
     messages,
-    temperature,
     max_completion_tokens: 1000,
   })
 
@@ -264,13 +261,11 @@ export async function generateStreamingChatResponse(
   options: {
     systemPrompt?: string
     model?: string
-    temperature?: number
   } = {}
 ): Promise<ReadableStream<Uint8Array>> {
   const {
     systemPrompt = DEFAULT_SYSTEM_PROMPT,
     model = 'gpt-5-mini',
-    temperature = 0.7,
   } = options
 
   const openai = getOpenAI()
@@ -302,7 +297,6 @@ export async function generateStreamingChatResponse(
   const stream = await openai.chat.completions.create({
     model,
     messages,
-    temperature,
     max_completion_tokens: 1000,
     stream: true,
   })
