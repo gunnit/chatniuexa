@@ -18,6 +18,7 @@ export async function GET(
         name: true,
         welcomeMessage: true,
         primaryColor: true,
+        secondaryColor: true,
         showBranding: true,
         suggestedPrompts: true,
         chatIconType: true,

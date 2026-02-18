@@ -250,6 +250,7 @@ model Chatbot {
 
   // Widget customization (Phase 5)
   primaryColor     String?  @default("#3B82F6")
+  secondaryColor   String?  @default("#6366f1")
   welcomeMessage   String?  @default("Hello! How can I help you?")
   showBranding     Boolean  @default(true)
   suggestedPrompts String[] @default([])  // Quick reply suggestions

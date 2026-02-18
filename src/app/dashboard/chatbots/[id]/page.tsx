@@ -11,6 +11,7 @@ interface Chatbot {
   temperature: number
   model: string
   primaryColor: string | null
+  secondaryColor: string | null
   welcomeMessage: string | null
   showBranding: boolean
   suggestedPrompts: string[]
@@ -160,6 +161,7 @@ export default function ChatbotConfigPage({
   const [temperature, setTemperature] = useState(0.7)
   const [model, setModel] = useState('gpt-5-mini')
   const [primaryColor, setPrimaryColor] = useState('#6366f1')
+  const [secondaryColor, setSecondaryColor] = useState('#6366f1')
   const [welcomeMessage, setWelcomeMessage] = useState('')
   const [showBranding, setShowBranding] = useState(true)
   const [suggestedPrompts, setSuggestedPrompts] = useState<string[]>([])
@@ -187,6 +189,7 @@ export default function ChatbotConfigPage({
           setTemperature(c.temperature)
           setModel(c.model)
           setPrimaryColor(c.primaryColor || '#6366f1')
+          setSecondaryColor(c.secondaryColor || '#6366f1')
           setWelcomeMessage(c.welcomeMessage || 'Hello! How can I help you?')
           setShowBranding(c.showBranding)
           setSuggestedPrompts(c.suggestedPrompts || [])
@@ -217,6 +220,7 @@ export default function ChatbotConfigPage({
           temperature,
           model,
           primaryColor: primaryColor || undefined,
+          secondaryColor: secondaryColor || undefined,
           welcomeMessage: welcomeMessage || undefined,
           showBranding,
           suggestedPrompts,
@@ -610,22 +614,44 @@ export default function ChatbotConfigPage({
           {/* Widget Style */}
           {activeTab === 'widget' && (
             <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Primary Color</label>
-                <div className="flex gap-4 items-center">
-                  <input
-                    type="color"
-                    value={primaryColor}
-                    onChange={(e) => setPrimaryColor(e.target.value)}
-                    className="w-14 h-14 rounded-xl cursor-pointer border-2 border-slate-200"
-                  />
-                  <input
-                    type="text"
-                    value={primaryColor}
-                    onChange={(e) => setPrimaryColor(e.target.value)}
-                    className="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-mono"
-                    placeholder="#6366f1"
-                  />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Primary Color</label>
+                  <p className="text-xs text-slate-500 mb-2">Chat button / launcher icon background</p>
+                  <div className="flex gap-3 items-center">
+                    <input
+                      type="color"
+                      value={primaryColor}
+                      onChange={(e) => setPrimaryColor(e.target.value)}
+                      className="w-12 h-12 rounded-xl cursor-pointer border-2 border-slate-200"
+                    />
+                    <input
+                      type="text"
+                      value={primaryColor}
+                      onChange={(e) => setPrimaryColor(e.target.value)}
+                      className="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-mono text-sm w-32"
+                      placeholder="#6366f1"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Secondary Color</label>
+                  <p className="text-xs text-slate-500 mb-2">Header, send button &amp; user message bubbles</p>
+                  <div className="flex gap-3 items-center">
+                    <input
+                      type="color"
+                      value={secondaryColor}
+                      onChange={(e) => setSecondaryColor(e.target.value)}
+                      className="w-12 h-12 rounded-xl cursor-pointer border-2 border-slate-200"
+                    />
+                    <input
+                      type="text"
+                      value={secondaryColor}
+                      onChange={(e) => setSecondaryColor(e.target.value)}
+                      className="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-mono text-sm w-32"
+                      placeholder="#6366f1"
+                    />
+                  </div>
                 </div>
               </div>
 

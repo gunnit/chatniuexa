@@ -37,6 +37,7 @@ const updateChatbotSchema = z.object({
   temperature: z.number().min(0).max(2).optional(),
   model: z.string().optional(),
   primaryColor: z.string().nullish(),
+  secondaryColor: z.string().nullish(),
   welcomeMessage: z.string().nullish(),
   showBranding: z.boolean().optional(),
   suggestedPrompts: z.array(z.string()).max(4).optional(),

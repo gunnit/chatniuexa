@@ -899,20 +899,22 @@
       const data = await res.json();
       chatbot = data.chatbot;
 
-      // Apply styling
-      const color = chatbot.primaryColor || '#3B82F6';
-      const theme = deriveThemeColors(color);
+      // Apply styling - primary for launcher, secondary for header/send/bubbles
+      const primary = chatbot.primaryColor || '#3B82F6';
+      const secondary = chatbot.secondaryColor || primary;
+      const primaryTheme = deriveThemeColors(primary);
+      const secondaryTheme = deriveThemeColors(secondary);
 
       // Set CSS custom properties for use in stylesheet
-      widgetHTML.style.setProperty('--widget-primary-color', color);
-      widgetHTML.style.setProperty('--widget-glow-color', theme.glow);
-      widgetHTML.style.setProperty('--widget-glow-subtle', theme.glowSubtle);
-      widgetHTML.style.setProperty('--widget-shadow-color', theme.shadowColor);
+      widgetHTML.style.setProperty('--widget-primary-color', secondary);
+      widgetHTML.style.setProperty('--widget-glow-color', primaryTheme.glow);
+      widgetHTML.style.setProperty('--widget-glow-subtle', primaryTheme.glowSubtle);
+      widgetHTML.style.setProperty('--widget-shadow-color', primaryTheme.shadowColor);
 
-      // Apply gradient backgrounds
-      toggleBtn.style.background = 'linear-gradient(135deg, ' + color + ', ' + theme.gradient2 + ')';
-      header.style.background = 'linear-gradient(135deg, ' + color + ', ' + theme.gradient2 + ')';
-      sendBtn.style.background = 'linear-gradient(135deg, ' + color + ', ' + theme.gradient2 + ')';
+      // Apply gradient backgrounds - primary for launcher, secondary for header/send
+      toggleBtn.style.background = 'linear-gradient(135deg, ' + primary + ', ' + primaryTheme.gradient2 + ')';
+      header.style.background = 'linear-gradient(135deg, ' + secondary + ', ' + secondaryTheme.gradient2 + ')';
+      sendBtn.style.background = 'linear-gradient(135deg, ' + secondary + ', ' + secondaryTheme.gradient2 + ')';
 
       // Apply custom icon
       toggleBtn.innerHTML = getIconHTML(chatbot);
@@ -954,7 +956,7 @@
 
     let userBubbleStyle = '';
     if (role === 'user' && chatbot) {
-      var c = chatbot.primaryColor || '#3B82F6';
+      var c = chatbot.secondaryColor || chatbot.primaryColor || '#3B82F6';
       var t = deriveThemeColors(c);
       userBubbleStyle = ' style="background: linear-gradient(135deg, ' + c + ', ' + t.bubbleGradient2 + ')"';
     }
