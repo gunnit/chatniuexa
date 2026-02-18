@@ -177,11 +177,21 @@ ${currentInstructions ? 'Improve and enhance the current instructions while pres
 Output ONLY the system prompt text. Do not include any preamble, explanation, or markdown code fences.`
 
     const openai = getOpenAI()
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-5-mini',
-      messages: [{ role: 'user', content: metaPrompt }],
-      max_completion_tokens: 1000,
-    })
+    let completion
+    try {
+      completion = await openai.chat.completions.create({
+        model: 'gpt-5-mini',
+        messages: [{ role: 'user', content: metaPrompt }],
+        max_completion_tokens: 1000,
+      })
+    } catch (openaiError: unknown) {
+      const msg = openaiError instanceof Error ? openaiError.message : String(openaiError)
+      console.error('OpenAI API error in enhance-instructions:', msg)
+      return NextResponse.json(
+        { error: `AI generation failed: ${msg}` },
+        { status: 502 }
+      )
+    }
 
     const enhancedInstructions = completion.choices[0]?.message?.content?.trim()
 
