@@ -132,7 +132,7 @@ export async function generateChatResponse(
   const completion = await openai.chat.completions.create({
     model,
     messages,
-    max_completion_tokens: 1000,
+    max_completion_tokens: 4000,
   })
 
   const responseContent = completion.choices[0]?.message?.content || 'I apologize, but I was unable to generate a response.'
@@ -297,7 +297,7 @@ export async function generateStreamingChatResponse(
   const stream = await openai.chat.completions.create({
     model,
     messages,
-    max_completion_tokens: 1000,
+    max_completion_tokens: 4000,
     stream: true,
   })
 

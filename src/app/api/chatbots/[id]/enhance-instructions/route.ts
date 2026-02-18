@@ -182,7 +182,7 @@ Output ONLY the system prompt text. Do not include any preamble, explanation, or
       completion = await openai.chat.completions.create({
         model: 'gpt-5-mini',
         messages: [{ role: 'user', content: metaPrompt }],
-        max_completion_tokens: 1000,
+        max_completion_tokens: 4000,
       })
     } catch (openaiError: unknown) {
       const msg = openaiError instanceof Error ? openaiError.message : String(openaiError)
