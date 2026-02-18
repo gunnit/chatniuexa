@@ -193,11 +193,19 @@ Output ONLY the system prompt text. Do not include any preamble, explanation, or
       )
     }
 
-    const enhancedInstructions = completion.choices[0]?.message?.content?.trim()
+    const choice = completion.choices[0]
+    const enhancedInstructions = choice?.message?.content?.trim()
 
     if (!enhancedInstructions) {
+      console.error('OpenAI returned empty content:', JSON.stringify({
+        finish_reason: choice?.finish_reason,
+        refusal: choice?.message?.refusal,
+        content: choice?.message?.content,
+        model: completion.model,
+        usage: completion.usage,
+      }))
       return NextResponse.json(
-        { error: 'Failed to generate enhanced instructions' },
+        { error: `Failed to generate enhanced instructions (finish_reason: ${choice?.finish_reason || 'unknown'})` },
         { status: 500 }
       )
     }
