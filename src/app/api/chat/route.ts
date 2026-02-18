@@ -103,7 +103,6 @@ export async function POST(request: NextRequest) {
       {
         systemPrompt: chatbot.systemPrompt || undefined,
         model: chatbot.model,
-        temperature: chatbot.temperature,
       }
     )
 
