@@ -9,29 +9,29 @@ function getResend() {
   return _resend
 }
 
-const FROM_EMAIL = 'niuexa.ai <noreply@niuexa.ai>'
+const FROM_EMAIL = 'ChatAziendale.it <noreply@chataziendale.it>'
 
 export async function sendWelcomeEmail(to: string, name: string) {
   try {
     await getResend().emails.send({
       from: FROM_EMAIL,
       to,
-      subject: 'Welcome to niuexa.ai!',
+      subject: 'Welcome to ChatAziendale.it!',
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #1e293b;">Welcome, ${name}!</h1>
           <p style="color: #475569; font-size: 16px; line-height: 1.6;">
-            Thanks for signing up for niuexa.ai. You're all set to create AI chatbots trained on your own data.
+            Thanks for signing up for ChatAziendale.it. You're all set to create AI chatbots trained on your own data.
           </p>
           <p style="color: #475569; font-size: 16px; line-height: 1.6;">
             Get started by adding a data source and creating your first chatbot.
           </p>
-          <a href="https://chatniuexa.onrender.com/dashboard"
+          <a href="https://chataziendale.onrender.com/dashboard"
              style="display: inline-block; padding: 12px 24px; background: linear-gradient(to right, #6366f1, #8b5cf6); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; margin-top: 16px;">
             Go to Dashboard
           </a>
           <p style="color: #94a3b8; font-size: 14px; margin-top: 32px;">
-            &mdash; The niuexa.ai Team
+            &mdash; The ChatAziendale.it Team
           </p>
         </div>
       `,
@@ -47,7 +47,7 @@ export async function sendPasswordResetEmail(to: string, name: string, resetUrl:
     await getResend().emails.send({
       from: FROM_EMAIL,
       to,
-      subject: 'Reset your password - niuexa.ai',
+      subject: 'Reset your password - ChatAziendale.it',
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #1e293b;">Reset your password</h1>
@@ -62,7 +62,7 @@ export async function sendPasswordResetEmail(to: string, name: string, resetUrl:
             This link expires in 1 hour. If you didn't request this, you can safely ignore this email.
           </p>
           <p style="color: #94a3b8; font-size: 14px;">
-            &mdash; The niuexa.ai Team
+            &mdash; The ChatAziendale.it Team
           </p>
         </div>
       `,
@@ -88,12 +88,12 @@ export async function sendBillingConfirmation(to: string, name: string, planName
           <p style="color: #475569; font-size: 16px; line-height: 1.6;">
             You now have access to all ${planName} features. Enjoy!
           </p>
-          <a href="https://chatniuexa.onrender.com/dashboard/billing"
+          <a href="https://chataziendale.onrender.com/dashboard/billing"
              style="display: inline-block; padding: 12px 24px; background: linear-gradient(to right, #6366f1, #8b5cf6); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; margin-top: 16px;">
             View Billing
           </a>
           <p style="color: #94a3b8; font-size: 14px; margin-top: 32px;">
-            &mdash; The niuexa.ai Team
+            &mdash; The ChatAziendale.it Team
           </p>
         </div>
       `,

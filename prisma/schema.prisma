@@ -1,4 +1,4 @@
-// Prisma schema for niuexa.ai
+// Prisma schema for ChatAziendale.it
 // NextAuth + Multi-tenant architecture
 
 generator client {

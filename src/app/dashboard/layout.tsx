@@ -11,7 +11,7 @@ import { LogoutButton } from '@/components/LogoutButton'
 import { DesktopNavLinks, MobileNavLinks } from '@/components/NavLinks'
 
 export const metadata: Metadata = {
-  title: 'Dashboard - niuexa.ai',
+  title: 'Dashboard - ChatAziendale.it',
   description: 'Manage your AI chatbot',
 }
 
@@ -32,9 +32,9 @@ export default function DashboardLayout({
             <div className="flex items-center">
               {/* Logo */}
               <Link href="/dashboard" className="flex-shrink-0 flex items-center gap-2">
-                <Image src="/images/logo.png" alt="niuexa.ai logo" width={32} height={32} />
+                <Image src="/images/logo.png" alt="ChatAziendale.it logo" width={32} height={32} />
                 <span className="text-xl font-bold tracking-tight text-slate-900">
-                  niuexa<span className="text-indigo-600">.ai</span>
+                  ChatAziendale<span className="text-indigo-600">.it</span>
                 </span>
               </Link>
 

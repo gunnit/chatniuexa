@@ -36,9 +36,9 @@ function LoginForm() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex flex-col items-center gap-3">
-            <Image src="/images/logo.png" alt="niuexa.ai logo" width={56} height={56} className="drop-shadow-lg" />
+            <Image src="/images/logo.png" alt="ChatAziendale.it logo" width={56} height={56} className="drop-shadow-lg" />
             <span className="text-3xl font-bold text-white tracking-tight">
-              niuexa<span className="text-indigo-400">.ai</span>
+              ChatAziendale<span className="text-indigo-400">.it</span>
             </span>
           </Link>
         </div>

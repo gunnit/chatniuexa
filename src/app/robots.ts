@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/dashboard', '/api'],
     },
-    sitemap: 'https://chatniuexa.onrender.com/sitemap.xml',
+    sitemap: 'https://chataziendale.onrender.com/sitemap.xml',
   }
 }

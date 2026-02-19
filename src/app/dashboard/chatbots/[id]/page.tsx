@@ -778,7 +778,7 @@ export default function ChatbotConfigPage({
                   className="w-5 h-5 rounded text-indigo-600 focus:ring-indigo-500"
                 />
                 <label htmlFor="showBranding" className="text-sm text-slate-700">
-                  Show &quot;Powered by niuexa.ai&quot; branding
+                  Show &quot;Powered by ChatAziendale.it&quot; branding
                 </label>
               </div>
 

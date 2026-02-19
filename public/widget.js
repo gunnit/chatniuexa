@@ -4,13 +4,13 @@
   // Get configuration from script tag
   const script = document.currentScript || document.querySelector('script[data-chatbot-id]');
   if (!script) {
-    console.error('niuexa.ai widget: No chatbot ID found');
+    console.error('ChatAziendale.it widget: No chatbot ID found');
     return;
   }
 
   const chatbotId = script.getAttribute('data-chatbot-id');
   if (!chatbotId) {
-    console.error('niuexa.ai widget: Missing data-chatbot-id attribute');
+    console.error('ChatAziendale.it widget: Missing data-chatbot-id attribute');
     return;
   }
 
@@ -108,7 +108,7 @@
 
   // Create widget container with Shadow DOM
   const container = document.createElement('div');
-  container.id = 'niuexa-widget-container';
+  container.id = 'chataziendale-widget-container';
   document.body.appendChild(container);
 
   const shadow = container.attachShadow({ mode: 'open' });
@@ -760,7 +760,7 @@
         </form>
       </div>
       <div class="widget-branding" id="widget-branding">
-        Powered by <a href="https://niuexa.ai" target="_blank" rel="noopener">niuexa.ai</a>
+        Powered by <a href="https://chataziendale.it" target="_blank" rel="noopener">ChatAziendale.it</a>
       </div>
     </div>
   `;
@@ -781,7 +781,7 @@
   const branding = shadow.getElementById('widget-branding');
 
   // LocalStorage key for this chatbot
-  const storageKey = `niuexa-chat-${chatbotId}`;
+  const storageKey = `chataziendale-chat-${chatbotId}`;
 
   // Get stored session or create new one
   function getStoredSession() {
@@ -941,7 +941,7 @@
         addMessage('assistant', chatbot.welcomeMessage);
       }
     } catch (err) {
-      console.error('niuexa.ai widget: Failed to load chatbot', err);
+      console.error('ChatAziendale.it widget: Failed to load chatbot', err);
     }
   }
 

@@ -4,7 +4,7 @@
  * AnimatedBackground Component
  *
  * Creates a modern animated gradient background with floating orbs.
- * Inspired by niuexa.ai but with our own color palette.
+ * Animated gradient background with floating orbs.
  */
 export function AnimatedBackground() {
   return (

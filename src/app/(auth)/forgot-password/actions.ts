@@ -48,7 +48,7 @@ export async function forgotPassword(
       },
     })
 
-    const baseUrl = process.env.NEXTAUTH_URL || 'https://chatniuexa.onrender.com'
+    const baseUrl = process.env.NEXTAUTH_URL || 'https://chataziendale.onrender.com'
     const resetUrl = `${baseUrl}/reset-password?token=${token}`
 
     await sendPasswordResetEmail(email, user.name || 'there', resetUrl)

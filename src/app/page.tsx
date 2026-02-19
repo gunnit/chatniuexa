@@ -10,9 +10,9 @@ export default function Home() {
       {/* Navigation */}
       <nav className="relative z-10 flex items-center justify-between px-6 py-4 lg:px-12">
         <Link href="/" className="flex items-center gap-2.5">
-          <Image src="/images/logo.png" alt="niuexa.ai logo" width={36} height={36} className="drop-shadow-lg" />
+          <Image src="/images/logo.png" alt="ChatAziendale.it logo" width={36} height={36} className="drop-shadow-lg" />
           <span className="text-2xl font-bold text-white tracking-tight">
-            niuexa<span className="text-indigo-400">.ai</span>
+            ChatAziendale<span className="text-indigo-400">.it</span>
           </span>
         </Link>
         <div className="flex items-center gap-3">
@@ -150,7 +150,7 @@ export default function Home() {
       <footer className="relative z-10 border-t border-white/5 py-8 px-6">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="text-sm text-slate-500">
-            2026 niuexa.ai. All rights reserved.
+            2026 ChatAziendale.it. All rights reserved.
           </div>
           <div className="flex items-center gap-6">
             <Link href="/privacy" className="text-sm text-slate-500 hover:text-slate-300 transition-colors">Privacy</Link>

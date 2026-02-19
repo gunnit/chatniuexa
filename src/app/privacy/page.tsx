@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Privacy Policy - niuexa.ai",
+  title: "Privacy Policy - ChatAziendale.it",
 };
 
 export default function PrivacyPage() {
@@ -9,7 +9,7 @@ export default function PrivacyPage() {
     <div className="min-h-screen bg-slate-950 text-slate-300">
       <nav className="flex items-center justify-between px-6 py-4 lg:px-12 border-b border-slate-800">
         <Link href="/" className="text-2xl font-bold text-white tracking-tight">
-          niuexa<span className="text-indigo-400">.ai</span>
+          ChatAziendale<span className="text-indigo-400">.it</span>
         </Link>
       </nav>
 
@@ -50,7 +50,7 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">7. Contact</h2>
-            <p>For privacy-related inquiries, please contact us at <a href="mailto:privacy@niuexa.ai" className="text-indigo-400 hover:text-indigo-300">privacy@niuexa.ai</a>.</p>
+            <p>For privacy-related inquiries, please contact us at <a href="mailto:privacy@chataziendale.it" className="text-indigo-400 hover:text-indigo-300">privacy@chataziendale.it</a>.</p>
           </section>
         </div>
 

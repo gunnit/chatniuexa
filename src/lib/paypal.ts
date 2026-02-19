@@ -56,7 +56,7 @@ export async function createSubscription(
         email_address: email,
       },
       application_context: {
-        brand_name: 'niuexa.ai',
+        brand_name: 'ChatAziendale.it',
         locale: 'en-US',
         shipping_preference: 'NO_SHIPPING',
         user_action: 'SUBSCRIBE_NOW',

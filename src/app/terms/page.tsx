@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Terms of Service - niuexa.ai",
+  title: "Terms of Service - ChatAziendale.it",
 };
 
 export default function TermsPage() {
@@ -9,7 +9,7 @@ export default function TermsPage() {
     <div className="min-h-screen bg-slate-950 text-slate-300">
       <nav className="flex items-center justify-between px-6 py-4 lg:px-12 border-b border-slate-800">
         <Link href="/" className="text-2xl font-bold text-white tracking-tight">
-          niuexa<span className="text-indigo-400">.ai</span>
+          ChatAziendale<span className="text-indigo-400">.it</span>
         </Link>
       </nav>
 
@@ -20,12 +20,12 @@ export default function TermsPage() {
         <div className="space-y-8 text-slate-300 leading-relaxed">
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">1. Acceptance of Terms</h2>
-            <p>By creating an account or using niuexa.ai services, you agree to these Terms of Service. If you do not agree, do not use the service.</p>
+            <p>By creating an account or using ChatAziendale.it services, you agree to these Terms of Service. If you do not agree, do not use the service.</p>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">2. Service Description</h2>
-            <p>niuexa.ai provides an AI-powered chatbot platform that allows you to create chatbots trained on your own data sources (documents, web pages). Chatbots can be embedded on your website via a JavaScript widget.</p>
+            <p>ChatAziendale.it provides an AI-powered chatbot platform that allows you to create chatbots trained on your own data sources (documents, web pages). Chatbots can be embedded on your website via a JavaScript widget.</p>
           </section>
 
           <section>
@@ -65,7 +65,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">10. Contact</h2>
-            <p>For questions about these terms, contact us at <a href="mailto:legal@niuexa.ai" className="text-indigo-400 hover:text-indigo-300">legal@niuexa.ai</a>.</p>
+            <p>For questions about these terms, contact us at <a href="mailto:legal@ChatAziendale.it" className="text-indigo-400 hover:text-indigo-300">legal@ChatAziendale.it</a>.</p>
           </section>
         </div>
 

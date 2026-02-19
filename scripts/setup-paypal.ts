@@ -1,7 +1,7 @@
 /**
  * PayPal Setup Script
  *
- * Creates the PayPal product and subscription plans for niuexa.ai.
+ * Creates the PayPal product and subscription plans for ChatAziendale.it.
  * Run once with: npx tsx scripts/setup-paypal.ts
  *
  * Prerequisites:
@@ -47,7 +47,7 @@ async function createProduct(token: string): Promise<string> {
       Prefer: 'return=representation',
     },
     body: JSON.stringify({
-      name: 'niuexa.ai AI Chatbot Platform',
+      name: 'ChatAziendale.it AI Chatbot Platform',
       description: 'AI-powered chatbot platform with RAG capabilities',
       type: 'SERVICE',
       category: 'SOFTWARE',
@@ -78,8 +78,8 @@ async function createPlan(
     },
     body: JSON.stringify({
       product_id: productId,
-      name: `niuexa.ai ${name} Plan`,
-      description: `${name} subscription plan for niuexa.ai`,
+      name: `ChatAziendale.it ${name} Plan`,
+      description: `${name} subscription plan for ChatAziendale.it`,
       billing_cycles: [
         {
           frequency: {
@@ -145,7 +145,7 @@ async function main() {
   const command = process.argv[2] || 'all'
   const webhookUrl = process.env.NEXT_PUBLIC_APP_URL
     ? `${process.env.NEXT_PUBLIC_APP_URL}/api/billing/webhook`
-    : 'https://chatniuexa.onrender.com/api/billing/webhook'
+    : 'https://chataziendale.onrender.com/api/billing/webhook'
 
   console.log('Setting up PayPal billing...')
   console.log(`API Base: ${PAYPAL_API_BASE}`)

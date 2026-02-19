@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "niuexa.ai - AI Chatbots Trained on Your Data",
+  title: "ChatAziendale.it - AI Chatbots Trained on Your Data",
   description: "Deploy intelligent AI chatbots that learn from your business data and provide accurate, cited responses to your customers.",
 };
 

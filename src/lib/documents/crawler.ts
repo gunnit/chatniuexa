@@ -62,7 +62,7 @@ async function crawlWithFirecrawl(url: string): Promise<CrawlResult> {
 async function crawlWithFetch(url: string): Promise<CrawlResult> {
   const response = await fetch(url, {
     headers: {
-      'User-Agent': 'niuexa-bot/1.0',
+      'User-Agent': 'chataziendale-bot/1.0',
     },
   })
 
