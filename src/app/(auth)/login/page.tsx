@@ -4,6 +4,7 @@ import { Suspense } from 'react'
 import { useActionState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { login } from './actions'
 import { AnimatedBackground } from '@/components/AnimatedBackground'
 
@@ -34,7 +35,8 @@ function LoginForm() {
       <div className="relative z-10 w-full max-w-md animate-scale-in">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-block">
+          <Link href="/" className="inline-flex flex-col items-center gap-3">
+            <Image src="/images/logo.png" alt="niuexa.ai logo" width={56} height={56} className="drop-shadow-lg" />
             <span className="text-3xl font-bold text-white tracking-tight">
               niuexa<span className="text-indigo-400">.ai</span>
             </span>

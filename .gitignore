@@ -46,6 +46,7 @@ next-env.d.ts
 # playwright screenshots
 .playwright-mcp/
 
-# screenshots
+# screenshots (but allow public assets)
 *.png
+!public/images/*.png
 audit-*.jpeg

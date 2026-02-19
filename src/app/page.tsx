@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 
 export default function Home() {
@@ -8,11 +9,12 @@ export default function Home() {
 
       {/* Navigation */}
       <nav className="relative z-10 flex items-center justify-between px-6 py-4 lg:px-12">
-        <div className="flex items-center gap-2">
-          <div className="text-2xl font-bold text-white tracking-tight">
+        <Link href="/" className="flex items-center gap-2.5">
+          <Image src="/images/logo.png" alt="niuexa.ai logo" width={36} height={36} className="drop-shadow-lg" />
+          <span className="text-2xl font-bold text-white tracking-tight">
             niuexa<span className="text-indigo-400">.ai</span>
-          </div>
-        </div>
+          </span>
+        </Link>
         <div className="flex items-center gap-3">
           <Link
             href="/login"

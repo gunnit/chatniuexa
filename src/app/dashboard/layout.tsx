@@ -6,6 +6,7 @@
  */
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import Image from 'next/image'
 import { LogoutButton } from '@/components/LogoutButton'
 import { DesktopNavLinks, MobileNavLinks } from '@/components/NavLinks'
 
@@ -30,7 +31,8 @@ export default function DashboardLayout({
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               {/* Logo */}
-              <Link href="/dashboard" className="flex-shrink-0 flex items-center">
+              <Link href="/dashboard" className="flex-shrink-0 flex items-center gap-2">
+                <Image src="/images/logo.png" alt="niuexa.ai logo" width={32} height={32} />
                 <span className="text-xl font-bold tracking-tight text-slate-900">
                   niuexa<span className="text-indigo-600">.ai</span>
                 </span>
