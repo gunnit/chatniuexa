@@ -46,7 +46,9 @@ next-env.d.ts
 # playwright screenshots
 .playwright-mcp/
 
-# screenshots (but allow public assets)
+# screenshots (but allow public assets and app icons)
 *.png
 !public/images/*.png
+!src/app/icon.png
+!src/app/apple-icon.png
 audit-*.jpeg
