@@ -9,6 +9,8 @@
 
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
+import { sendWelcomeEmail } from '@/lib/email'
+import { logger } from '@/lib/logger'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 
@@ -101,8 +103,15 @@ export async function signup(
       })
     })
   } catch (error) {
-    console.error('Signup transaction failed:', error)
+    logger.error('Signup transaction failed', { error: String(error) })
     return { error: 'Failed to create account. Please try again.' }
+  }
+
+  // Send welcome email (don't block on failure)
+  try {
+    await sendWelcomeEmail(email, fullName)
+  } catch {
+    // Swallow — email failure shouldn't block signup
   }
 
   // Success - redirect to login page (no email verification for now)

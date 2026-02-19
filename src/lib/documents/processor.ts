@@ -188,6 +188,94 @@ export async function processUrl({
 }
 
 /**
+ * Re-process a document with updated content: delete old chunks, re-chunk, re-embed
+ */
+export async function reprocessDocumentContent(
+  documentId: string,
+  newContent: string
+): Promise<{ chunkCount: number }> {
+  const document = await prisma.document.findUnique({
+    where: { id: documentId },
+    include: { dataSource: true },
+  })
+
+  if (!document) {
+    throw new Error('Document not found')
+  }
+
+  const dataSourceId = document.dataSourceId
+
+  try {
+    // Mark as processing
+    await prisma.dataSource.update({
+      where: { id: dataSourceId },
+      data: { status: 'PROCESSING' },
+    })
+
+    // Update document content
+    await prisma.document.update({
+      where: { id: documentId },
+      data: { content: newContent },
+    })
+
+    // Delete existing chunks for this document
+    await prisma.chunk.deleteMany({
+      where: { documentId },
+    })
+
+    // Re-chunk the new content
+    const chunks = chunkText(newContent)
+    let chunkCount = 0
+
+    if (chunks.length > 0) {
+      const embeddings = await generateEmbeddings(chunks.map((c) => c.content))
+
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i]
+        const embedding = embeddings[i]
+
+        const chunkRecord = await prisma.chunk.create({
+          data: {
+            documentId,
+            content: chunk.content,
+            chunkIndex: chunk.index,
+            tokens: chunk.tokens,
+          },
+        })
+
+        await prisma.$executeRawUnsafe(
+          `UPDATE chunks SET embedding = $1::vector WHERE id = $2`,
+          `[${embedding.join(',')}]`,
+          chunkRecord.id
+        )
+      }
+      chunkCount = chunks.length
+    }
+
+    // Mark as complete
+    await prisma.dataSource.update({
+      where: { id: dataSourceId },
+      data: {
+        status: 'COMPLETE',
+        lastSyncAt: new Date(),
+        error: null,
+      },
+    })
+
+    return { chunkCount }
+  } catch (error) {
+    await prisma.dataSource.update({
+      where: { id: dataSourceId },
+      data: {
+        status: 'FAILED',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+    })
+    throw error
+  }
+}
+
+/**
  * Re-process a URL data source (delete existing and re-crawl)
  */
 export async function resyncUrl(dataSourceId: string): Promise<void> {

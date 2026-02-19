@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyWebhookSignature, getSubscription } from '@/lib/paypal'
-import { applyPlanLimits, type PlanId } from '@/lib/plans'
+import { applyPlanLimits, PLANS, type PlanId } from '@/lib/plans'
+import { sendBillingConfirmation } from '@/lib/email'
+import { logger } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
   const body = await request.text()
@@ -13,7 +15,7 @@ export async function POST(request: NextRequest) {
   // Verify webhook signature
   const isValid = await verifyWebhookSignature(headers, body)
   if (!isValid) {
-    console.error('Invalid PayPal webhook signature')
+    logger.error('Invalid PayPal webhook signature')
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
   }
 
@@ -21,7 +23,7 @@ export async function POST(request: NextRequest) {
   const eventType = event.event_type as string
   const resource = event.resource
 
-  console.log(`PayPal webhook: ${eventType}`, resource?.id)
+  logger.info('PayPal webhook received', { eventType, resourceId: resource?.id })
 
   try {
     switch (eventType) {
@@ -47,6 +49,25 @@ export async function POST(request: NextRequest) {
 
           // Apply plan limits
           await applyPlanLimits(existing.tenantId, existing.planId as PlanId)
+
+          // Send billing confirmation email
+          try {
+            const profile = await prisma.profile.findFirst({
+              where: { tenantId: existing.tenantId },
+              include: { user: true },
+            })
+            if (profile?.user?.email) {
+              const plan = PLANS[existing.planId as PlanId]
+              await sendBillingConfirmation(
+                profile.user.email,
+                profile.fullName || profile.user.name || 'there',
+                plan?.name || existing.planId,
+                plan?.price || 0
+              )
+            }
+          } catch {
+            // Don't fail webhook on email error
+          }
         }
         break
       }
@@ -118,7 +139,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ received: true })
   } catch (error) {
-    console.error('Webhook processing error:', error)
+    logger.error('Webhook processing error', { error: String(error) })
     return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 })
   }
 }

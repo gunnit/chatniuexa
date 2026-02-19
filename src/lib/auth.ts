@@ -3,6 +3,7 @@ import Credentials from 'next-auth/providers/credentials'
 import { PrismaAdapter } from '@auth/prisma-adapter'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
+import { logger } from '@/lib/logger'
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -53,7 +54,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             select: { id: true },
           })
           if (!tenantExists) {
-            console.log(`Tenant ${tenantId} not found for user ${user.id}, will recreate`)
+            logger.warn('Tenant not found, will recreate', { tenantId, userId: user.id })
             tenantId = null
           }
         }
@@ -86,9 +87,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               return tenant.id
             })
             tenantId = result
-            console.log(`Auto-created tenant ${tenantId} for user ${user.id}`)
+            logger.info('Auto-created tenant', { tenantId, userId: user.id })
           } catch (error) {
-            console.error('Failed to auto-create tenant for user:', error)
+            logger.error('Failed to auto-create tenant', { userId: user.id, error: String(error) })
           }
         }
 

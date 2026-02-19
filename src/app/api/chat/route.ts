@@ -4,6 +4,7 @@ import { generateChatResponse } from '@/lib/chat/rag'
 import { logUsage } from '@/lib/usage'
 import { getCorsHeaders } from '@/lib/cors'
 import { rateLimit } from '@/lib/rate-limit'
+import { logger } from '@/lib/logger'
 import { z } from 'zod'
 
 const chatSchema = z.object({
@@ -144,10 +145,7 @@ export async function POST(request: NextRequest) {
         { status: 400, headers: corsHeaders }
       )
     }
-    // Log error details in development only
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Error in chat:', error)
-    }
+    logger.error('Chat error', { error: String(error) })
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500, headers: corsHeaders }
