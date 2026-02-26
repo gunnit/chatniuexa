@@ -6,7 +6,7 @@ export function SplineScene() {
   const [loaded, setLoaded] = useState(false)
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full overflow-hidden">
       {/* Loading state */}
       {!loaded && (
         <div className="absolute inset-0 flex items-center justify-center">
@@ -31,6 +31,8 @@ export function SplineScene() {
         allow="autoplay"
         loading="eager"
       />
+      {/* Cover Spline watermark */}
+      <div className="absolute bottom-0 right-0 w-48 h-12 bg-[#030014] pointer-events-none" />
     </div>
   )
 }
