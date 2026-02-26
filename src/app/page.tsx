@@ -25,7 +25,7 @@ export default function Home() {
           ══════════════════════════════════════════════ */}
       <section className="relative z-10 min-h-screen flex items-center pt-16 sm:pt-[72px]">
         <div className="w-full max-w-7xl mx-auto px-6 lg:px-12 py-12 lg:py-0">
-          <div className="grid lg:grid-cols-[1fr,1.15fr] gap-8 lg:gap-4 items-center">
+          <div className="grid lg:grid-cols-[1fr_1.15fr] gap-8 lg:gap-4 items-center">
             {/* Left — Content */}
             <div className="stagger-children">
               {/* Status Badge */}
