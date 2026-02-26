@@ -32,7 +32,7 @@ export function SplineScene() {
         loading="eager"
       />
       {/* Cover Spline watermark */}
-      <div className="absolute bottom-0 right-0 w-48 h-12 bg-[#030014] pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-52 h-14 bg-[#030014] pointer-events-none" />
     </div>
   )
 }
