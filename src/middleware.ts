@@ -1,13 +1,16 @@
 /**
  * Root Middleware — Composed i18n + Auth
  *
- * 1. API routes bypass i18n entirely (handled by matcher)
+ * Uses cookie-based auth check instead of auth() wrapper to avoid
+ * redirect loop caused by NextAuth v5 beta adding location headers
+ * that conflict with next-intl rewrites.
+ *
+ * 1. API routes bypass i18n entirely
  * 2. next-intl handles locale detection / redirect
- * 3. NextAuth auth checks use locale-stripped paths
+ * 3. Auth checks use session token cookie (actual validation in routes)
  */
 
 import createMiddleware from 'next-intl/middleware'
-import { auth } from '@/lib/auth'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { routing } from '@/i18n/routing'
@@ -32,13 +35,20 @@ function stripLocale(pathname: string): string {
   return pathname
 }
 
-export default auth((req) => {
-  const { nextUrl } = req
-  const pathname = nextUrl.pathname
+// Check auth via session token cookie (lightweight middleware check)
+function isAuthenticated(req: NextRequest): boolean {
+  return !!(
+    req.cookies.get('__Secure-authjs.session-token')?.value ||
+    req.cookies.get('authjs.session-token')?.value
+  )
+}
+
+export default function middleware(req: NextRequest) {
+  const pathname = req.nextUrl.pathname
 
   // Skip i18n for API routes
   if (pathname.startsWith('/api/')) {
-    const isLoggedIn = !!req.auth
+    const isLoggedIn = isAuthenticated(req)
     const isPublicPrefix = publicPrefixes.some((prefix) =>
       pathname.startsWith(prefix)
     )
@@ -50,7 +60,7 @@ export default auth((req) => {
   }
 
   // Run i18n middleware first (handles locale detection + redirect)
-  const intlResponse = intlMiddleware(req as unknown as NextRequest)
+  const intlResponse = intlMiddleware(req)
 
   // If intl middleware redirected, let it through
   if (intlResponse.headers.get('location')) {
@@ -59,27 +69,27 @@ export default auth((req) => {
 
   // Now check auth on the locale-stripped path
   const strippedPath = stripLocale(pathname)
-  const isLoggedIn = !!req.auth
+  const isLoggedIn = isAuthenticated(req)
 
   const isPublicRoute = publicRoutes.includes(strippedPath)
 
   if (isPublicRoute) {
     // Redirect logged-in users away from auth pages to dashboard
     if (isLoggedIn && (strippedPath === '/login' || strippedPath === '/signup')) {
-      return NextResponse.redirect(new URL('/dashboard', nextUrl))
+      return NextResponse.redirect(new URL('/dashboard', req.nextUrl))
     }
     return intlResponse
   }
 
   // Redirect unauthenticated users to login
   if (!isLoggedIn) {
-    const loginUrl = new URL('/login', nextUrl)
+    const loginUrl = new URL('/login', req.nextUrl)
     loginUrl.searchParams.set('callbackUrl', pathname)
     return NextResponse.redirect(loginUrl)
   }
 
   return intlResponse
-})
+}
 
 export const config = {
   matcher: [
