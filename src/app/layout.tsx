@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
-import { CookieConsent } from "@/components/CookieConsent";
+import { getLocale } from "next-intl/server";
 import "./globals.css";
 
 const inter = Inter({
@@ -19,18 +19,19 @@ export const metadata: Metadata = {
   description: "Deploy intelligent AI chatbots that learn from your business data and provide accurate, cited responses to your customers.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+
   return (
-    <html lang="en">
+    <html lang={locale}>
       <body
         className={`${inter.variable} ${geistMono.variable} antialiased`}
       >
         {children}
-        <CookieConsent />
       </body>
     </html>
   );

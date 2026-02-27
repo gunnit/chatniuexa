@@ -1,11 +1,18 @@
 'use client'
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { Link } from '@/i18n/navigation'
+import { usePathname } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 
-const navigation = [
+type NavItem = {
+  key: string
+  href: string
+  icon: React.ReactNode
+}
+
+const navItems: NavItem[] = [
   {
-    name: 'Dashboard',
+    key: 'dashboard',
     href: '/dashboard',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -14,7 +21,7 @@ const navigation = [
     ),
   },
   {
-    name: 'Chatbots',
+    key: 'chatbots',
     href: '/dashboard/chatbots',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -23,7 +30,7 @@ const navigation = [
     ),
   },
   {
-    name: 'Data Sources',
+    key: 'dataSources',
     href: '/dashboard/data-sources',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -32,7 +39,7 @@ const navigation = [
     ),
   },
   {
-    name: 'Analytics',
+    key: 'analytics',
     href: '/dashboard/analytics',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -41,7 +48,7 @@ const navigation = [
     ),
   },
   {
-    name: 'Billing',
+    key: 'billing',
     href: '/dashboard/billing',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -50,7 +57,7 @@ const navigation = [
     ),
   },
   {
-    name: 'Settings',
+    key: 'settings',
     href: '/dashboard/settings',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -71,14 +78,15 @@ function useNavActive() {
 
 export function DesktopNavLinks() {
   const isActive = useNavActive()
+  const t = useTranslations('nav')
 
   return (
     <div className="hidden sm:ml-10 sm:flex sm:space-x-1">
-      {navigation.map((item) => {
+      {navItems.map((item) => {
         const active = isActive(item.href)
         return (
           <Link
-            key={item.name}
+            key={item.key}
             href={item.href}
             className={`group flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
               active
@@ -89,7 +97,7 @@ export function DesktopNavLinks() {
             <span className={`transition-colors ${active ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-600'}`}>
               {item.icon}
             </span>
-            {item.name}
+            {t(item.key)}
           </Link>
         )
       })}
@@ -99,15 +107,16 @@ export function DesktopNavLinks() {
 
 export function MobileNavLinks() {
   const isActive = useNavActive()
+  const t = useTranslations('nav')
 
   return (
     <div className="sm:hidden border-t border-slate-200/50">
       <div className="flex overflow-x-auto px-4 py-2 gap-1 no-scrollbar">
-        {navigation.map((item) => {
+        {navItems.map((item) => {
           const active = isActive(item.href)
           return (
             <Link
-              key={item.name}
+              key={item.key}
               href={item.href}
               className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-all ${
                 active
@@ -116,7 +125,7 @@ export function MobileNavLinks() {
               }`}
             >
               <span className={active ? 'text-indigo-600' : 'text-slate-400'}>{item.icon}</span>
-              {item.name}
+              {t(item.key)}
             </Link>
           )
         })}
