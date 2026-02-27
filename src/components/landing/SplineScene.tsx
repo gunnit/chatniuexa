@@ -7,34 +7,35 @@ const Spline = lazy(() => import('@splinetool/react-spline'))
 
 const SCENE_URL = 'https://prod.spline.design/gmN5Qk3WgMVQCDOO/scene.splinecode'
 
-// Robot recoloring: map object names to palette colors
-const ROBOT_COLORS: Record<string, string> = {
-  // Body panels → Indigo-400
-  Head_1: '#818CF8',
-  Body: '#818CF8',
-  Arm_R: '#818CF8',
-  Arm_L: '#818CF8',
-  Shoulder_R: '#818CF8',
-  Shoulder_L: '#818CF8',
-  Cylinder: '#818CF8',
+// Robot recoloring: map each object to the correct material layer + target color
+const ROBOT_COLORS: { name: string; layer: number; color: string }[] = [
+  // Body panels (color in layer 1) → Indigo-400
+  { name: 'Head_1', layer: 1, color: '#818CF8' },
+  { name: 'Body', layer: 1, color: '#818CF8' },
+  { name: 'Arm_R', layer: 1, color: '#818CF8' },
+  { name: 'Arm_L', layer: 1, color: '#818CF8' },
+  { name: 'Shoulder_R', layer: 1, color: '#818CF8' },
+  { name: 'Shoulder_L', layer: 1, color: '#818CF8' },
+  { name: 'Cylinder', layer: 1, color: '#818CF8' },
 
-  // Joints & dark parts → Deep indigo-900
-  Head_2: '#312E81',
-  'Body Circle_2': '#312E81',
-  Neck: '#312E81',
-  Forearm_R: '#312E81',
-  Forearm_L: '#312E81',
-  HAND_R: '#312E81',
-  Hand_L: '#312E81',
-  Cylinder002: '#312E81',
-  'Hand Down': '#312E81',
+  // Joints & dark parts (color in layer 1) → Deep indigo-900
+  { name: 'Head_2', layer: 1, color: '#312E81' },
+  { name: 'Body Circle_2', layer: 1, color: '#312E81' },
+  { name: 'Neck', layer: 1, color: '#312E81' },
+  { name: 'Forearm_R', layer: 1, color: '#312E81' },
+  { name: 'Forearm_L', layer: 1, color: '#312E81' },
+  { name: 'HAND_R', layer: 1, color: '#312E81' },
+  { name: 'Hand_L', layer: 1, color: '#312E81' },
+  { name: 'Cylinder002', layer: 1, color: '#312E81' },
 
-  // Accents → Teal / Cyan
-  Eyes: '#14B8A6',
-  Mouth: '#14B8A6',
-  Ears: '#22D3EE',
-  'Body Circle_1': '#06B6D4',
-}
+  // Accents (color in layer 0) → Teal
+  { name: 'Eyes', layer: 0, color: '#14B8A6' },
+  { name: 'Mouth', layer: 0, color: '#14B8A6' },
+
+  // Accents (color in layer 2) → Cyan
+  { name: 'Ears', layer: 2, color: '#22D3EE' },
+  { name: 'Body Circle_1', layer: 2, color: '#06B6D4' },
+]
 
 export function SplineScene() {
   const [loaded, setLoaded] = useState(false)
@@ -45,17 +46,24 @@ export function SplineScene() {
     splineRef.current = spline
     setLoaded(true)
 
-    // Set scene background to match page background color
+    // Set scene background to match page background
     try {
       spline.setBackgroundColor('#FAFAF7')
     } catch {}
 
-    // Fix all overflow:hidden on Spline wrapper divs + set canvas bg
+    // Hide "Built with Spline" watermark via render pipeline
+    try {
+      const renderer = (spline as any)._renderer
+      if (renderer?.pipeline?.logoOverlayPass) {
+        renderer.pipeline.logoOverlayPass.enabled = false
+      }
+    } catch {}
+
+    // Fix overflow:hidden on Spline's internal wrapper divs + canvas bg
     if (containerRef.current) {
       const canvas = containerRef.current.querySelector('canvas')
       if (canvas) {
         canvas.style.background = '#FAFAF7'
-        // Remove overflow:hidden from Spline's own wrapper divs
         let el: HTMLElement | null = canvas.parentElement
         while (el && el !== containerRef.current) {
           el.style.overflow = 'visible'
@@ -64,13 +72,13 @@ export function SplineScene() {
       }
     }
 
-    // Recolor robot objects to match project palette
+    // Recolor robot by targeting each object's correct material layer
     const recolor = () => {
-      for (const [name, color] of Object.entries(ROBOT_COLORS)) {
+      for (const { name, layer, color } of ROBOT_COLORS) {
         try {
           const obj = spline.findObjectByName(name)
-          if (obj) {
-            ;(obj as any).color = color
+          if (obj?.material?.layers?.[layer]) {
+            obj.material.layers[layer].color = color
           }
         } catch {}
       }
