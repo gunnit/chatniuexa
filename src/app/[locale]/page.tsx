@@ -24,7 +24,7 @@ export default async function Home() {
       {/* ── HERO ── */}
       <section className="relative z-10 min-h-[calc(100vh-4rem)] flex items-center pt-20 sm:pt-24">
         <div className="w-full max-w-7xl mx-auto px-6 lg:px-12 py-12 lg:py-0">
-          <div className="grid lg:grid-cols-[1.2fr_1fr] gap-10 lg:gap-6 items-center">
+          <div className="grid lg:grid-cols-[1.1fr_1.1fr] gap-10 lg:gap-4 items-center">
             {/* Left — Copy */}
             <div className="stagger-children">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-teal-50 border border-teal-200/60 text-teal-700 text-[13px] font-medium mb-8">
@@ -70,11 +70,9 @@ export default async function Home() {
               </div>
             </div>
 
-            {/* Right — 3D Robot in dark canvas */}
+            {/* Right — 3D Robot */}
             <div className="relative h-[360px] sm:h-[440px] lg:h-[540px]">
-              <div className="absolute inset-0 bg-gradient-to-br from-[#0f0f1a] to-[#1a1a2e] rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.15)] overflow-hidden">
-                <SplineScene />
-              </div>
+              <SplineScene />
             </div>
           </div>
         </div>
