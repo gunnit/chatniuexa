@@ -53,19 +53,11 @@ async function processDataSource(dataSourceId: string): Promise<{ id: string; su
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
-    if (!session?.user?.id) {
+    if (!session?.user?.tenantId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get user's tenant
-    const profile = await prisma.profile.findUnique({
-      where: { userId: session.user.id },
-      select: { tenantId: true },
-    })
-
-    if (!profile?.tenantId) {
-      return NextResponse.json({ error: 'Tenant not found' }, { status: 404 })
-    }
+    const tenantId = session.user.tenantId
 
     const { dataSourceIds } = await request.json()
 
@@ -77,7 +69,7 @@ export async function POST(request: NextRequest) {
     const dataSources = await prisma.dataSource.findMany({
       where: {
         id: { in: dataSourceIds },
-        tenantId: profile.tenantId,
+        tenantId: tenantId,
         status: 'PENDING',
       },
     })

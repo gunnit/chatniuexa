@@ -324,37 +324,6 @@ export async function searchSimilarChunks(
 > {
   const embeddingStr = `[${embedding.join(',')}]`
 
-  // Debug: Count chunks for this tenant
-  const chunkCount = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
-    `SELECT COUNT(*) as count FROM chunks c
-     JOIN documents d ON c."documentId" = d.id
-     JOIN data_sources ds ON d."dataSourceId" = ds.id
-     WHERE ds."tenantId" = $1 AND ds.status = 'COMPLETE'`,
-    tenantId
-  )
-  const embeddingCount = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
-    `SELECT COUNT(*) as count FROM chunks c
-     JOIN documents d ON c."documentId" = d.id
-     JOIN data_sources ds ON d."dataSourceId" = ds.id
-     WHERE ds."tenantId" = $1 AND ds.status = 'COMPLETE' AND c.embedding IS NOT NULL`,
-    tenantId
-  )
-  console.log(`RAG Search: tenant=${tenantId}, total chunks=${chunkCount[0]?.count}, with embeddings=${embeddingCount[0]?.count}, minSimilarity=${minSimilarity}`)
-
-  // Debug: Show top 5 chunks with their actual similarity scores (no filter)
-  const debugResults = await prisma.$queryRawUnsafe<Array<{ id: string; similarity: number; preview: string }>>(
-    `SELECT c.id, 1 - (c.embedding <=> $1::vector) as similarity, LEFT(c.content, 100) as preview
-     FROM chunks c
-     JOIN documents d ON c."documentId" = d.id
-     JOIN data_sources ds ON d."dataSourceId" = ds.id
-     WHERE ds."tenantId" = $2 AND ds.status = 'COMPLETE' AND c.embedding IS NOT NULL
-     ORDER BY c.embedding <=> $1::vector
-     LIMIT 5`,
-    embeddingStr,
-    tenantId
-  )
-  console.log(`RAG Debug: Top 5 chunks by similarity (unfiltered):`, debugResults.map(r => ({ similarity: r.similarity?.toFixed(4), preview: r.preview?.substring(0, 50) })))
-
   const results = await prisma.$queryRawUnsafe<
     Array<{
       id: string
@@ -386,8 +355,6 @@ export async function searchSimilarChunks(
     minSimilarity,
     limit
   )
-
-  console.log(`RAG Search results: found ${results.length} chunks`, results.map(r => ({ id: r.id, similarity: r.similarity, preview: r.content.substring(0, 50) })))
 
   return results.map((r) => ({
     id: r.id,

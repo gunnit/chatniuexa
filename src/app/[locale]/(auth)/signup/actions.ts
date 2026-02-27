@@ -101,6 +101,11 @@ export async function signup(
           fullName,
         },
       })
+
+      // Create usage limits for the new tenant
+      await tx.usageLimit.create({
+        data: { tenantId: tenant.id },
+      })
     })
   } catch (error) {
     logger.error('Signup transaction failed', { error: String(error) })

@@ -30,80 +30,90 @@ export async function logUsage(params: {
     : 0.001
   const cost = (tokens / 1000) * costRate
 
-  // Get or create usage limits
-  let limits = await prisma.usageLimit.findUnique({
-    where: { tenantId },
-  })
-
-  if (!limits) {
-    limits = await prisma.usageLimit.create({
-      data: { tenantId },
-    })
-  }
-
-  // Reset counters if needed
   const now = new Date()
   const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
 
-  let needsUpdate = false
-  const updates: Parameters<typeof prisma.usageLimit.update>[0]['data'] = {}
-
-  if (limits.lastDayReset < dayStart) {
-    updates.currentDayMessages = 0
-    updates.lastDayReset = dayStart
-    needsUpdate = true
-  }
-
-  if (limits.lastMonthReset < monthStart) {
-    updates.currentMonthTokens = 0
-    updates.currentMonthCost = 0
-    updates.lastMonthReset = monthStart
-    needsUpdate = true
-  }
-
-  if (needsUpdate) {
-    limits = await prisma.usageLimit.update({
+  return await prisma.$transaction(async (tx) => {
+    // Get or create usage limits
+    let limits = await tx.usageLimit.findUnique({
       where: { tenantId },
-      data: updates,
     })
-  }
 
-  // Check limits
-  if (limits.currentMonthTokens + tokens > limits.monthlyTokenLimit) {
-    return { allowed: false, reason: 'Monthly token limit exceeded' }
-  }
+    if (!limits) {
+      try {
+        limits = await tx.usageLimit.create({
+          data: { tenantId },
+        })
+      } catch {
+        // Handle race condition where another request created it
+        limits = await tx.usageLimit.findUnique({
+          where: { tenantId },
+        })
+        if (!limits) return { allowed: false, reason: 'Failed to create usage limits' }
+      }
+    }
 
-  if (limits.currentMonthCost + cost > limits.monthlyCostLimit) {
-    return { allowed: false, reason: 'Monthly cost limit exceeded' }
-  }
+    // Reset counters if needed
+    const updates: Parameters<typeof prisma.usageLimit.update>[0]['data'] = {}
+    let needsUpdate = false
 
-  if (type === 'chat' && limits.currentDayMessages >= limits.dailyMessageLimit) {
-    return { allowed: false, reason: 'Daily message limit exceeded' }
-  }
+    if (limits.lastDayReset < dayStart) {
+      updates.currentDayMessages = 0
+      updates.lastDayReset = dayStart
+      needsUpdate = true
+    }
 
-  // Log the usage
-  await prisma.usageLog.create({
-    data: {
-      tenantId,
-      chatbotId,
-      type,
-      tokens,
-      cost,
-    },
+    if (limits.lastMonthReset < monthStart) {
+      updates.currentMonthTokens = 0
+      updates.currentMonthCost = 0
+      updates.lastMonthReset = monthStart
+      needsUpdate = true
+    }
+
+    if (needsUpdate) {
+      limits = await tx.usageLimit.update({
+        where: { tenantId },
+        data: updates,
+      })
+    }
+
+    // Check limits
+    if (limits.currentMonthTokens + tokens > limits.monthlyTokenLimit) {
+      return { allowed: false, reason: 'Monthly token limit exceeded' }
+    }
+
+    if (limits.currentMonthCost + cost > limits.monthlyCostLimit) {
+      return { allowed: false, reason: 'Monthly cost limit exceeded' }
+    }
+
+    if (type === 'chat' && limits.currentDayMessages >= limits.dailyMessageLimit) {
+      return { allowed: false, reason: 'Daily message limit exceeded' }
+    }
+
+    // Log the usage
+    await tx.usageLog.create({
+      data: {
+        tenantId,
+        chatbotId,
+        type,
+        tokens,
+        cost,
+      },
+    })
+
+    // Update counters atomically
+    await tx.usageLimit.update({
+      where: { tenantId },
+      data: {
+        currentMonthTokens: { increment: tokens },
+        currentMonthCost: { increment: cost },
+        ...(type === 'chat' ? { currentDayMessages: { increment: 1 } } : {}),
+      },
+    })
+
+    return { allowed: true }
   })
-
-  // Update counters
-  await prisma.usageLimit.update({
-    where: { tenantId },
-    data: {
-      currentMonthTokens: { increment: tokens },
-      currentMonthCost: { increment: cost },
-      ...(type === 'chat' ? { currentDayMessages: { increment: 1 } } : {}),
-    },
-  })
-
-  return { allowed: true }
 }
 
 /**

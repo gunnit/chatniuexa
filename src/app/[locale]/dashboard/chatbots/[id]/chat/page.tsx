@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, use } from 'react'
 import { Link } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 
 interface Source {
   chunkId: string
@@ -32,6 +33,8 @@ export default function ChatbotTestPage({
   params: Promise<{ id: string }>
 }) {
   const { id: chatbotId } = use(params)
+  const t = useTranslations('chatbotDetail')
+  const tc = useTranslations('common')
   const [chatbot, setChatbot] = useState<Chatbot | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
@@ -183,7 +186,7 @@ export default function ChatbotTestPage({
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
           </svg>
-          Loading chatbot...
+          {tc('loading')}
         </div>
       </div>
     )
@@ -202,7 +205,7 @@ export default function ChatbotTestPage({
           </div>
           <div>
             <h1 className="font-semibold text-slate-900">{chatbot.name}</h1>
-            <p className="text-sm text-slate-500">Test Mode</p>
+            <p className="text-sm text-slate-500">{t('testMode')}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -214,7 +217,7 @@ export default function ChatbotTestPage({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            Configure
+            {tc('configure')}
           </Link>
           <Link
             href="/dashboard/chatbots"
@@ -223,7 +226,7 @@ export default function ChatbotTestPage({
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
-            Close
+            {t('close')}
           </Link>
         </div>
       </div>
@@ -253,7 +256,7 @@ export default function ChatbotTestPage({
                 {/* Sources */}
                 {message.sources && message.sources.length > 0 && (
                   <div className="mt-4 pt-3 border-t border-slate-200/60">
-                    <p className="text-xs font-medium text-slate-500 mb-2">Sources:</p>
+                    <p className="text-xs font-medium text-slate-500 mb-2">{tc('sources')}:</p>
                     <div className="space-y-1.5">
                       {message.sources.map((source, idx) => (
                         <div
@@ -297,7 +300,7 @@ export default function ChatbotTestPage({
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Type a message..."
+              placeholder={t('typeMessage')}
               disabled={loading}
               className="flex-1 px-5 py-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all disabled:opacity-60"
             />

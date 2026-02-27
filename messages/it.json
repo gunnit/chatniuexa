@@ -200,7 +200,14 @@
     "deleteDesc": "Questo eliminerà permanentemente il chatbot, tutte le sue conversazioni e i dati analitici. Questa azione non può essere annullata.",
     "deleting": "Eliminazione...",
     "deleteChatbot": "Elimina Chatbot",
-    "confirmDelete": "Sei sicuro di voler eliminare questo chatbot? Questa azione non può essere annullata."
+    "confirmDelete": "Sei sicuro di voler eliminare questo chatbot? Questa azione non può essere annullata.",
+    "advanced": "Avanzato",
+    "widgetStyle": "Stile Widget",
+    "changesSaved": "Modifiche salvate con successo!",
+    "chatbotNotFound": "Chatbot non trovato",
+    "testMode": "Modalità Test",
+    "close": "Chiudi",
+    "typeMessage": "Scrivi un messaggio..."
   },
   "dataSources": {
     "title": "Fonti Dati",

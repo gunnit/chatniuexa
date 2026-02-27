@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 
 export function CookieConsent() {
   const [visible, setVisible] = useState(false)
@@ -30,7 +31,7 @@ export function CookieConsent() {
       <div className="max-w-xl mx-auto bg-white border border-[#E4E4E7] rounded-2xl p-4 shadow-xl flex flex-col sm:flex-row items-center gap-4">
         <p className="text-sm text-[#52525B] flex-1">
           {t('message')}{' '}
-          <a href="/privacy" className="text-teal-600 hover:text-teal-700 underline">{t('privacyPolicy')}</a>.
+          <Link href="/privacy" className="text-teal-600 hover:text-teal-700 underline">{t('privacyPolicy')}</Link>.
         </p>
         <div className="flex gap-2 shrink-0">
           <button

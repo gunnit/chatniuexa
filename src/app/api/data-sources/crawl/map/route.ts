@@ -11,7 +11,7 @@ interface MapLink {
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
-    if (!session?.user?.id) {
+    if (!session?.user?.tenantId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

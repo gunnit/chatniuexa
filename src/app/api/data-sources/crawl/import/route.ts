@@ -5,19 +5,11 @@ import { prisma } from '@/lib/db'
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
-    if (!session?.user?.id) {
+    if (!session?.user?.tenantId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get user's tenant
-    const profile = await prisma.profile.findUnique({
-      where: { userId: session.user.id },
-      select: { tenantId: true },
-    })
-
-    if (!profile?.tenantId) {
-      return NextResponse.json({ error: 'Tenant not found' }, { status: 404 })
-    }
+    const tenantId = session.user.tenantId
 
     const { urls } = await request.json()
 
@@ -46,7 +38,7 @@ export async function POST(request: NextRequest) {
       urls.map((urlItem: { url: string; title?: string }) =>
         prisma.dataSource.create({
           data: {
-            tenantId: profile.tenantId,
+            tenantId: tenantId,
             type: 'URL',
             name: urlItem.title || new URL(urlItem.url).pathname || urlItem.url,
             sourceUrl: urlItem.url,

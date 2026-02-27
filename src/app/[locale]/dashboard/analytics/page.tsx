@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
+import { useLocale } from 'next-intl'
 
 interface UsageStats {
   limits: {
@@ -74,6 +75,7 @@ type TabType = 'usage' | 'conversations'
 export default function AnalyticsPage() {
   const t = useTranslations('analytics')
   const tc = useTranslations('common')
+  const locale = useLocale()
   const [activeTab, setActiveTab] = useState<TabType>('usage')
   const [stats, setStats] = useState<UsageStats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -159,7 +161,7 @@ export default function AnalyticsPage() {
     if (diffHours < 24) return t('hoursAgo', { count: diffHours })
     if (diffDays < 7) return t('daysAgo', { count: diffDays })
 
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString(locale, {
       month: 'short',
       day: 'numeric',
       year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
@@ -167,7 +169,7 @@ export default function AnalyticsPage() {
   }
 
   const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('en-US', {
+    return new Date(dateString).toLocaleTimeString(locale, {
       hour: 'numeric',
       minute: '2-digit',
     })

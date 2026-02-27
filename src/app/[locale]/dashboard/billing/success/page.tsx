@@ -67,7 +67,8 @@ function SuccessContent() {
       if (attempts < maxAttempts) {
         setTimeout(tryActivate, 2000)
       } else {
-        setStatus('success')
+        setError(t('errorHint'))
+        setStatus('error')
       }
     }
 

@@ -200,7 +200,14 @@
     "deleteDesc": "This will permanently delete the chatbot, all its conversations, and analytics data. This action cannot be undone.",
     "deleting": "Deleting...",
     "deleteChatbot": "Delete Chatbot",
-    "confirmDelete": "Are you sure you want to delete this chatbot? This cannot be undone."
+    "confirmDelete": "Are you sure you want to delete this chatbot? This cannot be undone.",
+    "advanced": "Advanced",
+    "widgetStyle": "Widget Style",
+    "changesSaved": "Changes saved successfully!",
+    "chatbotNotFound": "Chatbot not found",
+    "testMode": "Test Mode",
+    "close": "Close",
+    "typeMessage": "Type a message..."
   },
   "dataSources": {
     "title": "Data Sources",
