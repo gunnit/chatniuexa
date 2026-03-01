@@ -53,8 +53,8 @@ export function SplineScene() {
 
     // Hide "Built with Spline" watermark via render pipeline
     try {
-      const renderer = (spline as any)._renderer
-      if (renderer?.pipeline?.logoOverlayPass) {
+      const renderer = (spline as any)?._renderer
+      if (renderer && renderer.pipeline && 'logoOverlayPass' in renderer.pipeline && renderer.pipeline.logoOverlayPass) {
         renderer.pipeline.logoOverlayPass.enabled = false
       }
     } catch {}
@@ -78,7 +78,7 @@ export function SplineScene() {
         try {
           const obj = spline.findObjectByName(name)
           if (obj?.material?.layers?.[layer]) {
-            obj.material.layers[layer].color = color
+            (obj.material.layers[layer] as any).color = color
           }
         } catch {}
       }
