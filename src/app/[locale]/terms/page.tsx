@@ -16,7 +16,7 @@ export default async function TermsPage() {
     <div className="min-h-screen bg-slate-950 text-slate-300">
       <nav className="flex items-center justify-between px-6 py-4 lg:px-12 border-b border-slate-800">
         <Link href="/" className="text-2xl font-bold text-white tracking-tight">
-          ChatAziendale<span className="text-indigo-400">.it</span>
+          ChatAziendale<span className="text-teal-400">.it</span>
         </Link>
       </nav>
 
@@ -72,7 +72,7 @@ export default async function TermsPage() {
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">{t('section10Title')}</h2>
-            <p>{t('section10Text')} <a href="mailto:legal@ChatAziendale.it" className="text-indigo-400 hover:text-indigo-300">legal@ChatAziendale.it</a>.</p>
+            <p>{t('section10Text')} <a href="mailto:legal@ChatAziendale.it" className="text-teal-400 hover:text-teal-300">legal@ChatAziendale.it</a>.</p>
           </section>
         </div>
 

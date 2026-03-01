@@ -300,7 +300,7 @@ export default function ChatbotConfigPage({
             </svg>
           </div>
           <p className="text-slate-900 font-medium">{t('chatbotNotFound')}</p>
-          <Link href="/dashboard/chatbots" className="mt-4 inline-flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-700">
+          <Link href="/dashboard/chatbots" className="mt-4 inline-flex items-center gap-2 text-sm text-teal-600 hover:text-teal-700">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
@@ -349,7 +349,7 @@ export default function ChatbotConfigPage({
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 disabled:opacity-50 transition-all shadow-md hover:shadow-lg"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-white bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 disabled:opacity-50 transition-all shadow-md hover:shadow-lg"
           >
             {saving ? (
               <>
@@ -405,7 +405,7 @@ export default function ChatbotConfigPage({
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-4 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                   activeTab === tab.id
-                    ? 'border-indigo-500 text-indigo-600'
+                    ? 'border-teal-500 text-teal-600'
                     : 'border-transparent text-slate-500 hover:text-slate-700'
                 }`}
               >
@@ -426,7 +426,7 @@ export default function ChatbotConfigPage({
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
                 />
               </div>
 
@@ -436,7 +436,7 @@ export default function ChatbotConfigPage({
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={2}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
                   placeholder={t('descriptionPlaceholder')}
                 />
               </div>
@@ -447,7 +447,7 @@ export default function ChatbotConfigPage({
                   type="text"
                   value={welcomeMessage}
                   onChange={(e) => setWelcomeMessage(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
                   placeholder={t('welcomeMessagePlaceholder')}
                 />
               </div>
@@ -462,7 +462,7 @@ export default function ChatbotConfigPage({
                 <select
                   value={model}
                   onChange={(e) => setModel(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
                 >
                   <option value="gpt-5-mini">GPT-5 Mini (Fast & Affordable)</option>
                   <option value="gpt-5.2">GPT-5.2 (Most Capable)</option>
@@ -473,7 +473,7 @@ export default function ChatbotConfigPage({
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-sm font-medium text-slate-700">{t('temperature')}</label>
-                  <span className="text-sm font-mono text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">{temperature}</span>
+                  <span className="text-sm font-mono text-teal-600 bg-teal-50 px-2 py-1 rounded-lg">{temperature}</span>
                 </div>
                 <input
                   type="range"
@@ -482,7 +482,7 @@ export default function ChatbotConfigPage({
                   step="0.1"
                   value={temperature}
                   onChange={(e) => setTemperature(parseFloat(e.target.value))}
-                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
                 />
                 <p className="text-sm text-slate-500 mt-2">{t('precise')} ← → {t('creative')}</p>
               </div>
@@ -506,12 +506,12 @@ export default function ChatbotConfigPage({
                         }}
                         className={`p-3 rounded-xl text-left transition-all border ${
                           selectedTemplate === template.id
-                            ? 'bg-indigo-50 border-indigo-300 ring-2 ring-indigo-500/20'
+                            ? 'bg-teal-50 border-teal-300 ring-2 ring-teal-500/20'
                             : 'bg-slate-50 border-slate-200 hover:border-slate-300 hover:bg-slate-100'
                         }`}
                       >
                         <div className={`text-sm font-medium ${
-                          selectedTemplate === template.id ? 'text-indigo-700' : 'text-slate-700'
+                          selectedTemplate === template.id ? 'text-teal-700' : 'text-slate-700'
                         }`}>
                           {template.name}
                         </div>
@@ -529,7 +529,7 @@ export default function ChatbotConfigPage({
                     type="button"
                     onClick={handleEnhance}
                     disabled={enhancing}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-violet-500 to-indigo-500 hover:from-violet-600 hover:to-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md"
                   >
                     {enhancing ? (
                       <>
@@ -574,7 +574,7 @@ export default function ChatbotConfigPage({
                     setSelectedTemplate('custom')
                   }}
                   rows={8}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-mono text-sm"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all font-mono text-sm"
                   placeholder={t('systemPromptPlaceholder')}
                 />
 
@@ -624,7 +624,7 @@ export default function ChatbotConfigPage({
                   <p className="text-xs text-slate-500 mb-2">Chat button / launcher icon background</p>
                   <div className="flex gap-3 items-center">
                     <input type="color" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="w-12 h-12 rounded-xl cursor-pointer border-2 border-slate-200" />
-                    <input type="text" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-mono text-sm w-32" placeholder="#6366f1" />
+                    <input type="text" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all font-mono text-sm w-32" placeholder="#6366f1" />
                   </div>
                 </div>
                 <div>
@@ -632,7 +632,7 @@ export default function ChatbotConfigPage({
                   <p className="text-xs text-slate-500 mb-2">Header, send button &amp; user message bubbles</p>
                   <div className="flex gap-3 items-center">
                     <input type="color" value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} className="w-12 h-12 rounded-xl cursor-pointer border-2 border-slate-200" />
-                    <input type="text" value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} className="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-mono text-sm w-32" placeholder="#6366f1" />
+                    <input type="text" value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} className="px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all font-mono text-sm w-32" placeholder="#6366f1" />
                   </div>
                 </div>
               </div>
@@ -648,7 +648,7 @@ export default function ChatbotConfigPage({
                       onClick={() => setChatIconType(type)}
                       className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all border ${
                         chatIconType === type
-                          ? 'bg-indigo-50 border-indigo-300 text-indigo-700 ring-2 ring-indigo-500/20'
+                          ? 'bg-teal-50 border-teal-300 text-teal-700 ring-2 ring-teal-500/20'
                           : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300'
                       }`}
                     >
@@ -668,7 +668,7 @@ export default function ChatbotConfigPage({
                         onClick={() => setChatIconPreset(key)}
                         className={`flex flex-col items-center gap-2 p-3 rounded-xl transition-all border ${
                           chatIconPreset === key
-                            ? 'border-indigo-300 ring-2 ring-indigo-500/20 bg-indigo-50'
+                            ? 'border-teal-300 ring-2 ring-teal-500/20 bg-teal-50'
                             : 'border-slate-200 bg-slate-50 hover:border-slate-300'
                         }`}
                       >
@@ -688,7 +688,7 @@ export default function ChatbotConfigPage({
                 {chatIconType === 'custom' && (
                   <div className="space-y-3">
                     <div className="flex items-center gap-4">
-                      <label className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-50 text-indigo-600 font-medium hover:bg-indigo-100 transition-colors cursor-pointer text-sm">
+                      <label className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-50 text-teal-600 font-medium hover:bg-teal-100 transition-colors cursor-pointer text-sm">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
@@ -743,7 +743,7 @@ export default function ChatbotConfigPage({
               </div>
 
               <div className="flex items-center gap-3 p-4 rounded-xl bg-slate-50">
-                <input type="checkbox" id="showBranding" checked={showBranding} onChange={(e) => setShowBranding(e.target.checked)} className="w-5 h-5 rounded text-indigo-600 focus:ring-indigo-500" />
+                <input type="checkbox" id="showBranding" checked={showBranding} onChange={(e) => setShowBranding(e.target.checked)} className="w-5 h-5 rounded text-teal-600 focus:ring-teal-500" />
                 <label htmlFor="showBranding" className="text-sm text-slate-700">
                   {t('showBranding')}
                 </label>
@@ -765,8 +765,8 @@ export default function ChatbotConfigPage({
                 </div>
                 {suggestedPrompts.length < 4 && (
                   <div className="flex gap-2">
-                    <input type="text" value={newPrompt} onChange={(e) => setNewPrompt(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && newPrompt.trim()) { e.preventDefault(); setSuggestedPrompts([...suggestedPrompts, newPrompt.trim()]); setNewPrompt('') } }} className="flex-1 px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm" placeholder={t('suggestedPromptsPlaceholder')} />
-                    <button onClick={() => { if (newPrompt.trim()) { setSuggestedPrompts([...suggestedPrompts, newPrompt.trim()]); setNewPrompt('') } }} disabled={!newPrompt.trim()} className="px-4 py-2.5 rounded-xl bg-indigo-50 text-indigo-600 font-medium hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                    <input type="text" value={newPrompt} onChange={(e) => setNewPrompt(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && newPrompt.trim()) { e.preventDefault(); setSuggestedPrompts([...suggestedPrompts, newPrompt.trim()]); setNewPrompt('') } }} className="flex-1 px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all text-sm" placeholder={t('suggestedPromptsPlaceholder')} />
+                    <button onClick={() => { if (newPrompt.trim()) { setSuggestedPrompts([...suggestedPrompts, newPrompt.trim()]); setNewPrompt('') } }} disabled={!newPrompt.trim()} className="px-4 py-2.5 rounded-xl bg-teal-50 text-teal-600 font-medium hover:bg-teal-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                       Add
                     </button>
                   </div>
@@ -819,12 +819,12 @@ export default function ChatbotConfigPage({
                 </div>
               </div>
 
-              <div className="p-5 bg-indigo-50 border border-indigo-200 rounded-xl">
-                <h4 className="font-semibold text-indigo-900 mb-3">Installation Instructions</h4>
-                <ol className="list-decimal list-inside text-sm text-indigo-800 space-y-2">
+              <div className="p-5 bg-teal-50 border border-teal-200 rounded-xl">
+                <h4 className="font-semibold text-teal-900 mb-3">Installation Instructions</h4>
+                <ol className="list-decimal list-inside text-sm text-teal-800 space-y-2">
                   <li>Copy the embed script above</li>
                   <li>Open your website&apos;s HTML file</li>
-                  <li>Paste the script just before the closing <code className="px-1 bg-indigo-100 rounded">&lt;/body&gt;</code> tag</li>
+                  <li>Paste the script just before the closing <code className="px-1 bg-teal-100 rounded">&lt;/body&gt;</code> tag</li>
                   <li>Save and publish your website</li>
                   <li>The chat widget will appear in the bottom-right corner</li>
                 </ol>

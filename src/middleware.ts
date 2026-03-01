@@ -101,6 +101,6 @@ export const config = {
      * - Static image files (.svg, .png, .jpg, .jpeg, .gif, .webp)
      * - API routes (handled separately inside middleware)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|widget\\.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

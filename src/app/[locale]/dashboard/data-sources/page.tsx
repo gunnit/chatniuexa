@@ -237,11 +237,11 @@ export default function DataSourcesPage() {
             </div>
           </div>
           <label className="block">
-            <div className={`relative border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${uploading ? 'border-slate-200 bg-slate-50' : 'border-slate-300 hover:border-indigo-400 hover:bg-indigo-50/50'}`}>
+            <div className={`relative border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${uploading ? 'border-slate-200 bg-slate-50' : 'border-slate-300 hover:border-teal-400 hover:bg-teal-50/50'}`}>
               <input type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleFileUpload} disabled={uploading} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed" />
               {uploading ? (
                 <div className="flex flex-col items-center">
-                  <svg className="animate-spin h-8 w-8 text-indigo-500 mb-2" viewBox="0 0 24 24">
+                  <svg className="animate-spin h-8 w-8 text-teal-500 mb-2" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
@@ -263,7 +263,7 @@ export default function DataSourcesPage() {
         {/* URL Input */}
         <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-teal-500 to-teal-600">
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
               </svg>
@@ -274,8 +274,8 @@ export default function DataSourcesPage() {
             </div>
           </div>
           <form onSubmit={handleAddUrl} className="space-y-3">
-            <input type="url" value={urlInput} onChange={(e) => setUrlInput(e.target.value)} placeholder={t('urlPlaceholder')} disabled={addingUrl} className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all disabled:opacity-50" />
-            <button type="submit" disabled={addingUrl || !urlInput.trim()} className="w-full px-4 py-3 rounded-xl font-medium text-white bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+            <input type="url" value={urlInput} onChange={(e) => setUrlInput(e.target.value)} placeholder={t('urlPlaceholder')} disabled={addingUrl} className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all disabled:opacity-50" />
+            <button type="submit" disabled={addingUrl || !urlInput.trim()} className="w-full px-4 py-3 rounded-xl font-medium text-white bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
               {addingUrl ? (
                 <span className="flex items-center justify-center gap-2">
                   <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
@@ -294,7 +294,7 @@ export default function DataSourcesPage() {
         {/* Crawl Site */}
         <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-500">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-teal-600 to-teal-700">
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
               </svg>
@@ -306,7 +306,7 @@ export default function DataSourcesPage() {
           </div>
           <div className="space-y-3">
             <p className="text-sm text-slate-600">{t('crawlDesc')}</p>
-            <button onClick={() => setCrawlerModalOpen(true)} className="w-full px-4 py-3 rounded-xl font-medium text-white bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 transition-all flex items-center justify-center gap-2">
+            <button onClick={() => setCrawlerModalOpen(true)} className="w-full px-4 py-3 rounded-xl font-medium text-white bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 transition-all flex items-center justify-center gap-2">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
@@ -384,7 +384,7 @@ export default function DataSourcesPage() {
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-1">
                         {ds.status === 'COMPLETE' && (
-                          <button onClick={() => { setPreviewDataSource({ id: ds.id, name: ds.name }); setPreviewModalOpen(true) }} className="p-2 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors" title={t('viewContent')}>
+                          <button onClick={() => { setPreviewDataSource({ id: ds.id, name: ds.name }); setPreviewModalOpen(true) }} className="p-2 rounded-lg text-slate-400 hover:text-teal-600 hover:bg-teal-50 transition-colors" title={t('viewContent')}>
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                           </button>
                         )}

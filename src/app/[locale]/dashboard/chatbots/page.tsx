@@ -120,7 +120,7 @@ export default function ChatbotsPage() {
       {/* Create New Chatbot */}
       <div className="mb-8 bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6">
         <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500">
+          <div className="p-2 rounded-xl bg-gradient-to-br from-teal-500 to-teal-600">
             <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
@@ -134,12 +134,12 @@ export default function ChatbotsPage() {
             onChange={(e) => setNewName(e.target.value)}
             placeholder={t('enterName')}
             disabled={creating}
-            className="flex-1 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all disabled:opacity-50"
+            className="flex-1 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all disabled:opacity-50"
           />
           <button
             type="submit"
             disabled={creating || !newName.trim()}
-            className="px-6 py-3 rounded-xl font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
+            className="px-6 py-3 rounded-xl font-medium text-white bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
           >
             {creating ? (
               <span className="flex items-center gap-2">
@@ -195,7 +195,7 @@ export default function ChatbotsPage() {
             >
               <div className="p-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
                     {chatbot.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">

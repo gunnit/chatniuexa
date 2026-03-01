@@ -50,9 +50,9 @@ export default function BillingPage() {
         t('featureProAnalytics'),
         t('featureProSupport'),
       ],
-      color: 'from-indigo-500 to-purple-500',
-      bgColor: 'bg-indigo-50',
-      borderColor: 'border-indigo-200',
+      color: 'from-teal-500 to-teal-600',
+      bgColor: 'bg-teal-50',
+      borderColor: 'border-teal-200',
       popular: true,
     },
     {
@@ -164,7 +164,7 @@ export default function BillingPage() {
           <div className="flex items-center gap-4">
             <div className={`px-4 py-1.5 rounded-full text-sm font-semibold text-white bg-gradient-to-r ${
               currentPlan === 'business' ? 'from-amber-500 to-orange-500' :
-              currentPlan === 'pro' ? 'from-indigo-500 to-purple-500' :
+              currentPlan === 'pro' ? 'from-teal-500 to-teal-600' :
               'from-slate-500 to-slate-600'
             }`}>
               {status?.planName || t('planFree')} {t('currentPlan')}
@@ -220,11 +220,11 @@ export default function BillingPage() {
               key={plan.id}
               className={`relative bg-white rounded-2xl border-2 shadow-sm p-6 transition-all hover:shadow-lg ${
                 isCurrent ? plan.borderColor : 'border-slate-200/60'
-              } ${plan.popular ? 'ring-2 ring-indigo-500/20' : ''}`}
+              } ${plan.popular ? 'ring-2 ring-teal-500/20' : ''}`}
             >
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <span className="px-3 py-1 text-xs font-semibold text-white bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full">
+                  <span className="px-3 py-1 text-xs font-semibold text-white bg-gradient-to-r from-teal-500 to-teal-600 rounded-full">
                     {t('mostPopular')}
                   </span>
                 </div>

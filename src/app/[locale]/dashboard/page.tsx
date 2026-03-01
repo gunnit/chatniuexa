@@ -39,8 +39,8 @@ export default async function DashboardPage() {
       name: t('statChatbots'),
       value: chatbotCount,
       href: '/dashboard/chatbots',
-      color: 'from-indigo-500 to-purple-500',
-      bgColor: 'bg-indigo-50',
+      color: 'from-teal-500 to-teal-600',
+      bgColor: 'bg-teal-50',
       icon: (
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
@@ -130,7 +130,7 @@ export default async function DashboardPage() {
             <div className="space-y-3">
               <Link
                 href="/dashboard/chatbots"
-                className="group flex items-center gap-3 w-full p-4 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:from-indigo-600 hover:to-purple-600 transition-all shadow-md hover:shadow-lg"
+                className="group flex items-center gap-3 w-full p-4 rounded-xl bg-gradient-to-r from-teal-500 to-teal-600 text-white hover:from-teal-600 hover:to-teal-700 transition-all shadow-md hover:shadow-lg"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -196,7 +196,7 @@ export default async function DashboardPage() {
               <h2 className="text-lg font-semibold text-slate-900">{t('recentChatbots')}</h2>
               <Link
                 href="/dashboard/chatbots"
-                className="text-sm font-medium text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+                className="text-sm font-medium text-teal-600 hover:text-teal-700 flex items-center gap-1"
               >
                 {tc('viewAll')}
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -211,14 +211,14 @@ export default async function DashboardPage() {
                   <Link
                     key={chatbot.id}
                     href={`/dashboard/chatbots/${chatbot.id}`}
-                    className="group p-5 rounded-xl border border-slate-200 hover:border-indigo-200 hover:bg-gradient-to-br hover:from-indigo-50/50 hover:to-purple-50/50 transition-all"
+                    className="group p-5 rounded-xl border border-slate-200 hover:border-teal-200 hover:bg-gradient-to-br hover:from-teal-50/50 hover:to-emerald-50/50 transition-all"
                   >
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-semibold">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center text-white font-semibold">
                         {chatbot.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-slate-900 truncate group-hover:text-indigo-600 transition-colors">
+                        <h3 className="font-semibold text-slate-900 truncate group-hover:text-teal-600 transition-colors">
                           {chatbot.name}
                         </h3>
                         <p className="text-xs text-slate-500">
@@ -246,7 +246,7 @@ export default async function DashboardPage() {
                 <p className="text-sm text-slate-500 mb-4">{t('createFirstChatbot')}</p>
                 <Link
                   href="/dashboard/chatbots"
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 transition-all"
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 transition-all"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

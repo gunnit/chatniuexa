@@ -242,7 +242,7 @@ export default function ChatbotTestPage({
               <div
                 className={`max-w-[80%] rounded-2xl px-5 py-3.5 shadow-sm ${
                   message.role === 'user'
-                    ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white'
+                    ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white'
                     : 'bg-white border border-slate-200/60 text-slate-900'
                 }`}
               >
@@ -302,12 +302,12 @@ export default function ChatbotTestPage({
               onChange={(e) => setInput(e.target.value)}
               placeholder={t('typeMessage')}
               disabled={loading}
-              className="flex-1 px-5 py-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all disabled:opacity-60"
+              className="flex-1 px-5 py-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all disabled:opacity-60"
             />
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="px-6 py-3.5 rounded-xl font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
+              className="px-6 py-3.5 rounded-xl font-medium text-white bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />

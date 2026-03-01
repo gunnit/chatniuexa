@@ -25,7 +25,7 @@ function ResetPasswordForm() {
         <div className="relative z-10 w-full max-w-md">
           <div className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-8 shadow-2xl text-center">
             <p className="text-red-300 mb-4">{t('invalidResetLink')}</p>
-            <Link href="/forgot-password" className="text-indigo-400 hover:text-indigo-300 transition-colors">
+            <Link href="/forgot-password" className="text-teal-400 hover:text-teal-300 transition-colors">
               {t('requestNewLink')}
             </Link>
           </div>
@@ -53,7 +53,7 @@ function ResetPasswordForm() {
           <Link href="/" className="inline-flex flex-col items-center gap-3">
             <Image src="/images/logo.png" alt="ChatAziendale.it logo" width={56} height={56} className="drop-shadow-lg" />
             <span className="text-3xl font-bold text-white tracking-tight">
-              ChatAziendale<span className="text-indigo-400">.it</span>
+              ChatAziendale<span className="text-teal-400">.it</span>
             </span>
           </Link>
         </div>
@@ -74,7 +74,7 @@ function ResetPasswordForm() {
               </div>
               <Link
                 href="/login"
-                className="inline-block px-6 py-3 text-sm font-semibold text-white rounded-xl bg-indigo-500 hover:bg-indigo-600 transition-colors"
+                className="inline-block px-6 py-3 text-sm font-semibold text-white rounded-xl bg-teal-600 hover:bg-teal-700 transition-colors"
               >
                 {t('resetSignIn')}
               </Link>
@@ -103,7 +103,7 @@ function ResetPasswordForm() {
                   autoComplete="new-password"
                   required
                   minLength={8}
-                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500/50 transition-all"
                   placeholder={t('newPasswordPlaceholder')}
                 />
               </div>
@@ -113,8 +113,8 @@ function ResetPasswordForm() {
                 disabled={pending}
                 className="w-full relative py-3.5 px-6 text-base font-semibold text-white rounded-xl overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
-                <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 opacity-0 hover:opacity-100 transition-opacity" />
+                <div className="absolute inset-0 bg-gradient-to-r from-teal-500 via-teal-600 to-emerald-600" />
+                <div className="absolute inset-0 bg-gradient-to-r from-teal-600 via-teal-700 to-emerald-700 opacity-0 hover:opacity-100 transition-opacity" />
                 <span className="relative flex items-center justify-center gap-2">
                   {pending ? (
                     <>

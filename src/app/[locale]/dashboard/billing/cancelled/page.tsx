@@ -20,7 +20,7 @@ export default function BillingCancelledPage() {
         </p>
         <Link
           href="/dashboard/billing"
-          className="inline-flex items-center px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl hover:opacity-90 transition-opacity"
+          className="inline-flex items-center px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-teal-500 to-teal-600 rounded-xl hover:opacity-90 transition-opacity"
         >
           {t('backToBilling')}
         </Link>

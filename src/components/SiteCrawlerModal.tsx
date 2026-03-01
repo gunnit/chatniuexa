@@ -138,7 +138,7 @@ export default function SiteCrawlerModal({ isOpen, onClose, onImportComplete }: 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-500">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-teal-500 to-teal-600">
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
               </svg>
@@ -181,7 +181,7 @@ export default function SiteCrawlerModal({ isOpen, onClose, onImportComplete }: 
                   onChange={(e) => setSiteUrl(e.target.value)}
                   placeholder="https://example.com"
                   disabled={discovering}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all disabled:opacity-50"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all disabled:opacity-50"
                   onKeyDown={(e) => e.key === 'Enter' && handleDiscover()}
                 />
               </div>
@@ -196,7 +196,7 @@ export default function SiteCrawlerModal({ isOpen, onClose, onImportComplete }: 
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleSelectAll}
-                    className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                    className="text-sm text-teal-600 hover:text-teal-700 font-medium"
                   >
                     Select all
                   </button>
@@ -225,7 +225,7 @@ export default function SiteCrawlerModal({ isOpen, onClose, onImportComplete }: 
                         type="checkbox"
                         checked={selectedUrls.has(item.url)}
                         onChange={() => handleToggleUrl(item.url)}
-                        className="mt-1 w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                        className="mt-1 w-4 h-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
                       />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-slate-900 truncate">
@@ -265,7 +265,7 @@ export default function SiteCrawlerModal({ isOpen, onClose, onImportComplete }: 
               <button
                 onClick={handleDiscover}
                 disabled={discovering || !siteUrl.trim()}
-                className="px-5 py-2.5 rounded-xl font-medium text-white bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                className="px-5 py-2.5 rounded-xl font-medium text-white bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
               >
                 {discovering ? (
                   <>
@@ -288,7 +288,7 @@ export default function SiteCrawlerModal({ isOpen, onClose, onImportComplete }: 
               <button
                 onClick={handleImport}
                 disabled={importing || selectedUrls.size === 0}
-                className="px-5 py-2.5 rounded-xl font-medium text-white bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                className="px-5 py-2.5 rounded-xl font-medium text-white bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
               >
                 {importing ? (
                   <>

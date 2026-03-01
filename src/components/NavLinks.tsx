@@ -90,11 +90,11 @@ export function DesktopNavLinks() {
             href={item.href}
             className={`group flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
               active
-                ? 'text-indigo-700 bg-indigo-50'
+                ? 'text-teal-700 bg-teal-50'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
             }`}
           >
-            <span className={`transition-colors ${active ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-600'}`}>
+            <span className={`transition-colors ${active ? 'text-teal-600' : 'text-slate-400 group-hover:text-teal-600'}`}>
               {item.icon}
             </span>
             {t(item.key)}
@@ -120,11 +120,11 @@ export function MobileNavLinks() {
               href={item.href}
               className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-all ${
                 active
-                  ? 'text-indigo-700 bg-indigo-50'
+                  ? 'text-teal-700 bg-teal-50'
                   : 'text-slate-600 hover:bg-slate-100/80'
               }`}
             >
-              <span className={active ? 'text-indigo-600' : 'text-slate-400'}>{item.icon}</span>
+              <span className={active ? 'text-teal-600' : 'text-slate-400'}>{item.icon}</span>
               {t(item.key)}
             </Link>
           )

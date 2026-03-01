@@ -216,8 +216,8 @@ export default function AnalyticsPage() {
     {
       name: t('totalConversations'),
       value: stats.totals.conversations.toLocaleString(),
-      color: 'from-indigo-500 to-purple-500',
-      bgColor: 'bg-indigo-50',
+      color: 'from-teal-500 to-teal-600',
+      bgColor: 'bg-teal-50',
       icon: (
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
@@ -254,7 +254,7 @@ export default function AnalyticsPage() {
       current: stats.usage.currentMonthTokens,
       limit: stats.limits.monthlyTokenLimit,
       percent: tokenUsagePercent,
-      color: tokenUsagePercent >= 90 ? 'from-red-500 to-red-600' : tokenUsagePercent >= 70 ? 'from-amber-500 to-amber-600' : 'from-blue-500 to-indigo-500',
+      color: tokenUsagePercent >= 90 ? 'from-red-500 to-red-600' : tokenUsagePercent >= 70 ? 'from-amber-500 to-amber-600' : 'from-teal-500 to-teal-600',
       bgColor: 'bg-blue-100',
     },
     {
@@ -380,7 +380,7 @@ export default function AnalyticsPage() {
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
                 <label className="block text-xs font-medium text-slate-500 mb-1.5">{t('chatbotFilter')}</label>
-                <select value={selectedChatbot} onChange={(e) => setSelectedChatbot(e.target.value)} className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+                <select value={selectedChatbot} onChange={(e) => setSelectedChatbot(e.target.value)} className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all">
                   <option value="">{t('allChatbots')}</option>
                   {chatbots.map((bot) => (<option key={bot.id} value={bot.id}>{bot.name}</option>))}
                 </select>
@@ -390,9 +390,9 @@ export default function AnalyticsPage() {
                 <form onSubmit={handleSearch} className="flex gap-2">
                   <div className="relative flex-1">
                     <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                    <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t('searchPlaceholder')} className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" />
+                    <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t('searchPlaceholder')} className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all" />
                   </div>
-                  <button type="submit" className="px-5 py-2.5 rounded-xl font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 transition-all shadow-sm">{tc('search')}</button>
+                  <button type="submit" className="px-5 py-2.5 rounded-xl font-medium text-white bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 transition-all shadow-sm">{tc('search')}</button>
                 </form>
               </div>
             </div>
@@ -450,7 +450,7 @@ export default function AnalyticsPage() {
                         <div className="ml-14 p-4 bg-slate-50 rounded-xl space-y-3 max-h-96 overflow-y-auto">
                           {conv.messages.map((msg) => (
                             <div key={msg.id} className={`flex ${msg.role === 'USER' ? 'justify-end' : 'justify-start'}`}>
-                              <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${msg.role === 'USER' ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white' : 'bg-white border border-slate-200 text-slate-900'}`}>
+                              <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${msg.role === 'USER' ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white' : 'bg-white border border-slate-200 text-slate-900'}`}>
                                 <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                                 <div className={`flex items-center gap-2 mt-1 text-xs ${msg.role === 'USER' ? 'text-white/70' : 'text-slate-500'}`}>
                                   <span>{formatTime(msg.createdAt)}</span>

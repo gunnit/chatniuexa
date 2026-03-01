@@ -20,7 +20,7 @@ export function AnimatedBackground() {
           inset: 0;
           overflow: hidden;
           z-index: -1;
-          background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #2d3561 100%);
+          background: linear-gradient(135deg, #042f2e 0%, #0f3d3a 50%, #134e4a 100%);
         }
 
         .animated-bg::before {
@@ -28,7 +28,7 @@ export function AnimatedBackground() {
           position: absolute;
           inset: 0;
           background: url('/images/hero-bg.png') center center / cover no-repeat;
-          opacity: 0.4;
+          opacity: 0.3;
           mix-blend-mode: screen;
         }
 
@@ -43,7 +43,7 @@ export function AnimatedBackground() {
         .orb-1 {
           width: 600px;
           height: 600px;
-          background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+          background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
           top: -200px;
           left: -100px;
           animation-delay: 0s;
@@ -52,7 +52,7 @@ export function AnimatedBackground() {
         .orb-2 {
           width: 500px;
           height: 500px;
-          background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+          background: linear-gradient(135deg, #0f766e 0%, #2dd4bf 100%);
           top: 60%;
           right: -150px;
           animation-delay: -5s;
@@ -62,7 +62,7 @@ export function AnimatedBackground() {
         .orb-3 {
           width: 400px;
           height: 400px;
-          background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+          background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
           bottom: -100px;
           left: 30%;
           animation-delay: -10s;

@@ -39,7 +39,7 @@ export default function DashboardLayout({
               <Link href="/dashboard" className="flex-shrink-0 flex items-center gap-2">
                 <Image src="/images/logo.png" alt="ChatAziendale.it logo" width={32} height={32} />
                 <span className="text-xl font-bold tracking-tight text-slate-900">
-                  ChatAziendale<span className="text-indigo-600">.it</span>
+                  ChatAziendale<span className="text-teal-600">.it</span>
                 </span>
               </Link>
 
