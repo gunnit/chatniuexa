@@ -8,33 +8,34 @@ const Spline = lazy(() => import('@splinetool/react-spline'))
 const SCENE_URL = 'https://prod.spline.design/gmN5Qk3WgMVQCDOO/scene.splinecode'
 
 // Robot recoloring: map each object to the correct material layer + target color
+// Colors matched to landing page brand palette (teal primary + amber accent)
 const ROBOT_COLORS: { name: string; layer: number; color: string }[] = [
-  // Body panels (color in layer 1) → Indigo-400
-  { name: 'Head_1', layer: 1, color: '#818CF8' },
-  { name: 'Body', layer: 1, color: '#818CF8' },
-  { name: 'Arm_R', layer: 1, color: '#818CF8' },
-  { name: 'Arm_L', layer: 1, color: '#818CF8' },
-  { name: 'Shoulder_R', layer: 1, color: '#818CF8' },
-  { name: 'Shoulder_L', layer: 1, color: '#818CF8' },
-  { name: 'Cylinder', layer: 1, color: '#818CF8' },
+  // Body panels (color in layer 1) → Teal-600 (matches bot avatar, check icons)
+  { name: 'Head_1', layer: 1, color: '#0D9488' },
+  { name: 'Body', layer: 1, color: '#0D9488' },
+  { name: 'Arm_R', layer: 1, color: '#0D9488' },
+  { name: 'Arm_L', layer: 1, color: '#0D9488' },
+  { name: 'Shoulder_R', layer: 1, color: '#0D9488' },
+  { name: 'Shoulder_L', layer: 1, color: '#0D9488' },
+  { name: 'Cylinder', layer: 1, color: '#0D9488' },
 
-  // Joints & dark parts (color in layer 1) → Deep indigo-900
-  { name: 'Head_2', layer: 1, color: '#312E81' },
-  { name: 'Body Circle_2', layer: 1, color: '#312E81' },
-  { name: 'Neck', layer: 1, color: '#312E81' },
-  { name: 'Forearm_R', layer: 1, color: '#312E81' },
-  { name: 'Forearm_L', layer: 1, color: '#312E81' },
-  { name: 'HAND_R', layer: 1, color: '#312E81' },
-  { name: 'Hand_L', layer: 1, color: '#312E81' },
-  { name: 'Cylinder002', layer: 1, color: '#312E81' },
+  // Joints & dark parts (color in layer 1) → Teal-900 (deep teal for contrast)
+  { name: 'Head_2', layer: 1, color: '#134E4A' },
+  { name: 'Body Circle_2', layer: 1, color: '#134E4A' },
+  { name: 'Neck', layer: 1, color: '#134E4A' },
+  { name: 'Forearm_R', layer: 1, color: '#134E4A' },
+  { name: 'Forearm_L', layer: 1, color: '#134E4A' },
+  { name: 'HAND_R', layer: 1, color: '#134E4A' },
+  { name: 'Hand_L', layer: 1, color: '#134E4A' },
+  { name: 'Cylinder002', layer: 1, color: '#134E4A' },
 
-  // Accents (color in layer 0) → Teal
-  { name: 'Eyes', layer: 0, color: '#14B8A6' },
-  { name: 'Mouth', layer: 0, color: '#14B8A6' },
+  // Accents (color in layer 0) → Amber-500 (warm pop, matches amber feature card)
+  { name: 'Eyes', layer: 0, color: '#F59E0B' },
+  { name: 'Mouth', layer: 0, color: '#F59E0B' },
 
-  // Accents (color in layer 2) → Cyan
-  { name: 'Ears', layer: 2, color: '#22D3EE' },
-  { name: 'Body Circle_1', layer: 2, color: '#06B6D4' },
+  // Accents (color in layer 2) → Teal-300 / Teal-700 (lighter/darker teal accents)
+  { name: 'Ears', layer: 2, color: '#5EEAD4' },
+  { name: 'Body Circle_1', layer: 2, color: '#0F766E' },
 ]
 
 export function SplineScene() {
@@ -93,7 +94,7 @@ export function SplineScene() {
       {!loaded && (
         <div className="absolute inset-0 flex items-center justify-center z-10">
           <div className="relative">
-            <div className="w-16 h-16 rounded-full border-2 border-indigo-500/20 border-t-indigo-500 animate-spin" />
+            <div className="w-16 h-16 rounded-full border-2 border-teal-500/20 border-t-teal-500 animate-spin" />
             <div className="absolute inset-0 w-16 h-16 rounded-full border-2 border-transparent border-b-teal-400/40 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }} />
           </div>
         </div>
