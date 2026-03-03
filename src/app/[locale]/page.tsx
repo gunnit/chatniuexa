@@ -1,5 +1,6 @@
 import { Link } from "@/i18n/navigation";
 import Image from "next/image";
+import Script from "next/script";
 import { SplineScene } from "@/components/landing/SplineScene";
 import { RevealOnScroll } from "@/components/landing/RevealOnScroll";
 import { Navbar } from "@/components/landing/Navbar";
@@ -274,6 +275,13 @@ export default async function Home() {
           </div>
         </div>
       </footer>
+
+      {/* ChatNiuexa Widget */}
+      <Script
+        src="https://chatniuexa.onrender.com/widget.js"
+        data-chatbot-id="cmmalql0a000f26c057twr5uh"
+        strategy="afterInteractive"
+      />
     </div>
   );
 }
