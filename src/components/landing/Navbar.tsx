@@ -43,9 +43,9 @@ export function Navbar() {
           <Image
             src="/images/logo.png"
             alt="ChatAziendale.it logo"
-            width={28}
-            height={28}
-            className="group-hover:scale-105 transition-transform duration-300 flex-shrink-0 sm:w-8 sm:h-8"
+            width={36}
+            height={36}
+            className="group-hover:scale-105 transition-transform duration-300 flex-shrink-0 sm:w-10 sm:h-10"
           />
           <span className="hidden sm:inline text-xl font-bold text-[#18181B] tracking-tight">
             ChatAziendale<span className="text-teal-600">.it</span>

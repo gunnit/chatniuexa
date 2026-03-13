@@ -266,10 +266,11 @@ export default async function Home() {
       <footer className="relative z-10 border-t border-[#E4E4E7] py-8 px-6">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
-            <Image src="/images/logo.png" alt="ChatAziendale.it" width={24} height={24} className="opacity-60" />
+            <Image src="/images/logo.png" alt="ChatAziendale.it" width={28} height={28} className="opacity-60" />
             <span className="text-sm text-[#A1A1AA]">{tc("copyright")}</span>
           </div>
           <div className="flex items-center gap-6">
+            <Link href="/docs" className="text-sm text-[#A1A1AA] hover:text-[#52525B] transition-colors duration-200">{tc("docs")}</Link>
             <Link href="/privacy" className="text-sm text-[#A1A1AA] hover:text-[#52525B] transition-colors duration-200">{tc("privacy")}</Link>
             <Link href="/terms" className="text-sm text-[#A1A1AA] hover:text-[#52525B] transition-colors duration-200">{tc("terms")}</Link>
           </div>
