@@ -451,6 +451,26 @@ body {
 .stagger-children > *:nth-child(5) { animation-delay: 200ms; }
 .stagger-children > *:nth-child(6) { animation-delay: 250ms; }
 
+/* Marquee — infinite horizontal scroll for logo strip */
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-33.333%);
+  }
+}
+
+.marquee-track {
+  animation: marquee 35s linear infinite;
+  width: max-content;
+  will-change: transform;
+}
+
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
 /* Loading skeleton */
 .skeleton {
   background: linear-gradient(

@@ -3,6 +3,7 @@ import Image from "next/image";
 import Script from "next/script";
 import { SplineScene } from "@/components/landing/SplineScene";
 import { RevealOnScroll } from "@/components/landing/RevealOnScroll";
+import { TrustedBy } from "@/components/landing/TrustedBy";
 import { Navbar } from "@/components/landing/Navbar";
 import { getTranslations } from "next-intl/server";
 
@@ -120,6 +121,9 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      {/* ── TRUSTED BY ── */}
+      <TrustedBy />
 
       {/* ── DEMO ── */}
       <section className="relative z-10 py-24">
