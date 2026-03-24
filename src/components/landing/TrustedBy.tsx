@@ -3,17 +3,19 @@
 import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 
-const clients = [
-  { name: 'PugliAI', src: '/images/clients/pugliai.webp', width: 63, height: 60, url: 'https://pugliai.com' },
+type Client = { name: string; src: string; width: number; height: number; url: string; invertOnLight?: boolean }
+
+const clients: Client[] = [
+  { name: 'PugliAI', src: '/images/clients/pugliai.webp', width: 63, height: 60, url: 'https://pugliai.com', invertOnLight: true },
   { name: 'Niuexa', src: '/images/clients/niuexa.webp', width: 217, height: 60, url: 'https://niuexa.ai' },
   { name: 'Unioncamere', src: '/images/clients/unioncamere.webp', width: 255, height: 60, url: 'https://unioncamere.gov.it' },
   { name: 'BeBit', src: '/images/clients/bebit.webp', width: 113, height: 60, url: 'https://bebit.it' },
   { name: 'Libera Brand Building', src: '/images/clients/libera.svg', width: 180, height: 60, url: 'https://liberabrandbuilding.it' },
   { name: 'Inthezon', src: '/images/clients/inthezon.svg', width: 160, height: 60, url: 'https://inthezon.com' },
-  { name: 'GeoPick', src: '/images/clients/geopick.webp', width: 176, height: 60, url: 'https://geopick.it' },
+  { name: 'GeoPick', src: '/images/clients/geopick.webp', width: 176, height: 60, url: 'https://geopick.it', invertOnLight: true },
 ]
 
-function LogoItem({ client }: { client: typeof clients[number] }) {
+function LogoItem({ client }: { client: Client }) {
   return (
     <a
       href={client.url}
@@ -27,7 +29,7 @@ function LogoItem({ client }: { client: typeof clients[number] }) {
         alt={client.name}
         width={client.width}
         height={client.height}
-        className="h-8 sm:h-10 w-auto object-contain opacity-40 grayscale transition-all duration-500 group-hover:opacity-100 group-hover:grayscale-0"
+        className={`h-8 sm:h-10 w-auto object-contain opacity-40 grayscale transition-all duration-500 group-hover:opacity-100 group-hover:grayscale-0 ${client.invertOnLight ? 'invert group-hover:invert-0' : ''}`}
         unoptimized={client.src.endsWith('.svg')}
       />
     </a>

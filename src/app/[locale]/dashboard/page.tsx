@@ -14,7 +14,7 @@ export default async function DashboardPage() {
   const tc = await getTranslations('common')
 
   // Fetch summary data
-  const [chatbotCount, dataSourceCount, conversationCount, messageCount] = await Promise.all([
+  const [chatbotCount, dataSourceCount, conversationCount, messageCount, configuredChatbotCount, firstChatbot] = await Promise.all([
     prisma.chatbot.count({ where: { tenantId: session.tenantId! } }),
     prisma.dataSource.count({ where: { tenantId: session.tenantId! } }),
     prisma.conversation.count({
@@ -22,6 +22,14 @@ export default async function DashboardPage() {
     }),
     prisma.message.count({
       where: { conversation: { chatbot: { tenantId: session.tenantId! } } },
+    }),
+    prisma.chatbot.count({
+      where: { tenantId: session.tenantId!, systemPrompt: { not: null } },
+    }),
+    prisma.chatbot.findFirst({
+      where: { tenantId: session.tenantId! },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true },
     }),
   ])
 
@@ -160,29 +168,36 @@ export default async function DashboardPage() {
             <h2 className="text-lg font-semibold text-slate-900 mb-4">{t('gettingStarted')}</h2>
             <ol className="space-y-3">
               {[
-                { text: t('step1'), done: dataSourceCount > 0 },
-                { text: t('step2'), done: chatbotCount > 0 },
-                { text: t('step3'), done: false },
-                { text: t('step4'), done: false },
-                { text: t('step5'), done: false },
+                { text: t('step1'), done: dataSourceCount > 0, href: '/dashboard/data-sources' as string },
+                { text: t('step2'), done: chatbotCount > 0, href: '/dashboard/chatbots' as string },
+                { text: t('step3'), done: configuredChatbotCount > 0, href: firstChatbot ? `/dashboard/chatbots/${firstChatbot.id}` : '/dashboard/chatbots' },
+                { text: t('step4'), done: conversationCount > 0, href: firstChatbot ? `/dashboard/chatbots/${firstChatbot.id}/chat` : '/dashboard/chatbots' },
+                { text: t('step5'), done: false, href: firstChatbot ? `/dashboard/chatbots/${firstChatbot.id}` : '/dashboard/chatbots' },
               ].map((step, index) => (
-                <li key={index} className="flex items-start gap-3">
-                  <span className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
-                    step.done
-                      ? 'bg-emerald-100 text-emerald-600'
-                      : 'bg-slate-100 text-slate-500'
-                  }`}>
-                    {step.done ? (
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    ) : (
-                      index + 1
-                    )}
-                  </span>
-                  <span className={`text-sm ${step.done ? 'text-emerald-600' : 'text-slate-600'}`}>
-                    {step.text}
-                  </span>
+                <li key={index}>
+                  <Link
+                    href={step.href}
+                    className={`flex items-start gap-3 p-2 -m-2 rounded-lg transition-colors ${
+                      step.done ? 'hover:bg-emerald-50' : 'hover:bg-slate-50'
+                    }`}
+                  >
+                    <span className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                      step.done
+                        ? 'bg-emerald-100 text-emerald-600'
+                        : 'bg-slate-100 text-slate-500'
+                    }`}>
+                      {step.done ? (
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      ) : (
+                        index + 1
+                      )}
+                    </span>
+                    <span className={`text-sm ${step.done ? 'text-emerald-600 line-through' : 'text-slate-600 group-hover:text-teal-600'}`}>
+                      {step.text}
+                    </span>
+                  </Link>
                 </li>
               ))}
             </ol>

@@ -34,7 +34,7 @@ export default async function Home() {
                 {t("badge")}
               </div>
 
-              <h1 className="text-[clamp(2.25rem,4.5vw,3.75rem)] font-extrabold tracking-[-0.035em] leading-[1.1] text-[#18181B] mb-6">
+              <h1 className="font-serif text-[clamp(2.25rem,4.5vw,3.75rem)] tracking-[-0.02em] leading-[1.08] text-[#18181B] mb-6">
                 {t("headline")}
               </h1>
 
@@ -81,14 +81,15 @@ export default async function Home() {
       </section>
 
       {/* ── FEATURES ── */}
-      <section className="relative z-10 py-24 bg-white border-y border-[#E4E4E7]">
-        <div className="max-w-7xl mx-auto px-6 lg:px-12">
+      <section className="relative z-10 py-24 bg-white border-y border-[#E4E4E7] overflow-hidden">
+        <div className="absolute inset-0 bg-dots opacity-[0.35] pointer-events-none" />
+        <div className="max-w-7xl mx-auto px-6 lg:px-12 relative">
           <RevealOnScroll>
             <div className="mb-14">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 border border-teal-200/60 text-teal-700 text-xs font-semibold tracking-wider uppercase mb-4">
                 {t("featuresTag")}
               </div>
-              <h2 className="text-3xl sm:text-[2.5rem] font-bold tracking-[-0.025em] text-[#18181B] leading-tight">
+              <h2 className="font-serif text-3xl sm:text-[2.5rem] tracking-[-0.015em] text-[#18181B] leading-tight">
                 {t("featuresTitle")}
               </h2>
             </div>
@@ -130,7 +131,7 @@ export default async function Home() {
         <div className="max-w-5xl mx-auto px-6 lg:px-12">
           <RevealOnScroll>
             <div className="text-center mb-14">
-              <h2 className="text-3xl sm:text-[2.5rem] font-bold tracking-[-0.025em] text-[#18181B] mb-4">
+              <h2 className="font-serif text-3xl sm:text-[2.5rem] tracking-[-0.015em] text-[#18181B] mb-4">
                 {t("demoTitle")}
               </h2>
               <p className="text-lg text-[#71717A] max-w-2xl mx-auto">{t("demoSubtitle")}</p>
@@ -138,7 +139,7 @@ export default async function Home() {
           </RevealOnScroll>
 
           <RevealOnScroll>
-            <div className="rounded-2xl border border-[#E4E4E7] bg-white shadow-xl overflow-hidden">
+            <div className="demo-tilt rounded-2xl border border-[#E4E4E7] bg-white shadow-2xl overflow-hidden">
               {/* Browser chrome */}
               <div className="flex items-center gap-2 px-5 py-3 border-b border-[#E4E4E7] bg-[#FAFAF7]">
                 <div className="w-3 h-3 rounded-full bg-[#EF4444]/60" />
@@ -200,7 +201,7 @@ export default async function Home() {
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 border border-teal-200/60 text-teal-700 text-xs font-semibold tracking-wider uppercase mb-4">
                 {t("howTag")}
               </div>
-              <h2 className="text-3xl sm:text-[2.5rem] font-bold tracking-[-0.025em] text-[#18181B]">
+              <h2 className="font-serif text-3xl sm:text-[2.5rem] tracking-[-0.015em] text-[#18181B]">
                 {t("howTitle")}
               </h2>
             </div>
@@ -208,12 +209,12 @@ export default async function Home() {
 
           <div className="grid md:grid-cols-3 gap-12 relative">
             {/* Connecting line */}
-            <div className="hidden md:block absolute top-6 left-[calc(16.67%+1rem)] right-[calc(16.67%+1rem)] h-px bg-[#E4E4E7]" />
+            <div className="hidden md:block absolute top-7 left-[calc(16.67%+1rem)] right-[calc(16.67%+1rem)] border-t border-dashed border-[#D4D4D8]" />
 
             <RevealOnScroll delay={0}>
               <div className="text-center relative">
-                <div className="relative z-10 w-12 h-12 mx-auto mb-6 rounded-full bg-teal-50 border-2 border-teal-200 flex items-center justify-center">
-                  <span className="text-sm font-bold text-teal-700">01</span>
+                <div className="relative z-10 w-14 h-14 mx-auto mb-6 rounded-full bg-[#0F766E] shadow-lg shadow-teal-700/25 flex items-center justify-center">
+                  <span className="text-sm font-bold text-white tracking-wider">01</span>
                 </div>
                 <h3 className="text-base font-semibold text-[#18181B] mb-2">{t("step1Title")}</h3>
                 <p className="text-[14px] text-[#71717A] leading-relaxed max-w-[240px] mx-auto">{t("step1Desc")}</p>
@@ -222,8 +223,8 @@ export default async function Home() {
 
             <RevealOnScroll delay={150}>
               <div className="text-center relative">
-                <div className="relative z-10 w-12 h-12 mx-auto mb-6 rounded-full bg-teal-50 border-2 border-teal-200 flex items-center justify-center">
-                  <span className="text-sm font-bold text-teal-700">02</span>
+                <div className="relative z-10 w-14 h-14 mx-auto mb-6 rounded-full bg-[#0F766E] shadow-lg shadow-teal-700/25 flex items-center justify-center">
+                  <span className="text-sm font-bold text-white tracking-wider">02</span>
                 </div>
                 <h3 className="text-base font-semibold text-[#18181B] mb-2">{t("step2Title")}</h3>
                 <p className="text-[14px] text-[#71717A] leading-relaxed max-w-[240px] mx-auto">{t("step2Desc")}</p>
@@ -232,8 +233,8 @@ export default async function Home() {
 
             <RevealOnScroll delay={300}>
               <div className="text-center relative">
-                <div className="relative z-10 w-12 h-12 mx-auto mb-6 rounded-full bg-teal-50 border-2 border-teal-200 flex items-center justify-center">
-                  <span className="text-sm font-bold text-teal-700">03</span>
+                <div className="relative z-10 w-14 h-14 mx-auto mb-6 rounded-full bg-[#0F766E] shadow-lg shadow-teal-700/25 flex items-center justify-center">
+                  <span className="text-sm font-bold text-white tracking-wider">03</span>
                 </div>
                 <h3 className="text-base font-semibold text-[#18181B] mb-2">{t("step3Title")}</h3>
                 <p className="text-[14px] text-[#71717A] leading-relaxed max-w-[240px] mx-auto">{t("step3Desc")}</p>
@@ -244,18 +245,19 @@ export default async function Home() {
       </section>
 
       {/* ── FINAL CTA ── */}
-      <section className="relative z-10 py-24">
-        <div className="max-w-3xl mx-auto px-6 text-center">
+      <section className="relative z-10 py-24 bg-[#0A3D38] overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(20,184,166,0.15)_0%,_transparent_60%)] pointer-events-none" />
+        <div className="max-w-3xl mx-auto px-6 text-center relative">
           <RevealOnScroll>
-            <h2 className="text-3xl sm:text-4xl lg:text-[2.75rem] font-bold tracking-[-0.025em] text-[#18181B] mb-5 leading-tight">
+            <h2 className="font-serif text-3xl sm:text-4xl lg:text-[2.75rem] tracking-[-0.015em] text-white mb-5 leading-tight">
               {t("ctaTitle")}
             </h2>
-            <p className="text-lg text-[#71717A] max-w-xl mx-auto mb-10 leading-relaxed">
+            <p className="text-lg text-teal-300/60 max-w-xl mx-auto mb-10 leading-relaxed">
               {t("ctaSubtitle")}
             </p>
             <Link
               href="/signup"
-              className="group inline-flex items-center justify-center gap-2.5 px-10 py-4 text-base font-semibold text-white bg-[#0F766E] rounded-xl hover:bg-[#0D6960] transition-colors duration-200 active:scale-[0.98]"
+              className="group inline-flex items-center justify-center gap-2.5 px-10 py-4 text-base font-semibold text-[#0A3D38] bg-white rounded-xl hover:bg-teal-50 transition-colors duration-200 active:scale-[0.98]"
             >
               <span>{t("ctaGetStarted")}</span>
               <svg className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">

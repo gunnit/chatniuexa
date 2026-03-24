@@ -395,7 +395,7 @@
 
     /* Markdown styles */
     .md-p {
-      margin: 0 0 8px 0;
+      margin: 0 0 12px 0;
     }
 
     .md-p:last-child {
@@ -451,6 +451,11 @@
 
     .md-link:hover {
       text-decoration: underline;
+    }
+
+    .message.assistant .message-content strong {
+      color: var(--widget-primary-color);
+      font-weight: 700;
     }
 
     /* Message reactions */
@@ -589,6 +594,10 @@
     @keyframes blink {
       0%, 50% { opacity: 1; }
       51%, 100% { opacity: 0; }
+    }
+
+    .streaming-cursor {
+      white-space: pre-wrap;
     }
 
     .streaming-cursor::after {
