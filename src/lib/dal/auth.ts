@@ -24,6 +24,7 @@ export interface SessionData {
   userId: string
   email: string | undefined
   tenantId: string | null
+  role: string
 }
 
 /**
@@ -57,6 +58,7 @@ export const verifySession = cache(async (): Promise<SessionData> => {
     userId: session.user.id,
     email: session.user.email ?? undefined,
     tenantId: session.user.tenantId ?? null,
+    role: session.user.role ?? 'user',
   }
 })
 
@@ -77,6 +79,19 @@ export const verifySession = cache(async (): Promise<SessionData> => {
  * }
  * ```
  */
+/**
+ * Verify user is an admin. Redirects to /dashboard if not admin.
+ */
+export const verifyAdminSession = cache(async (): Promise<SessionData> => {
+  const session = await verifySession()
+
+  if (session.role !== 'admin') {
+    redirect('/dashboard')
+  }
+
+  return session
+})
+
 export const getUser = cache(async () => {
   const session = await auth()
   return session?.user ?? null

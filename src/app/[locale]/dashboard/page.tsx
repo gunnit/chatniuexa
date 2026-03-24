@@ -49,6 +49,7 @@ export default async function DashboardPage() {
       href: '/dashboard/chatbots',
       color: 'from-teal-500 to-teal-600',
       bgColor: 'bg-teal-50',
+      iconColor: 'text-teal-600',
       icon: (
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
@@ -61,6 +62,7 @@ export default async function DashboardPage() {
       href: '/dashboard/data-sources',
       color: 'from-emerald-500 to-teal-500',
       bgColor: 'bg-emerald-50',
+      iconColor: 'text-emerald-600',
       icon: (
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
@@ -73,6 +75,7 @@ export default async function DashboardPage() {
       href: '/dashboard/analytics',
       color: 'from-purple-500 to-pink-500',
       bgColor: 'bg-purple-50',
+      iconColor: 'text-purple-600',
       icon: (
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
@@ -85,6 +88,7 @@ export default async function DashboardPage() {
       href: '/dashboard/analytics',
       color: 'from-orange-500 to-amber-500',
       bgColor: 'bg-orange-50',
+      iconColor: 'text-orange-600',
       icon: (
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
@@ -119,10 +123,8 @@ export default async function DashboardPage() {
                   {stat.value}
                 </p>
               </div>
-              <div className={`p-3 rounded-xl ${stat.bgColor}`}>
-                <span className={`bg-gradient-to-r ${stat.color} bg-clip-text`}>
-                  {stat.icon}
-                </span>
+              <div className={`p-3 rounded-xl ${stat.bgColor} ${stat.iconColor}`}>
+                {stat.icon}
               </div>
             </div>
           </Link>
@@ -177,14 +179,14 @@ export default async function DashboardPage() {
                 <li key={index}>
                   <Link
                     href={step.href}
-                    className={`flex items-start gap-3 p-2 -m-2 rounded-lg transition-colors ${
+                    className={`group flex items-start gap-3 p-2 -m-2 rounded-lg transition-colors ${
                       step.done ? 'hover:bg-emerald-50' : 'hover:bg-slate-50'
                     }`}
                   >
-                    <span className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                    <span className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
                       step.done
                         ? 'bg-emerald-100 text-emerald-600'
-                        : 'bg-slate-100 text-slate-500'
+                        : 'bg-slate-100 text-slate-500 group-hover:bg-teal-100 group-hover:text-teal-600'
                     }`}>
                       {step.done ? (
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -194,7 +196,7 @@ export default async function DashboardPage() {
                         index + 1
                       )}
                     </span>
-                    <span className={`text-sm ${step.done ? 'text-emerald-600 line-through' : 'text-slate-600 group-hover:text-teal-600'}`}>
+                    <span className={`text-sm transition-colors ${step.done ? 'text-emerald-600 line-through' : 'text-slate-600 group-hover:text-teal-600'}`}>
                       {step.text}
                     </span>
                   </Link>

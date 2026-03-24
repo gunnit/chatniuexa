@@ -73,10 +73,14 @@ export async function PATCH(
     const body = await request.json()
     const data = updateChatbotSchema.parse(body)
 
+    console.log('[PATCH chatbot] saving suggestedPrompts:', JSON.stringify(data.suggestedPrompts))
+
     const chatbot = await prisma.chatbot.update({
       where: { id },
       data,
     })
+
+    console.log('[PATCH chatbot] saved suggestedPrompts:', JSON.stringify(chatbot.suggestedPrompts))
 
     return NextResponse.json({ chatbot })
   } catch (error) {

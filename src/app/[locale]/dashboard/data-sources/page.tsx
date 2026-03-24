@@ -186,10 +186,10 @@ export default function DataSourcesPage() {
 
   const getStatusBadge = (status: DataSource['status']) => {
     const config = {
-      PENDING: { bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-500' },
-      PROCESSING: { bg: 'bg-blue-50', text: 'text-blue-700', dot: 'bg-blue-500 animate-pulse' },
-      COMPLETE: { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500' },
-      FAILED: { bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-500' },
+      PENDING: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200/60', dot: 'bg-amber-500' },
+      PROCESSING: { bg: 'bg-sky-50', text: 'text-sky-700', border: 'border-sky-200/60', dot: 'bg-sky-500 animate-pulse' },
+      COMPLETE: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200/60', dot: 'bg-emerald-500' },
+      FAILED: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200/60', dot: 'bg-red-500' },
     }
     const statusLabels: Record<string, string> = {
       PENDING: t('statusPending'),
@@ -197,9 +197,9 @@ export default function DataSourcesPage() {
       COMPLETE: t('statusComplete'),
       FAILED: t('statusFailed'),
     }
-    const { bg, text, dot } = config[status]
+    const { bg, text, border, dot } = config[status]
     return (
-      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full ${bg} ${text}`}>
+      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border ${bg} ${text} ${border}`}>
         <span className={`w-1.5 h-1.5 rounded-full ${dot}`} />
         {statusLabels[status]}
       </span>
@@ -207,20 +207,22 @@ export default function DataSourcesPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Page Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900">{t('title')}</h1>
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{t('title')}</h1>
         <p className="text-slate-500 mt-1">{t('subtitle')}</p>
       </div>
 
+      {/* Error Banner */}
       {error && (
-        <div className="mb-6 flex items-center gap-3 p-4 rounded-xl bg-red-50 border border-red-200">
+        <div className="mb-6 flex items-center gap-3 p-4 rounded-xl bg-red-50 border border-red-200/80">
           <svg className="w-5 h-5 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <p className="text-sm text-red-700 flex-1">{error}</p>
-          <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <button onClick={() => setError(null)} className="p-1 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-100 transition-colors">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -230,9 +232,9 @@ export default function DataSourcesPage() {
       {/* Add Data Source Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
         {/* File Upload */}
-        <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6">
+        <div className="group bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md hover:border-slate-300/60 transition-all duration-200 p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500">
+            <div className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 shadow-sm shadow-emerald-200">
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
@@ -243,7 +245,7 @@ export default function DataSourcesPage() {
             </div>
           </div>
           <label className="block">
-            <div className={`relative border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${uploading ? 'border-slate-200 bg-slate-50' : 'border-slate-300 hover:border-teal-400 hover:bg-teal-50/50'}`}>
+            <div className={`relative border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${uploading ? 'border-slate-200 bg-slate-50' : 'border-slate-300 hover:border-teal-400 hover:bg-teal-50/30'}`}>
               <input type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleFileUpload} disabled={uploading} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed" />
               {uploading ? (
                 <div className="flex flex-col items-center">
@@ -267,9 +269,9 @@ export default function DataSourcesPage() {
         </div>
 
         {/* URL Input */}
-        <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6">
+        <div className="group bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md hover:border-slate-300/60 transition-all duration-200 p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-teal-500 to-teal-600">
+            <div className="p-2.5 rounded-xl bg-gradient-to-br from-teal-500 to-teal-600 shadow-sm shadow-teal-200">
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
               </svg>
@@ -281,7 +283,7 @@ export default function DataSourcesPage() {
           </div>
           <form onSubmit={handleAddUrl} className="space-y-3">
             <input type="url" value={urlInput} onChange={(e) => setUrlInput(e.target.value)} placeholder={t('urlPlaceholder')} disabled={addingUrl} className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all disabled:opacity-50" />
-            <button type="submit" disabled={addingUrl || !urlInput.trim()} className="w-full px-4 py-3 rounded-xl font-medium text-white bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+            <button type="submit" disabled={addingUrl || !urlInput.trim()} className="w-full px-4 py-3 rounded-xl font-medium text-white bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm shadow-teal-200 hover:shadow-md hover:shadow-teal-200">
               {addingUrl ? (
                 <span className="flex items-center justify-center gap-2">
                   <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
@@ -298,17 +300,17 @@ export default function DataSourcesPage() {
         </div>
 
         {/* Crawl Site */}
-        <div className="relative bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6 overflow-hidden">
+        <div className="relative group bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md hover:border-slate-300/60 transition-all duration-200 p-6 overflow-hidden">
           {userPlan === 'free' && (
             <div className="absolute inset-0 z-10 bg-white/80 backdrop-blur-[2px] flex flex-col items-center justify-center p-6 text-center">
-              <div className="p-2 rounded-full bg-amber-100 mb-3">
+              <div className="p-2.5 rounded-full bg-amber-100 mb-3">
                 <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
               </div>
               <p className="text-sm font-semibold text-slate-900 mb-1">{t('crawlProOnly')}</p>
               <p className="text-xs text-slate-500 mb-3">{t('crawlUpgradeHint')}</p>
-              <Link href="/dashboard/billing" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 transition-all">
+              <Link href="/dashboard/billing" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 transition-all shadow-sm">
                 {t('upgradePlan')}
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
@@ -317,7 +319,7 @@ export default function DataSourcesPage() {
             </div>
           )}
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-teal-600 to-teal-700">
+            <div className="p-2.5 rounded-xl bg-gradient-to-br from-teal-600 to-teal-700 shadow-sm shadow-teal-200">
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
               </svg>
@@ -329,7 +331,7 @@ export default function DataSourcesPage() {
           </div>
           <div className="space-y-3">
             <p className="text-sm text-slate-600">{t('crawlDesc')}</p>
-            <button onClick={() => setCrawlerModalOpen(true)} className="w-full px-4 py-3 rounded-xl font-medium text-white bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 transition-all flex items-center justify-center gap-2">
+            <button onClick={() => setCrawlerModalOpen(true)} className="w-full px-4 py-3 rounded-xl font-medium text-white bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 transition-all shadow-sm shadow-teal-200 hover:shadow-md hover:shadow-teal-200 flex items-center justify-center gap-2">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
@@ -340,71 +342,80 @@ export default function DataSourcesPage() {
       </div>
 
       {/* Data Sources Table */}
-      <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-200/60">
+      <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm">
+        <div className="px-6 py-4 border-b border-slate-200/60 flex items-center justify-between">
           <h2 className="font-semibold text-slate-900">{t('yourDataSources')}</h2>
+          {dataSources.length > 0 && (
+            <span className="text-xs font-medium text-slate-400 bg-slate-100 px-2.5 py-1 rounded-full">
+              {dataSources.length}
+            </span>
+          )}
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px]">
+        <div className="overflow-x-auto rounded-b-2xl">
+          <table className="w-full min-w-[800px]">
             <thead>
-              <tr className="bg-slate-50/50">
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('colName')}</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('colType')}</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('colStatus')}</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('colSize')}</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('colAdded')}</th>
-                <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">{t('colActions')}</th>
+              <tr className="bg-slate-50/80">
+                <th className="px-6 py-3.5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest w-[35%]">{t('colName')}</th>
+                <th className="px-4 py-3.5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest w-[10%]">{t('colType')}</th>
+                <th className="px-4 py-3.5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest w-[15%]">{t('colStatus')}</th>
+                <th className="px-4 py-3.5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest w-[10%]">{t('colSize')}</th>
+                <th className="px-4 py-3.5 text-left text-[11px] font-semibold text-slate-400 uppercase tracking-widest w-[14%]">{t('colAdded')}</th>
+                <th className="px-6 py-3.5 text-right text-[11px] font-semibold text-slate-400 uppercase tracking-widest w-[16%]">{t('colActions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 [...Array(3)].map((_, i) => (
                   <tr key={i}>
-                    <td className="px-6 py-4"><div className="h-4 bg-slate-200 rounded animate-pulse w-32" /></td>
-                    <td className="px-6 py-4"><div className="h-4 bg-slate-100 rounded animate-pulse w-12" /></td>
-                    <td className="px-6 py-4"><div className="h-6 bg-slate-100 rounded-full animate-pulse w-20" /></td>
-                    <td className="px-6 py-4"><div className="h-4 bg-slate-100 rounded animate-pulse w-16" /></td>
-                    <td className="px-6 py-4"><div className="h-4 bg-slate-100 rounded animate-pulse w-24" /></td>
-                    <td className="px-6 py-4"><div className="h-4 bg-slate-100 rounded animate-pulse w-16 ml-auto" /></td>
+                    <td className="px-6 py-4"><div className="h-4 bg-slate-200 rounded-md animate-pulse w-40" /></td>
+                    <td className="px-4 py-4"><div className="h-4 bg-slate-100 rounded-md animate-pulse w-12" /></td>
+                    <td className="px-4 py-4"><div className="h-6 bg-slate-100 rounded-full animate-pulse w-20" /></td>
+                    <td className="px-4 py-4"><div className="h-4 bg-slate-100 rounded-md animate-pulse w-14" /></td>
+                    <td className="px-4 py-4"><div className="h-4 bg-slate-100 rounded-md animate-pulse w-20" /></td>
+                    <td className="px-6 py-4"><div className="h-4 bg-slate-100 rounded-md animate-pulse w-20 ml-auto" /></td>
                   </tr>
                 ))
               ) : dataSources.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
+                  <td colSpan={6} className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center">
-                      <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center mb-3">
-                        <svg className="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+                        <svg className="w-7 h-7 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
                         </svg>
                       </div>
-                      <p className="text-slate-500">{t('noDataSourcesYet')}</p>
-                      <p className="text-sm text-slate-400 mt-1">{t('noDataSourcesHint')}</p>
+                      <p className="font-medium text-slate-600">{t('noDataSourcesYet')}</p>
+                      <p className="text-sm text-slate-400 mt-1 max-w-xs">{t('noDataSourcesHint')}</p>
                     </div>
                   </td>
                 </tr>
               ) : (
                 dataSources.map((ds) => (
-                  <tr key={ds.id} className="hover:bg-slate-50/50 transition-colors">
+                  <tr key={ds.id} className="hover:bg-slate-50/60 transition-colors">
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${ds.type === 'FILE' ? 'bg-emerald-100' : 'bg-blue-100'}`}>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${ds.type === 'FILE' ? 'bg-emerald-100' : 'bg-sky-100'}`}>
                           {ds.type === 'FILE' ? (
                             <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
                           ) : (
-                            <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                            <svg className="w-4 h-4 text-sky-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
                           )}
                         </div>
-                        <div>
-                          <div className="font-medium text-slate-900">{ds.name}</div>
-                          {ds.error && <div className="text-xs text-red-500 mt-0.5">{ds.error}</div>}
+                        <div className="min-w-0">
+                          <div className="font-medium text-slate-900 truncate">{ds.name}</div>
+                          {ds.error && <div className="text-xs text-red-500 mt-0.5 truncate">{ds.error}</div>}
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-500">{ds.type}</td>
-                    <td className="px-6 py-4">{getStatusBadge(ds.status)}</td>
-                    <td className="px-6 py-4 text-sm text-slate-500">{formatFileSize(ds.fileSize)}</td>
-                    <td className="px-6 py-4 text-sm text-slate-500">{new Date(ds.createdAt).toLocaleDateString()}</td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-md ${ds.type === 'FILE' ? 'bg-emerald-50 text-emerald-700' : 'bg-sky-50 text-sky-700'}`}>
+                        {ds.type}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">{getStatusBadge(ds.status)}</td>
+                    <td className="px-4 py-4 text-sm text-slate-500 whitespace-nowrap">{formatFileSize(ds.fileSize)}</td>
+                    <td className="px-4 py-4 text-sm text-slate-500 whitespace-nowrap">{new Date(ds.createdAt).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex justify-end gap-1">
                         {ds.status === 'COMPLETE' && (
                           <button onClick={() => { setPreviewDataSource({ id: ds.id, name: ds.name }); setPreviewModalOpen(true) }} className="p-2 rounded-lg text-slate-400 hover:text-teal-600 hover:bg-teal-50 transition-colors" title={t('viewContent')}>
@@ -412,7 +423,7 @@ export default function DataSourcesPage() {
                           </button>
                         )}
                         {ds.type === 'URL' && (
-                          <button onClick={() => handleResync(ds.id)} className="p-2 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors" title={t('reSync')}>
+                          <button onClick={() => handleResync(ds.id)} className="p-2 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors" title={t('reSync')}>
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                           </button>
                         )}

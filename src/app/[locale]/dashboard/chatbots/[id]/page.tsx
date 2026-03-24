@@ -177,7 +177,7 @@ export default function ChatbotConfigPage({
   const [enhanceError, setEnhanceError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch(`/api/chatbots/${chatbotId}`)
+    fetch(`/api/chatbots/${chatbotId}`, { cache: 'no-store' })
       .then((res) => {
         if (!res.ok) throw new Error('Failed to load chatbot')
         return res.json()
@@ -233,9 +233,14 @@ export default function ChatbotConfigPage({
         }),
       })
 
+      const responseData = await res.json()
       if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Failed to save')
+        throw new Error(responseData.error || 'Failed to save')
+      }
+
+      // Update local state from server response to ensure consistency
+      if (responseData.chatbot) {
+        setSuggestedPrompts(responseData.chatbot.suggestedPrompts || [])
       }
 
       setSuccess(true)

@@ -10,6 +10,7 @@ import Image from 'next/image'
 import { LogoutButton } from '@/components/LogoutButton'
 import { DesktopNavLinks, MobileNavLinks } from '@/components/NavLinks'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { AdminLink } from '@/components/AdminLink'
 import { getTranslations } from 'next-intl/server'
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -47,6 +48,7 @@ export default function DashboardLayout({
             </div>
 
             <div className="flex items-center gap-4">
+              <AdminLink />
               <LanguageSwitcher />
               <LogoutButton />
             </div>
