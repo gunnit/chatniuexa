@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/db'
 import FirecrawlApp from '@mendable/firecrawl-js'
 
 interface MapLink {
@@ -13,6 +14,18 @@ export async function POST(request: NextRequest) {
     const session = await auth()
     if (!session?.user?.tenantId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check plan — website crawling is a paid feature
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: session.user.tenantId },
+      select: { plan: true },
+    })
+    if (!tenant || tenant.plan === 'free') {
+      return NextResponse.json(
+        { error: 'PLAN_UPGRADE_REQUIRED' },
+        { status: 403 }
+      )
     }
 
     const { url, limit = 100 } = await request.json()

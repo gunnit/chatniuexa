@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 import SiteCrawlerModal from '@/components/SiteCrawlerModal'
 import DocumentPreviewModal from '@/components/DocumentPreviewModal'
 
@@ -31,6 +32,7 @@ export default function DataSourcesPage() {
   const [crawlerModalOpen, setCrawlerModalOpen] = useState(false)
   const [previewModalOpen, setPreviewModalOpen] = useState(false)
   const [previewDataSource, setPreviewDataSource] = useState<{ id: string; name: string } | null>(null)
+  const [userPlan, setUserPlan] = useState<string>('free')
 
   const fetchDataSources = async () => {
     try {
@@ -49,6 +51,10 @@ export default function DataSourcesPage() {
 
   useEffect(() => {
     fetchDataSources()
+    fetch('/api/billing/status')
+      .then((res) => res.json())
+      .then((data) => { if (data.plan) setUserPlan(data.plan) })
+      .catch(() => {})
   }, [])
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -292,7 +298,24 @@ export default function DataSourcesPage() {
         </div>
 
         {/* Crawl Site */}
-        <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6">
+        <div className="relative bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6 overflow-hidden">
+          {userPlan === 'free' && (
+            <div className="absolute inset-0 z-10 bg-white/80 backdrop-blur-[2px] flex flex-col items-center justify-center p-6 text-center">
+              <div className="p-2 rounded-full bg-amber-100 mb-3">
+                <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <p className="text-sm font-semibold text-slate-900 mb-1">{t('crawlProOnly')}</p>
+              <p className="text-xs text-slate-500 mb-3">{t('crawlUpgradeHint')}</p>
+              <Link href="/dashboard/billing" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 transition-all">
+                {t('upgradePlan')}
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </Link>
+            </div>
+          )}
           <div className="flex items-center gap-3 mb-4">
             <div className="p-2 rounded-xl bg-gradient-to-br from-teal-600 to-teal-700">
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -11,6 +11,18 @@ export async function POST(request: NextRequest) {
 
     const tenantId = session.user.tenantId
 
+    // Check plan — website crawling is a paid feature
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { plan: true },
+    })
+    if (!tenant || tenant.plan === 'free') {
+      return NextResponse.json(
+        { error: 'PLAN_UPGRADE_REQUIRED' },
+        { status: 403 }
+      )
+    }
+
     const { urls } = await request.json()
 
     if (!urls || !Array.isArray(urls) || urls.length === 0) {
