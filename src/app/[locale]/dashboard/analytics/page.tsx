@@ -219,7 +219,7 @@ export default function AnalyticsPage() {
             <div className="w-3.5 h-12 rounded-sm bg-slate-100 animate-pulse" style={{ animationDelay: '450ms' }} />
             <div className="w-3.5 h-4 rounded-sm bg-slate-100 animate-pulse" style={{ animationDelay: '600ms' }} />
           </div>
-          <p className="font-serif text-xl text-slate-300 italic">{t('noData')}</p>
+          <p className="text-xl text-slate-300 italic">{t('noData')}</p>
         </div>
       </div>
     )
@@ -299,7 +299,7 @@ export default function AnalyticsPage() {
 
       {/* ── Header ── */}
       <div className="mb-10 relative">
-        <h1 className="font-serif text-4xl sm:text-[2.75rem] text-slate-900 tracking-tight leading-tight">
+        <h1 className="text-2xl font-bold text-slate-900">
           {t('title')}
         </h1>
         <p className="text-slate-400 mt-2 text-[0.9rem]">{t('subtitle')}</p>
@@ -324,7 +324,7 @@ export default function AnalyticsPage() {
                 {stat.icon}
               </div>
             </div>
-            <p className="font-serif text-[3.25rem] leading-none text-slate-900 tracking-tight tabular-nums mt-2">
+            <p className="text-3xl font-bold text-slate-900 tabular-nums mt-2">
               {stat.value}
             </p>
           </div>
@@ -423,7 +423,7 @@ export default function AnalyticsPage() {
                         x="60" y="55"
                         textAnchor="middle"
                         dominantBaseline="central"
-                        style={{ fontFamily: 'var(--font-display)', fontSize: '26px', fontWeight: 400 }}
+                        style={{ fontSize: '26px', fontWeight: 700 }}
                         className="fill-slate-900"
                       >
                         {Math.round(pct)}%
