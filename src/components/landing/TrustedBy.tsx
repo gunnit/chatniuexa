@@ -46,7 +46,7 @@ export function TrustedBy() {
     <section className="relative z-10 py-14 sm:py-16 overflow-hidden">
       {/* Label */}
       <div className="text-center mb-10">
-        <p className="text-xs font-semibold tracking-[0.2em] uppercase text-[#A1A1AA]">
+        <p className="text-xs font-semibold tracking-[0.2em] uppercase text-[#71717A]">
           {t('trustedBy')}
         </p>
       </div>

@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "title": "ChatAziendale.it - AI Chatbots Trained on Your Data",
-    "description": "Deploy intelligent AI chatbots that learn from your business data and provide accurate, cited responses to your customers.",
+    "title": "ChatAziendale | AI Chatbot Builder Trained on Your Business Data",
+    "description": "Build a custom AI chatbot in 5 minutes. Train it on your documents, website, or text — it answers questions instantly with source citations. No code required. Free plan available.",
     "dashboardTitle": "Dashboard - ChatAziendale.it",
     "dashboardDescription": "Manage your AI chatbot",
     "privacyTitle": "Privacy Policy - ChatAziendale.it",
@@ -67,12 +67,12 @@
     "previewSource": "Source: shipping-policy.pdf — page 3",
     "ctaTitle": "Ready to stop answering the same questions?",
     "ctaSubtitle": "Start free. No credit card. Your first chatbot is live in minutes.",
-    "ctaGetStarted": "Get started free",
+    "ctaGetStarted": "Start free",
     "trustedBy": "Trusted by innovative companies across Italy"
   },
   "nav": {
     "login": "Log in",
-    "getStarted": "Get Started",
+    "getStarted": "Start Free",
     "dashboard": "Dashboard",
     "chatbots": "Chatbots",
     "dataSources": "Data Sources",

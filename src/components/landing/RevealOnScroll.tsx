@@ -16,6 +16,12 @@ export function RevealOnScroll({ children, delay = 0, className = '' }: RevealOn
     const el = ref.current
     if (!el) return
 
+    // Respect prefers-reduced-motion
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setIsVisible(true)
+      return
+    }
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {

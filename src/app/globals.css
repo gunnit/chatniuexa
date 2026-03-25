@@ -556,3 +556,30 @@ body {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* ============================================
+   REDUCED MOTION — Accessibility
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  .stagger-children > * {
+    animation: none;
+    opacity: 1;
+  }
+
+  .marquee-track {
+    animation: none;
+  }
+
+  .demo-tilt {
+    transform: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

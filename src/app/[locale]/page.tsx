@@ -20,7 +20,7 @@ export default async function Home() {
   const tc = await getTranslations("common");
 
   return (
-    <div className="relative min-h-screen bg-[#FAFAF7] text-[#1B1B1F] overflow-x-hidden">
+    <div className="relative min-h-screen bg-[#FAFAF7] text-[#1B1B1F] overflow-x-hidden" style={{ colorScheme: 'light' }}>
       <Navbar />
 
       {/* ── HERO ── */}
@@ -48,7 +48,7 @@ export default async function Home() {
                   className="group inline-flex items-center justify-center gap-2 px-7 py-3.5 text-[15px] font-semibold text-white bg-[#0F766E] rounded-xl hover:bg-[#0D6960] transition-colors duration-200 active:scale-[0.98]"
                 >
                   <span>{t("ctaStartTrial")}</span>
-                  <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>
                 </Link>
@@ -60,10 +60,10 @@ export default async function Home() {
                 </Link>
               </div>
 
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] text-[#71717A]">
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-[#52525B]">
                 {(["benefit1", "benefit2", "benefit3"] as const).map((key) => (
                   <div key={key} className="flex items-center gap-1.5">
-                    <svg className="w-3.5 h-3.5 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-3.5 h-3.5 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                     </svg>
                     {t(key)}
@@ -154,7 +154,7 @@ export default async function Home() {
                 {/* User message */}
                 <div className="flex gap-3">
                   <div className="w-8 h-8 rounded-full bg-[#E4E4E7] flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4 text-[#71717A]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-4 h-4 text-[#71717A]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" />
                     </svg>
                   </div>
@@ -174,15 +174,15 @@ export default async function Home() {
                         </div>
                       ))}
                     </div>
-                    <div className="flex items-center gap-1.5 pt-3 border-t border-[#E4E4E7] text-xs text-[#A1A1AA]">
-                      <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="flex items-center gap-1.5 pt-3 border-t border-[#E4E4E7] text-xs text-[#71717A]">
+                      <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
                       </svg>
                       {t("previewSource")}
                     </div>
                   </div>
                   <div className="w-8 h-8 rounded-full bg-teal-600 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
                     </svg>
                   </div>
@@ -252,7 +252,7 @@ export default async function Home() {
             <h2 className="font-serif text-3xl sm:text-4xl lg:text-[2.75rem] tracking-[-0.015em] text-white mb-5 leading-tight">
               {t("ctaTitle")}
             </h2>
-            <p className="text-lg text-teal-300/60 max-w-xl mx-auto mb-10 leading-relaxed">
+            <p className="text-lg text-teal-200/80 max-w-xl mx-auto mb-10 leading-relaxed">
               {t("ctaSubtitle")}
             </p>
             <Link
@@ -260,7 +260,7 @@ export default async function Home() {
               className="group inline-flex items-center justify-center gap-2.5 px-10 py-4 text-base font-semibold text-[#0A3D38] bg-white rounded-xl hover:bg-teal-50 transition-colors duration-200 active:scale-[0.98]"
             >
               <span>{t("ctaGetStarted")}</span>
-              <svg className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
             </Link>
@@ -273,12 +273,12 @@ export default async function Home() {
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <Image src="/images/logo.png" alt="ChatAziendale.it" width={28} height={28} className="opacity-60" />
-            <span className="text-sm text-[#A1A1AA]">{tc("copyright")}</span>
+            <span className="text-sm text-[#71717A]">{tc("copyright")}</span>
           </div>
           <div className="flex items-center gap-6">
-            <Link href="/docs" className="text-sm text-[#A1A1AA] hover:text-[#52525B] transition-colors duration-200">{tc("docs")}</Link>
-            <Link href="/privacy" className="text-sm text-[#A1A1AA] hover:text-[#52525B] transition-colors duration-200">{tc("privacy")}</Link>
-            <Link href="/terms" className="text-sm text-[#A1A1AA] hover:text-[#52525B] transition-colors duration-200">{tc("terms")}</Link>
+            <Link href="/docs" className="text-sm text-[#71717A] hover:text-[#3F3F46] transition-colors duration-200">{tc("docs")}</Link>
+            <Link href="/privacy" className="text-sm text-[#71717A] hover:text-[#3F3F46] transition-colors duration-200">{tc("privacy")}</Link>
+            <Link href="/terms" className="text-sm text-[#71717A] hover:text-[#3F3F46] transition-colors duration-200">{tc("terms")}</Link>
           </div>
         </div>
       </footer>
