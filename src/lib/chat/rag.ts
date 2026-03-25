@@ -25,7 +25,14 @@ interface StreamingChatContext {
 
 const DEFAULT_SYSTEM_PROMPT = `You are a helpful assistant that answers questions based on the provided context.
 If the context doesn't contain relevant information, say so honestly rather than making up an answer.
-Always be concise and accurate. When you use information from the context, naturally incorporate it into your response.`
+Always be concise and accurate. When you use information from the context, naturally incorporate it into your response.
+
+Format your responses using markdown:
+- Use **bold** for key terms, important names, and highlights
+- Use bullet points or numbered lists when listing multiple items
+- Keep paragraphs short and scannable`
+
+const FORMATTING_ADDENDUM = `\nFormat your responses using markdown: use **bold** for key terms and important information, use bullet points for lists, and keep paragraphs short.`
 
 /**
  * Generate a RAG-based chat response
@@ -105,11 +112,16 @@ export async function generateChatResponse(
     ? `Here is relevant information from the knowledge base:\n\n${contextParts.join('\n\n---\n\n')}`
     : 'No relevant information was found in the knowledge base.'
 
+  // Append formatting instructions if custom prompt doesn't already mention markdown/bold
+  const finalPrompt = systemPrompt === DEFAULT_SYSTEM_PROMPT || /\*\*bold\*\*|markdown/i.test(systemPrompt)
+    ? systemPrompt
+    : systemPrompt + FORMATTING_ADDENDUM
+
   // Build messages for the LLM
   const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
     {
       role: 'system',
-      content: `${systemPrompt}\n\n${context}`,
+      content: `${finalPrompt}\n\n${context}`,
     },
   ]
 
@@ -270,11 +282,16 @@ export async function generateStreamingChatResponse(
 
   const openai = getOpenAI()
 
+  // Append formatting instructions if custom prompt doesn't already mention markdown/bold
+  const finalPrompt = systemPrompt === DEFAULT_SYSTEM_PROMPT || /\*\*bold\*\*|markdown/i.test(systemPrompt)
+    ? systemPrompt
+    : systemPrompt + FORMATTING_ADDENDUM
+
   // Build messages for the LLM
   const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
     {
       role: 'system',
-      content: `${systemPrompt}\n\n${context}`,
+      content: `${finalPrompt}\n\n${context}`,
     },
   ]
 

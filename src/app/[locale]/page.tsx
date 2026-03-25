@@ -467,7 +467,7 @@ export default async function Home() {
       {/* ChatNiuexa Widget */}
       <Script
         src="https://chatniuexa.onrender.com/widget.js"
-        data-chatbot-id="cmmalql0a000f26c057twr5uh"
+        data-chatbot-id="cmm7mojtm0001fzrkekjpfh84"
         strategy="afterInteractive"
       />
     </div>
