@@ -22,7 +22,7 @@ const intlMiddleware = createMiddleware(routing)
 const publicRoutes = ['/', '/login', '/signup', '/signup/check-email', '/auth/error', '/widget.js', '/privacy', '/terms', '/forgot-password', '/reset-password']
 
 // Routes that start with these prefixes are public
-const publicPrefixes = ['/api/auth', '/api/widget', '/api/chat']
+const publicPrefixes = ['/api/auth', '/api/widget', '/api/chat', '/api/public']
 
 // Strip locale prefix to get the actual path
 function stripLocale(pathname: string): string {
@@ -56,6 +56,11 @@ export default function middleware(req: NextRequest) {
     if (!isLoggedIn) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    return NextResponse.next()
+  }
+
+  // Public chat pages bypass i18n and auth entirely
+  if (pathname.startsWith('/c/')) {
     return NextResponse.next()
   }
 

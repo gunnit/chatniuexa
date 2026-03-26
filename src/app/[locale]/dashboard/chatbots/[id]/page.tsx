@@ -19,6 +19,7 @@ interface Chatbot {
   chatIconType: string | null
   chatIconPreset: string | null
   chatIconImage: string | null
+  shareToken: string | null
 }
 
 const PRESET_ICONS: Record<string, { label: string; svg: string }> = {
@@ -175,6 +176,8 @@ export default function ChatbotConfigPage({
   const [chatIconImage, setChatIconImage] = useState<string | null>(null)
   const [enhancing, setEnhancing] = useState(false)
   const [enhanceError, setEnhanceError] = useState<string | null>(null)
+  const [shareToken, setShareToken] = useState<string | null>(null)
+  const [shareLoading, setShareLoading] = useState(false)
 
   useEffect(() => {
     fetch(`/api/chatbots/${chatbotId}`, { cache: 'no-store' })
@@ -199,6 +202,7 @@ export default function ChatbotConfigPage({
           setChatIconType(c.chatIconType || 'default')
           setChatIconPreset(c.chatIconPreset || null)
           setChatIconImage(c.chatIconImage || null)
+          setShareToken(c.shareToken || null)
         }
       })
       .catch((err) => {
@@ -798,9 +802,79 @@ export default function ChatbotConfigPage({
             </div>
           )}
 
-          {/* Embed Code */}
+          {/* Embed Code & Share */}
           {activeTab === 'embed' && (
             <div className="space-y-6">
+              {/* Public Share Link */}
+              <div className="p-5 bg-white border border-slate-200 rounded-xl">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h4 className="font-semibold text-slate-900">{t('shareTitle')}</h4>
+                    <p className="text-sm text-slate-500 mt-1">{t('shareDesc')}</p>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      setShareLoading(true)
+                      try {
+                        if (shareToken) {
+                          await fetch(`/api/chatbots/${chatbotId}/share`, { method: 'DELETE' })
+                          setShareToken(null)
+                        } else {
+                          const res = await fetch(`/api/chatbots/${chatbotId}/share`, { method: 'POST' })
+                          const data = await res.json()
+                          if (data.shareToken) setShareToken(data.shareToken)
+                        }
+                      } catch { /* ignore */ }
+                      setShareLoading(false)
+                    }}
+                    disabled={shareLoading}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-teal-500/20 disabled:opacity-50 ${
+                      shareToken ? 'bg-teal-500' : 'bg-slate-300'
+                    }`}
+                  >
+                    <span className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transform transition-transform duration-200 ${
+                      shareToken ? 'translate-x-6' : 'translate-x-1'
+                    }`} />
+                  </button>
+                </div>
+                {shareToken && (
+                  <div className="mt-4">
+                    <label className="block text-xs font-medium text-slate-500 mb-2 uppercase tracking-wide">{t('shareUrl')}</label>
+                    <div className="relative">
+                      <pre className="p-3.5 bg-slate-50 text-slate-700 rounded-lg overflow-x-auto text-sm font-mono border border-slate-200">
+                        {appUrl}/c/{shareToken}
+                      </pre>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(`${appUrl}/c/${shareToken}`)
+                          setSuccess(true)
+                          setTimeout(() => setSuccess(false), 2000)
+                        }}
+                        className="absolute top-2.5 right-2.5 flex items-center gap-1.5 px-3 py-1.5 bg-teal-500 text-white text-xs font-medium rounded-lg hover:bg-teal-600 transition-colors"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        {t('copyLink')}
+                      </button>
+                    </div>
+                    <p className="text-xs text-amber-600 mt-2.5 flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                      </svg>
+                      {t('shareWarning')}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Divider */}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200" /></div>
+                <div className="relative flex justify-center"><span className="bg-white px-3 text-xs text-slate-400 uppercase tracking-wide">or</span></div>
+              </div>
+
+              {/* Embed Widget Code */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">{t('embedTitle')}</label>
                 <p className="text-sm text-slate-500 mb-4">{t('embedDesc')}</p>

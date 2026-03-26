@@ -44,6 +44,7 @@ const updateChatbotSchema = z.object({
   chatIconType: z.enum(['default', 'preset', 'custom']).optional(),
   chatIconPreset: z.string().max(30).nullish(),
   chatIconImage: z.string().max(50000).nullish(),
+  shareToken: z.string().max(20).nullish(),
 })
 
 export async function PATCH(

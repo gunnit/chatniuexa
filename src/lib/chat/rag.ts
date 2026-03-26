@@ -8,6 +8,7 @@ interface Source {
   similarity: number
   documentTitle: string
   dataSourceName: string
+  sourceUrl?: string
 }
 
 interface ChatResponse {
@@ -82,7 +83,7 @@ export async function generateChatResponse(
       where: { id: { in: documentIds } },
       include: {
         dataSource: {
-          select: { name: true },
+          select: { name: true, sourceUrl: true },
         },
       },
     })
@@ -98,6 +99,7 @@ export async function generateChatResponse(
           similarity: chunk.similarity,
           documentTitle: document.title || 'Untitled',
           dataSourceName: document.dataSource.name,
+          sourceUrl: document.dataSource.sourceUrl || undefined,
         })
 
         contextParts.push(
@@ -106,6 +108,9 @@ export async function generateChatResponse(
       }
     }
   }
+
+  // Deduplicate sources — keep highest similarity per document title
+  const deduplicatedSources = deduplicateSources(sources)
 
   // Build context section
   const context = contextParts.length > 0
@@ -150,15 +155,29 @@ export async function generateChatResponse(
   const responseContent = completion.choices[0]?.message?.content || 'I apologize, but I was unable to generate a response.'
 
   // Calculate confidence based on source quality
-  const confidenceScore = calculateConfidence(sources)
-  const confidence = confidenceScore >= 0.8 ? 'high' : confidenceScore >= 0.5 ? 'medium' : 'low'
+  const confidenceScore = calculateConfidence(deduplicatedSources)
+  const confidence = confidenceScore >= 0.7 ? 'high' : confidenceScore >= 0.4 ? 'medium' : 'low'
 
   return {
     content: responseContent,
-    sources,
+    sources: deduplicatedSources,
     confidence,
     confidenceScore,
   }
+}
+
+/**
+ * Deduplicate sources — keep the highest-similarity entry per document title
+ */
+function deduplicateSources(sources: Source[]): Source[] {
+  const bestByTitle = new Map<string, Source>()
+  for (const source of sources) {
+    const existing = bestByTitle.get(source.documentTitle)
+    if (!existing || source.similarity > existing.similarity) {
+      bestByTitle.set(source.documentTitle, source)
+    }
+  }
+  return Array.from(bestByTitle.values())
 }
 
 /**
@@ -166,40 +185,42 @@ export async function generateChatResponse(
  */
 function calculateConfidence(sources: Source[]): number {
   if (sources.length === 0) {
-    return 0.2 // Low confidence when no sources found
+    return 0.15 // Low confidence when no sources found
   }
 
-  // Weight by similarity scores
-  const avgSimilarity = sources.reduce((sum, s) => sum + s.similarity, 0) / sources.length
+  // Use the best source's similarity as the primary signal
+  const bestSimilarity = Math.max(...sources.map(s => s.similarity))
 
-  // Boost for multiple high-quality sources
-  const highQualitySources = sources.filter((s) => s.similarity >= 0.8).length
-  const sourceBonus = Math.min(highQualitySources * 0.05, 0.15)
+  // Small bonus for having multiple relevant sources
+  const sourceCountBonus = Math.min((sources.length - 1) * 0.03, 0.1)
 
-  return Math.min(avgSimilarity + sourceBonus, 1)
+  return Math.min(bestSimilarity + sourceCountBonus, 1)
 }
 
 /**
- * Prepare context for streaming chat (retrieves sources without generating response)
+ * Generate embedding for a user query (can be started early for parallelization)
  */
-export async function prepareStreamingContext(
+export async function generateQueryEmbedding(userMessage: string): Promise<number[]> {
+  const openai = getOpenAI()
+  const response = await openai.embeddings.create({
+    model: EMBEDDING_MODEL,
+    input: userMessage,
+  })
+  return response.data[0].embedding
+}
+
+/**
+ * Prepare streaming context using a pre-computed embedding
+ */
+export async function prepareStreamingContextWithEmbedding(
   tenantId: string,
-  userMessage: string,
+  queryEmbedding: number[],
   options: {
     maxSources?: number
     minSimilarity?: number
   } = {}
 ): Promise<{ context: string; streamingContext: StreamingChatContext }> {
-  const { maxSources = 5, minSimilarity = 0.2 } = options // Lowered to 0.2 for multilingual content recall
-
-  const openai = getOpenAI()
-
-  // Generate embedding for the user's query
-  const embeddingResponse = await openai.embeddings.create({
-    model: EMBEDDING_MODEL,
-    input: userMessage,
-  })
-  const queryEmbedding = embeddingResponse.data[0].embedding
+  const { maxSources = 5, minSimilarity = 0.2 } = options
 
   // Search for relevant chunks
   const relevantChunks = await searchSimilarChunks(
@@ -219,7 +240,7 @@ export async function prepareStreamingContext(
       where: { id: { in: documentIds } },
       include: {
         dataSource: {
-          select: { name: true },
+          select: { name: true, sourceUrl: true },
         },
       },
     })
@@ -235,6 +256,7 @@ export async function prepareStreamingContext(
           similarity: chunk.similarity,
           documentTitle: document.title || 'Untitled',
           dataSourceName: document.dataSource.name,
+          sourceUrl: document.dataSource.sourceUrl || undefined,
         })
 
         contextParts.push(
@@ -244,23 +266,41 @@ export async function prepareStreamingContext(
     }
   }
 
+  // Deduplicate sources — keep highest similarity per document title
+  const deduplicatedSources = deduplicateSources(sources)
+
   // Build context section
   const context = contextParts.length > 0
     ? `Here is relevant information from the knowledge base:\n\n${contextParts.join('\n\n---\n\n')}`
     : 'No relevant information was found in the knowledge base.'
 
   // Calculate confidence
-  const confidenceScore = calculateConfidence(sources)
-  const confidence = confidenceScore >= 0.8 ? 'high' : confidenceScore >= 0.5 ? 'medium' : 'low'
+  const confidenceScore = calculateConfidence(deduplicatedSources)
+  const confidence = confidenceScore >= 0.7 ? 'high' : confidenceScore >= 0.4 ? 'medium' : 'low'
 
   return {
     context,
     streamingContext: {
-      sources,
+      sources: deduplicatedSources,
       confidence,
       confidenceScore,
     },
   }
+}
+
+/**
+ * Prepare context for streaming chat (convenience wrapper)
+ */
+export async function prepareStreamingContext(
+  tenantId: string,
+  userMessage: string,
+  options: {
+    maxSources?: number
+    minSimilarity?: number
+  } = {}
+): Promise<{ context: string; streamingContext: StreamingChatContext }> {
+  const queryEmbedding = await generateQueryEmbedding(userMessage)
+  return prepareStreamingContextWithEmbedding(tenantId, queryEmbedding, options)
 }
 
 /**

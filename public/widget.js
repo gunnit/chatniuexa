@@ -367,6 +367,28 @@
       line-height: 1.4;
     }
 
+    .message-source a {
+      color: #2563eb;
+      text-decoration: none;
+    }
+
+    .message-source a:hover {
+      text-decoration: underline;
+    }
+
+    .reaction-feedback {
+      font-size: 11px;
+      color: #6b7280;
+      margin-left: 4px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      align-self: center;
+    }
+
+    .reaction-feedback.visible {
+      opacity: 1;
+    }
+
     .confidence-indicator {
       display: inline-flex;
       align-items: center;
@@ -978,9 +1000,15 @@
     }
 
     if (sources && sources.length > 0) {
+      const uniqueSources = deduplicateSourcesClient(sources);
       html += `<div class="message-sources">
         <div class="message-sources-title">Sources:</div>
-        ${sources.map(s => `<div class="message-source">${escapeHtml(s.documentTitle)}</div>`).join('')}
+        ${uniqueSources.map(s => {
+          if (s.sourceUrl) {
+            return `<div class="message-source"><a href="${escapeHtml(s.sourceUrl)}" target="_blank" rel="noopener">${escapeHtml(s.documentTitle)}</a></div>`;
+          }
+          return `<div class="message-source">${escapeHtml(s.documentTitle)}</div>`;
+        }).join('')}
       </div>`;
     }
 
@@ -998,6 +1026,7 @@
               <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/>
             </svg>
           </button>
+          <span class="reaction-feedback"></span>
         </div>`;
     }
 
@@ -1138,6 +1167,7 @@
           <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/>
         </svg>
       </button>
+      <span class="reaction-feedback"></span>
     `;
     content.appendChild(reactionsDiv);
 
@@ -1157,11 +1187,17 @@
 
     // Add sources
     if (sources && sources.length > 0) {
+      const uniqueSources = deduplicateSourcesClient(sources);
       const sourcesDiv = document.createElement('div');
       sourcesDiv.className = 'message-sources';
       sourcesDiv.innerHTML = `
         <div class="message-sources-title">Sources:</div>
-        ${sources.map(s => `<div class="message-source">${escapeHtml(s.documentTitle)}</div>`).join('')}
+        ${uniqueSources.map(s => {
+          if (s.sourceUrl) {
+            return `<div class="message-source"><a href="${escapeHtml(s.sourceUrl)}" target="_blank" rel="noopener">${escapeHtml(s.documentTitle)}</a></div>`;
+          }
+          return `<div class="message-source">${escapeHtml(s.documentTitle)}</div>`;
+        }).join('')}
       `;
       content.appendChild(sourcesDiv);
     }
@@ -1172,6 +1208,16 @@
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
   }
 
+  // Deduplicate sources on the client side — keep first occurrence per title
+  function deduplicateSourcesClient(sources) {
+    const seen = new Set();
+    return sources.filter(s => {
+      if (seen.has(s.documentTitle)) return false;
+      seen.add(s.documentTitle);
+      return true;
+    });
+  }
+
   // Handle reaction click
   async function handleReaction(btn, messageId) {
     const reaction = btn.getAttribute('data-reaction');
@@ -1180,6 +1226,14 @@
     // Visual feedback
     reactionsDiv.querySelectorAll('.reaction-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+
+    // Show feedback text
+    const feedback = reactionsDiv.querySelector('.reaction-feedback');
+    if (feedback) {
+      feedback.textContent = reaction === 'up' ? 'Thanks!' : 'Thanks for the feedback';
+      feedback.classList.add('visible');
+      setTimeout(() => feedback.classList.remove('visible'), 3000);
+    }
 
     // Send to server if messageId exists
     if (messageId) {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { prepareStreamingContext, generateStreamingChatResponse } from '@/lib/chat/rag'
+import { generateQueryEmbedding, prepareStreamingContextWithEmbedding, generateStreamingChatResponse } from '@/lib/chat/rag'
 import { logUsage } from '@/lib/usage'
 import { getCorsHeaders } from '@/lib/cors'
 import { rateLimit } from '@/lib/rate-limit'
@@ -35,10 +35,33 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { chatbotId, sessionId, message } = chatSchema.parse(body)
 
-    // Get chatbot (no auth required - this is the public API)
-    const chatbot = await prisma.chatbot.findUnique({
-      where: { id: chatbotId },
-    })
+    // Phase 1: Fire all independent work in parallel
+    // Embedding generation (~300-500ms) overlaps with DB queries (~75ms total)
+    const embeddingPromise = generateQueryEmbedding(message)
+    const chatbotPromise = prisma.chatbot.findUnique({ where: { id: chatbotId } })
+    const conversationPromise = getOrCreateConversation(chatbotId, sessionId)
+
+    // Chain usage check off chatbot (starts as soon as chatbot resolves)
+    const usagePromise = chatbotPromise.then((bot) =>
+      bot
+        ? logUsage({ tenantId: bot.tenantId, chatbotId: bot.id, type: 'chat', tokens: 500, model: bot.model })
+        : null
+    )
+
+    // Chain RAG off chatbot + embedding (starts when both resolve)
+    const ragPromise = Promise.all([chatbotPromise, embeddingPromise]).then(([bot, embedding]) =>
+      bot
+        ? prepareStreamingContextWithEmbedding(bot.tenantId, embedding)
+        : null
+    )
+
+    // Await all results
+    const [chatbot, conversation, usageCheck, ragResult] = await Promise.all([
+      chatbotPromise,
+      conversationPromise,
+      usagePromise,
+      ragPromise,
+    ])
 
     if (!chatbot) {
       return NextResponse.json(
@@ -47,47 +70,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check usage limits (estimate ~500 tokens per message)
-    const usageCheck = await logUsage({
-      tenantId: chatbot.tenantId,
-      chatbotId: chatbot.id,
-      type: 'chat',
-      tokens: 500,
-      model: chatbot.model,
-    })
-
-    if (!usageCheck.allowed) {
+    if (!usageCheck?.allowed) {
       return NextResponse.json(
-        { error: usageCheck.reason || 'Usage limit exceeded' },
+        { error: usageCheck?.reason || 'Usage limit exceeded' },
         { status: 429, headers: corsHeaders }
       )
     }
 
-    // Get or create conversation
-    let conversation = await prisma.conversation.findFirst({
-      where: {
-        chatbotId,
-        sessionId,
-      },
-      include: {
-        messages: {
-          orderBy: { createdAt: 'asc' },
-          take: 20,
-        },
-      },
-    })
-
-    if (!conversation) {
-      conversation = await prisma.conversation.create({
-        data: {
-          chatbotId,
-          sessionId,
-        },
-        include: {
-          messages: true,
-        },
-      })
-    }
+    const { context, streamingContext } = ragResult!
 
     // Build conversation history
     const history = conversation.messages.map((m) => ({
@@ -95,21 +85,14 @@ export async function POST(request: NextRequest) {
       content: m.content,
     }))
 
-    // Prepare context (retrieves sources)
-    const { context, streamingContext } = await prepareStreamingContext(
-      chatbot.tenantId,
-      message,
-      {}
-    )
-
-    // Save user message
-    await prisma.message.create({
+    // Fire-and-forget user message save (don't block streaming)
+    prisma.message.create({
       data: {
         conversationId: conversation.id,
         role: 'USER',
         content: message,
       },
-    })
+    }).catch((err) => console.error('Failed to save user message:', err))
 
     // Generate streaming response
     const stream = await generateStreamingChatResponse(
@@ -229,4 +212,22 @@ export async function POST(request: NextRequest) {
       { status: 500, headers: corsHeaders }
     )
   }
+}
+
+async function getOrCreateConversation(chatbotId: string, sessionId: string) {
+  const existing = await prisma.conversation.findFirst({
+    where: { chatbotId, sessionId },
+    include: {
+      messages: {
+        orderBy: { createdAt: 'asc' as const },
+        take: 20,
+      },
+    },
+  })
+  if (existing) return existing
+
+  return prisma.conversation.create({
+    data: { chatbotId, sessionId },
+    include: { messages: true },
+  })
 }

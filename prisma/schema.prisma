@@ -279,6 +279,9 @@ model Chatbot {
   chatIconPreset String?                        // e.g. "headset", "robot", "help"
   chatIconImage  String?  @db.Text              // base64 data URL (~2-8KB)
 
+  // Public sharing
+  shareToken   String?  @unique               // Short token for public chat URL (/c/<token>)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

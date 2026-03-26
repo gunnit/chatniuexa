@@ -270,7 +270,13 @@
     "chatbotNotFound": "Chatbot non trovato",
     "testMode": "Modalità Test",
     "close": "Chiudi",
-    "typeMessage": "Scrivi un messaggio..."
+    "typeMessage": "Scrivi un messaggio...",
+    "shareTitle": "Link Chat Pubblico",
+    "shareDesc": "Genera un link pubblico per condividere il tuo chatbot. Chiunque abbia il link può chattare senza accedere.",
+    "shareUrl": "URL di condivisione",
+    "copyLink": "Copia Link",
+    "linkCopied": "Link copiato!",
+    "shareWarning": "Chiunque abbia questo link potrà chattare. L'utilizzo viene conteggiato nei limiti del tuo piano."
   },
   "dataSources": {
     "title": "Fonti Dati",
