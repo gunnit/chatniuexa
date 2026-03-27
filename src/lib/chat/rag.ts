@@ -24,8 +24,15 @@ interface StreamingChatContext {
   confidenceScore: number
 }
 
-const DEFAULT_SYSTEM_PROMPT = `You are a helpful assistant that answers questions based on the provided context.
-If the context doesn't contain relevant information, say so honestly rather than making up an answer.
+const DEFAULT_SYSTEM_PROMPT = `You are a helpful assistant that ONLY answers questions using the provided context from the knowledge base.
+
+IMPORTANT RULES:
+- You must ONLY use information from the provided context to answer questions.
+- If the context does not contain information relevant to the user's question, politely decline to answer and suggest the user ask about topics covered by your knowledge base.
+- NEVER answer questions using your general training knowledge. Even if you know the answer, do not provide it unless it is supported by the provided context.
+- Do not answer off-topic questions such as recipes, trivia, coding help, math problems, or anything unrelated to the context provided.
+- You may respond to basic greetings and pleasantries conversationally.
+
 Always be concise and accurate. When you use information from the context, naturally incorporate it into your response.
 
 Format your responses using markdown:
@@ -34,6 +41,8 @@ Format your responses using markdown:
 - Keep paragraphs short and scannable`
 
 const FORMATTING_ADDENDUM = `\nFormat your responses using markdown: use **bold** for key terms and important information, use bullet points for lists, and keep paragraphs short.`
+
+const SCOPE_GUARDRAIL = `\n\nIMPORTANT: You must ONLY answer questions based on the provided context above. If no relevant context was provided, or if the user's question is not related to the context, politely let them know you can only help with topics covered by your knowledge base. Never use your general training knowledge to answer questions.`
 
 /**
  * Generate a RAG-based chat response
@@ -115,12 +124,13 @@ export async function generateChatResponse(
   // Build context section
   const context = contextParts.length > 0
     ? `Here is relevant information from the knowledge base:\n\n${contextParts.join('\n\n---\n\n')}`
-    : 'No relevant information was found in the knowledge base.'
+    : 'No relevant information was found in the knowledge base. You MUST let the user know that their question is not covered by your knowledge base. Do NOT attempt to answer using your own knowledge. Instead, politely suggest they ask about topics that your knowledge base covers.'
 
   // Append formatting instructions if custom prompt doesn't already mention markdown/bold
-  const finalPrompt = systemPrompt === DEFAULT_SYSTEM_PROMPT || /\*\*bold\*\*|markdown/i.test(systemPrompt)
+  const promptWithFormatting = systemPrompt === DEFAULT_SYSTEM_PROMPT || /\*\*bold\*\*|markdown/i.test(systemPrompt)
     ? systemPrompt
     : systemPrompt + FORMATTING_ADDENDUM
+  const finalPrompt = promptWithFormatting + SCOPE_GUARDRAIL
 
   // Build messages for the LLM
   const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
@@ -272,7 +282,7 @@ export async function prepareStreamingContextWithEmbedding(
   // Build context section
   const context = contextParts.length > 0
     ? `Here is relevant information from the knowledge base:\n\n${contextParts.join('\n\n---\n\n')}`
-    : 'No relevant information was found in the knowledge base.'
+    : 'No relevant information was found in the knowledge base. You MUST let the user know that their question is not covered by your knowledge base. Do NOT attempt to answer using your own knowledge. Instead, politely suggest they ask about topics that your knowledge base covers.'
 
   // Calculate confidence
   const confidenceScore = calculateConfidence(deduplicatedSources)
@@ -323,9 +333,10 @@ export async function generateStreamingChatResponse(
   const openai = getOpenAI()
 
   // Append formatting instructions if custom prompt doesn't already mention markdown/bold
-  const finalPrompt = systemPrompt === DEFAULT_SYSTEM_PROMPT || /\*\*bold\*\*|markdown/i.test(systemPrompt)
+  const promptWithFormatting = systemPrompt === DEFAULT_SYSTEM_PROMPT || /\*\*bold\*\*|markdown/i.test(systemPrompt)
     ? systemPrompt
     : systemPrompt + FORMATTING_ADDENDUM
+  const finalPrompt = promptWithFormatting + SCOPE_GUARDRAIL
 
   // Build messages for the LLM
   const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
