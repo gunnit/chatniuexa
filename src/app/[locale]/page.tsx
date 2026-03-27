@@ -5,22 +5,147 @@ import { SplineScene } from "@/components/landing/SplineScene";
 import { RevealOnScroll } from "@/components/landing/RevealOnScroll";
 import { TrustedBy } from "@/components/landing/TrustedBy";
 import { Navbar } from "@/components/landing/Navbar";
-import { getTranslations } from "next-intl/server";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { getTranslations, getLocale } from "next-intl/server";
 
 export async function generateMetadata() {
   const t = await getTranslations("metadata");
+  const locale = await getLocale();
+  const baseUrl = "https://chataziendale.it";
+  const path = locale === "en" ? "" : `/${locale}`;
+
   return {
     title: t("title"),
     description: t("description"),
+    alternates: {
+      canonical: `${baseUrl}${path || "/"}`,
+      languages: {
+        en: `${baseUrl}/`,
+        it: `${baseUrl}/it`,
+        "x-default": `${baseUrl}/`,
+      },
+    },
+    openGraph: {
+      title: t("title"),
+      description: t("description"),
+      url: `${baseUrl}${path || "/"}`,
+      siteName: "ChatAziendale",
+      locale: locale === "it" ? "it_IT" : "en_US",
+      type: "website",
+      images: [
+        {
+          url: `${baseUrl}/images/og-image.png`,
+          width: 1200,
+          height: 630,
+          alt: "ChatAziendale — AI Chatbot Builder",
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: t("title"),
+      description: t("description"),
+      images: [`${baseUrl}/images/og-image.png`],
+    },
   };
 }
 
 export default async function Home() {
   const t = await getTranslations("landing");
   const tc = await getTranslations("common");
+  const locale = await getLocale();
+
+  const baseUrl = "https://chataziendale.it";
+
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "ChatAziendale",
+    url: baseUrl,
+    logo: `${baseUrl}/images/logo.png`,
+    description: "AI-powered chatbot platform that lets businesses create custom chatbots trained on their own data.",
+    contactPoint: {
+      "@type": "ContactPoint",
+      email: "support@chataziendale.it",
+      contactType: "customer support",
+    },
+  };
+
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "ChatAziendale",
+    url: baseUrl,
+    inLanguage: [locale === "it" ? "it-IT" : "en-US"],
+  };
+
+  const softwareSchema = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "ChatAziendale",
+    url: baseUrl,
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web",
+    description: "Build a custom AI chatbot in 5 minutes. Train it on your documents, website, or text — it answers questions instantly with source citations.",
+    offers: [
+      {
+        "@type": "Offer",
+        name: "Free",
+        price: "0",
+        priceCurrency: "USD",
+        description: "1 chatbot, 50 messages/month",
+      },
+      {
+        "@type": "Offer",
+        name: "Pro",
+        price: "29",
+        priceCurrency: "USD",
+        priceSpecification: { "@type": "UnitPriceSpecification", billingDuration: "P1M" },
+        description: "5 chatbots, 2,000 messages/month",
+      },
+      {
+        "@type": "Offer",
+        name: "Business",
+        price: "149",
+        priceCurrency: "USD",
+        priceSpecification: { "@type": "UnitPriceSpecification", billingDuration: "P1M" },
+        description: "Unlimited chatbots, 10,000 messages/month",
+      },
+    ],
+  };
+
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      { "@type": "Question", name: t("faq1Q"), acceptedAnswer: { "@type": "Answer", text: t("faq1A") } },
+      { "@type": "Question", name: t("faq2Q"), acceptedAnswer: { "@type": "Answer", text: t("faq2A") } },
+      { "@type": "Question", name: t("faq3Q"), acceptedAnswer: { "@type": "Answer", text: t("faq3A") } },
+      { "@type": "Question", name: t("faq4Q"), acceptedAnswer: { "@type": "Answer", text: t("faq4A") } },
+      { "@type": "Question", name: t("faq5Q"), acceptedAnswer: { "@type": "Answer", text: t("faq5A") } },
+      { "@type": "Question", name: t("faq6Q"), acceptedAnswer: { "@type": "Answer", text: t("faq6A") } },
+    ],
+  };
+
+  const howToSchema = {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: t("howTitle"),
+    description: "Set up an AI chatbot trained on your business data in three simple steps.",
+    step: [
+      { "@type": "HowToStep", position: 1, name: t("step1Title"), text: t("step1Desc") },
+      { "@type": "HowToStep", position: 2, name: t("step2Title"), text: t("step2Desc") },
+      { "@type": "HowToStep", position: 3, name: t("step3Title"), text: t("step3Desc") },
+    ],
+  };
 
   return (
     <div className="relative min-h-screen bg-[#FAFAF7] text-[#1B1B1F] overflow-x-hidden" style={{ colorScheme: 'light' }}>
+      <JsonLd data={organizationSchema} />
+      <JsonLd data={websiteSchema} />
+      <JsonLd data={softwareSchema} />
+      <JsonLd data={faqSchema} />
+      <JsonLd data={howToSchema} />
       <Navbar />
 
       {/* ── HERO ── */}

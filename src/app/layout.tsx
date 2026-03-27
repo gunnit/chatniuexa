@@ -24,6 +24,23 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "ChatAziendale.it - AI Chatbots Trained on Your Data",
   description: "Deploy intelligent AI chatbots that learn from your business data and provide accurate, cited responses to your customers.",
+  metadataBase: new URL("https://chataziendale.it"),
+  openGraph: {
+    type: "website",
+    siteName: "ChatAziendale",
+    locale: "en",
+    alternateLocale: "it",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
+  alternates: {
+    canonical: "/",
+    languages: {
+      en: "/",
+      it: "/it",
+    },
+  },
 };
 
 export default async function RootLayout({

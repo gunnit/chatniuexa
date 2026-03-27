@@ -4,7 +4,7 @@ const locales = ['en', 'it'] as const
 const defaultLocale = 'en'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://chataziendale.onrender.com'
+  const baseUrl = 'https://chataziendale.it'
 
   function entry(
     path: string,
@@ -27,8 +27,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return [
     entry('', 'weekly', 1),
-    entry('/login', 'monthly', 0.5),
-    entry('/signup', 'monthly', 0.7),
+    entry('/docs', 'monthly', 0.8),
     entry('/privacy', 'yearly', 0.3),
     entry('/terms', 'yearly', 0.3),
   ]

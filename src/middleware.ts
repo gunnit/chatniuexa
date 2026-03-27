@@ -19,7 +19,7 @@ import { routing } from '@/i18n/routing'
 const intlMiddleware = createMiddleware(routing)
 
 // Routes that don't require authentication (without locale prefix)
-const publicRoutes = ['/', '/login', '/signup', '/signup/check-email', '/auth/error', '/widget.js', '/privacy', '/terms', '/forgot-password', '/reset-password']
+const publicRoutes = ['/', '/login', '/signup', '/signup/check-email', '/auth/error', '/widget.js', '/privacy', '/terms', '/forgot-password', '/reset-password', '/docs']
 
 // Routes that start with these prefixes are public
 const publicPrefixes = ['/api/auth', '/api/widget', '/api/chat', '/api/public']
@@ -106,6 +106,6 @@ export const config = {
      * - Static image files (.svg, .png, .jpg, .jpeg, .gif, .webp)
      * - API routes (handled separately inside middleware)
      */
-    '/((?!_next/static|_next/image|favicon.ico|widget\\.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|widget\\.js|robots\\.txt|sitemap\\.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
