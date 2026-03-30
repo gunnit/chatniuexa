@@ -42,6 +42,13 @@ Format your responses using markdown:
 
 const FORMATTING_ADDENDUM = `\nFormat your responses using markdown: use **bold** for key terms and important information, use bullet points for lists, and keep paragraphs short.`
 
+const PII_GUARDRAIL = `\n\nPRIVACY & PII RULES (MANDATORY):
+- NEVER repeat, echo, or store personal information that users share in their messages. This includes names, email addresses, phone numbers, fiscal codes (codice fiscale), ID numbers, home addresses, or any other personally identifiable information.
+- If a user shares PII in their question, answer the underlying question WITHOUT repeating the PII back.
+- If a user asks you to call them, email them, or contact them using personal details they provided, explain that you cannot do so and suggest they contact the organization directly. Do NOT repeat their contact details in your response.
+- If a user asks for personal contact information of staff, CEOs, or associates, only provide publicly available business contact information (company websites, official emails, office phone numbers).
+- NEVER share member lists, personal contact details, or private data about any individual or company.`
+
 const SCOPE_GUARDRAIL = `\n\nIMPORTANT: You must ONLY answer questions based on the provided context above. If no relevant context was provided, or if the user's question is not related to the context, politely let them know you can only help with topics covered by your knowledge base. Never use your general training knowledge to answer questions.`
 
 /**
@@ -130,7 +137,7 @@ export async function generateChatResponse(
   const promptWithFormatting = systemPrompt === DEFAULT_SYSTEM_PROMPT || /\*\*bold\*\*|markdown/i.test(systemPrompt)
     ? systemPrompt
     : systemPrompt + FORMATTING_ADDENDUM
-  const finalPrompt = promptWithFormatting + SCOPE_GUARDRAIL
+  const finalPrompt = promptWithFormatting + SCOPE_GUARDRAIL + PII_GUARDRAIL
 
   // Build messages for the LLM
   const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
@@ -336,7 +343,7 @@ export async function generateStreamingChatResponse(
   const promptWithFormatting = systemPrompt === DEFAULT_SYSTEM_PROMPT || /\*\*bold\*\*|markdown/i.test(systemPrompt)
     ? systemPrompt
     : systemPrompt + FORMATTING_ADDENDUM
-  const finalPrompt = promptWithFormatting + SCOPE_GUARDRAIL
+  const finalPrompt = promptWithFormatting + SCOPE_GUARDRAIL + PII_GUARDRAIL
 
   // Build messages for the LLM
   const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
