@@ -22,7 +22,7 @@ const intlMiddleware = createMiddleware(routing)
 const publicRoutes = ['/', '/login', '/signup', '/signup/check-email', '/auth/error', '/widget.js', '/privacy', '/terms', '/forgot-password', '/reset-password', '/docs']
 
 // Routes that start with these prefixes are public
-const publicPrefixes = ['/api/auth', '/api/widget', '/api/chat', '/api/public']
+const publicPrefixes = ['/api/auth', '/api/widget', '/api/chat', '/api/public', '/api/webhooks']
 
 // Strip locale prefix to get the actual path
 function stripLocale(pathname: string): string {

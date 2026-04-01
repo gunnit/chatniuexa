@@ -286,8 +286,9 @@ model Chatbot {
   updatedAt DateTime @updatedAt
 
   // Relations
-  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  conversations Conversation[]
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  conversations  Conversation[]
+  whatsappConfig WhatsAppConfig?
 
   @@index([tenantId])
   @@map("chatbots")
@@ -297,6 +298,7 @@ model Conversation {
   id        String   @id @default(cuid())
   chatbotId String
   sessionId String   // Anonymous session identifier
+  channel   String   @default("web")  // "web" | "whatsapp"
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -334,6 +336,27 @@ model Message {
 
   @@index([conversationId])
   @@map("messages")
+}
+
+// ─────────────────────────────────────────────────────────────
+// WhatsApp Integration
+// ─────────────────────────────────────────────────────────────
+
+model WhatsAppConfig {
+  id                        String   @id @default(cuid())
+  chatbotId                 String   @unique
+  phoneNumberId             String   @unique  // Meta phone number ID (for webhook routing)
+  whatsappBusinessAccountId String?
+  accessToken               String   @db.Text  // Encrypted via AES-256-GCM
+  webhookVerifyToken        String             // Random token for Meta webhook verification
+  isActive                  Boolean  @default(true)
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  chatbot Chatbot @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+
+  @@index([phoneNumberId])
+  @@map("whatsapp_configs")
 }
 
 // ─────────────────────────────────────────────────────────────

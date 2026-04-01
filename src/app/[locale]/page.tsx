@@ -466,7 +466,7 @@ export default async function Home() {
                   <span className="text-sm text-[#71717A]">{t("pricingPerMonth")}</span>
                 </div>
                 <div className="space-y-3 mb-8 flex-1">
-                  {(["pricingProFeat1", "pricingProFeat2", "pricingProFeat3", "pricingProFeat4", "pricingProFeat5"] as const).map((key) => (
+                  {(["pricingProFeat1", "pricingProFeat2", "pricingProFeat3", "pricingProFeat4", "pricingProFeat5", "pricingProFeat6"] as const).map((key) => (
                     <div key={key} className="flex items-center gap-2 text-sm text-[#52525B]">
                       <svg className="w-4 h-4 text-teal-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -491,7 +491,7 @@ export default async function Home() {
                   <span className="text-sm text-[#71717A]">{t("pricingPerMonth")}</span>
                 </div>
                 <div className="space-y-3 mb-8 flex-1">
-                  {(["pricingBizFeat1", "pricingBizFeat2", "pricingBizFeat3", "pricingBizFeat4", "pricingBizFeat5"] as const).map((key) => (
+                  {(["pricingBizFeat1", "pricingBizFeat2", "pricingBizFeat3", "pricingBizFeat4", "pricingBizFeat5", "pricingBizFeat6"] as const).map((key) => (
                     <div key={key} className="flex items-center gap-2 text-sm text-[#52525B]">
                       <svg className="w-4 h-4 text-teal-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />

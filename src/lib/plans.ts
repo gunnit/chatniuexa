@@ -8,6 +8,7 @@ export interface PlanLimits {
   monthlyTokenLimit: number
   dailyMessageLimit: number
   monthlyCostLimit: number
+  whatsappEnabled: boolean
 }
 
 export interface PlanInfo {
@@ -29,6 +30,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
       monthlyTokenLimit: 50_000,
       dailyMessageLimit: 20,
       monthlyCostLimit: 1.0,
+      whatsappEnabled: false,
     },
     features: [
       '50 messages per month',
@@ -47,6 +49,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
       monthlyTokenLimit: 2_000_000,
       dailyMessageLimit: 500,
       monthlyCostLimit: 100.0,
+      whatsappEnabled: true,
     },
     features: [
       '2,000 messages per month',
@@ -54,6 +57,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
       '500 messages per day',
       'Full analytics',
       'Priority support',
+      'WhatsApp integration',
     ],
   },
   business: {
@@ -66,6 +70,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
       monthlyTokenLimit: 10_000_000,
       dailyMessageLimit: 5_000,
       monthlyCostLimit: 1000.0,
+      whatsappEnabled: true,
     },
     features: [
       '10,000 messages per month',
@@ -74,6 +79,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
       'Full analytics',
       'Priority support',
       'Custom branding',
+      'WhatsApp integration',
     ],
   },
 }
