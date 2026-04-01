@@ -31,6 +31,16 @@ export async function GET(request: NextRequest) {
     return new NextResponse('Bad request', { status: 400 })
   }
 
+  // Check env-level fallback token first (for initial Meta webhook setup)
+  const envVerifyToken = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN
+  if (envVerifyToken && verifyToken === envVerifyToken) {
+    logger.info('WhatsApp webhook verified via env token')
+    return new NextResponse(challenge, {
+      status: 200,
+      headers: { 'Content-Type': 'text/plain' },
+    })
+  }
+
   // Look up the config with this verify token
   const config = await prisma.whatsAppConfig.findFirst({
     where: { webhookVerifyToken: verifyToken, isActive: true },
