@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     // Chain RAG off chatbot + embedding (starts when both resolve)
     const ragPromise = Promise.all([chatbotPromise, embeddingPromise]).then(([bot, embedding]) =>
       bot
-        ? prepareStreamingContextWithEmbedding(bot.tenantId, embedding)
+        ? prepareStreamingContextWithEmbedding(bot.tenantId, embedding, { userMessage: message })
         : null
     )
 

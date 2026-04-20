@@ -43,13 +43,26 @@ Format your responses using markdown:
 const FORMATTING_ADDENDUM = `\nFormat your responses using markdown: use **bold** for key terms and important information, use bullet points for lists, and keep paragraphs short.`
 
 const PII_GUARDRAIL = `\n\nPRIVACY & PII RULES (MANDATORY):
-- NEVER repeat, echo, or store personal information that users share in their messages. This includes names, email addresses, phone numbers, fiscal codes (codice fiscale), ID numbers, home addresses, or any other personally identifiable information.
+- NEVER repeat, echo, or store personal information that users share in their messages. This includes names, email addresses, phone numbers, fiscal codes (codice fiscale), ID numbers, home addresses, or any other personally identifiable information about the user themselves or any private individual.
 - If a user shares PII in their question, answer the underlying question WITHOUT repeating the PII back.
 - If a user asks you to call them, email them, or contact them using personal details they provided, explain that you cannot do so and suggest they contact the organization directly. Do NOT repeat their contact details in your response.
-- If a user asks for personal contact information of staff, CEOs, or associates, only provide publicly available business contact information (company websites, official emails, office phone numbers).
-- NEVER share member lists, personal contact details, or private data about any individual or company.`
+- For staff, CEOs, or associates, only provide publicly available business contact information (company websites, official emails, office phone numbers).
+- Public information that appears in your knowledge base (corporate member directories, partner lists, company names with public URLs and public descriptions) is allowed and may be shared in full when relevant. The PII rules above apply to PRIVATE individuals, not to publicly listed organizations.`
 
 const SCOPE_GUARDRAIL = `\n\nIMPORTANT: You must ONLY answer questions based on the provided context above. If no relevant context was provided, or if the user's question is not related to the context, politely let them know you can only help with topics covered by your knowledge base. Never use your general training knowledge to answer questions.`
+
+const DIRECTORY_QUERY_PATTERN = /\b(list|show|all|every|which|what are|chi sono|quali sono|elenca|tutti|tutte|mostra)\b.{0,80}\b(partners?|members?|companies|companie|firms|aziende|partner|membri|soci|imprese|category|sector|categoria|settore)\b/i
+
+/**
+ * Detect when the user is asking for a directory-style listing
+ * (e.g. "list all partners in finance"). For these, retrieve more chunks
+ * so multi-chunk sectors are returned in full.
+ */
+function isDirectoryQuery(message: string): boolean {
+  return DIRECTORY_QUERY_PATTERN.test(message)
+}
+
+const DIRECTORY_MAX_SOURCES = 15
 
 /**
  * Generate a RAG-based chat response
@@ -68,9 +81,10 @@ export async function generateChatResponse(
   const {
     systemPrompt = DEFAULT_SYSTEM_PROMPT,
     model = 'gpt-5-mini',
-    maxSources = 5,
     minSimilarity = 0.2, // Lowered to 0.2 for multilingual content recall
   } = options
+  const maxSources = options.maxSources
+    ?? (isDirectoryQuery(userMessage) ? DIRECTORY_MAX_SOURCES : 5)
 
   const openai = getOpenAI()
 
@@ -235,9 +249,12 @@ export async function prepareStreamingContextWithEmbedding(
   options: {
     maxSources?: number
     minSimilarity?: number
+    userMessage?: string
   } = {}
 ): Promise<{ context: string; streamingContext: StreamingChatContext }> {
-  const { maxSources = 5, minSimilarity = 0.2 } = options
+  const { minSimilarity = 0.2, userMessage } = options
+  const maxSources = options.maxSources
+    ?? (userMessage && isDirectoryQuery(userMessage) ? DIRECTORY_MAX_SOURCES : 5)
 
   // Search for relevant chunks
   const relevantChunks = await searchSimilarChunks(
@@ -317,7 +334,7 @@ export async function prepareStreamingContext(
   } = {}
 ): Promise<{ context: string; streamingContext: StreamingChatContext }> {
   const queryEmbedding = await generateQueryEmbedding(userMessage)
-  return prepareStreamingContextWithEmbedding(tenantId, queryEmbedding, options)
+  return prepareStreamingContextWithEmbedding(tenantId, queryEmbedding, { ...options, userMessage })
 }
 
 /**
