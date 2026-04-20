@@ -50,7 +50,7 @@ export async function POST(
       chatbotId: id,
       type: 'chat',
       tokens: 2000,
-      model: 'gpt-5-mini',
+      model: 'gpt-5.4-mini',
     })
 
     if (!usage.allowed) {
@@ -180,9 +180,8 @@ Output ONLY the system prompt text. Do not include any preamble, explanation, or
     let completion
     try {
       completion = await openai.chat.completions.create({
-        model: 'gpt-5-mini',
+        model: 'gpt-5.4-mini',
         messages: [{ role: 'user', content: metaPrompt }],
-        max_completion_tokens: 4000,
       })
     } catch (openaiError: unknown) {
       const msg = openaiError instanceof Error ? openaiError.message : String(openaiError)

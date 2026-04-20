@@ -80,7 +80,7 @@ export async function generateChatResponse(
 ): Promise<ChatResponse> {
   const {
     systemPrompt = DEFAULT_SYSTEM_PROMPT,
-    model = 'gpt-5-mini',
+    model = 'gpt-5.4-mini',
     minSimilarity = 0.2, // Lowered to 0.2 for multilingual content recall
   } = options
   const maxSources = options.maxSources
@@ -180,7 +180,6 @@ export async function generateChatResponse(
   const completion = await openai.chat.completions.create({
     model,
     messages,
-    max_completion_tokens: 4000,
   })
 
   const responseContent = completion.choices[0]?.message?.content || 'I apologize, but I was unable to generate a response.'
@@ -351,7 +350,7 @@ export async function generateStreamingChatResponse(
 ): Promise<ReadableStream<Uint8Array>> {
   const {
     systemPrompt = DEFAULT_SYSTEM_PROMPT,
-    model = 'gpt-5-mini',
+    model = 'gpt-5.4-mini',
   } = options
 
   const openai = getOpenAI()
@@ -389,7 +388,6 @@ export async function generateStreamingChatResponse(
   const stream = await openai.chat.completions.create({
     model,
     messages,
-    max_completion_tokens: 4000,
     stream: true,
   })
 

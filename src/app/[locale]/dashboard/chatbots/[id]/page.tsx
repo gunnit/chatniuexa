@@ -163,7 +163,7 @@ export default function ChatbotConfigPage({
   const [description, setDescription] = useState('')
   const [systemPrompt, setSystemPrompt] = useState('')
   const [temperature, setTemperature] = useState(0.7)
-  const [model, setModel] = useState('gpt-5-mini')
+  const [model, setModel] = useState('gpt-5.4-mini')
   const [primaryColor, setPrimaryColor] = useState('#6366f1')
   const [secondaryColor, setSecondaryColor] = useState('#6366f1')
   const [welcomeMessage, setWelcomeMessage] = useState('')
@@ -501,9 +501,11 @@ export default function ChatbotConfigPage({
                   onChange={(e) => setModel(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
                 >
-                  <option value="gpt-5-mini">GPT-5 Mini (Fast & Affordable)</option>
-                  <option value="gpt-5.2">GPT-5.2 (Most Capable)</option>
-                  <option value="gpt-5-nano">GPT-5 Nano (Budget)</option>
+                  <option value="gpt-5.4">GPT-5.4 (Flagship)</option>
+                  <option value="gpt-5.4-mini">GPT-5.4 Mini (Recommended — Fast & Affordable)</option>
+                  <option value="gpt-5.4-nano">GPT-5.4 Nano (Cheapest)</option>
+                  <option value="gpt-5.2">GPT-5.2 (Previous Frontier)</option>
+                  <option value="gpt-5-mini">GPT-5 Mini (Legacy)</option>
                 </select>
               </div>
 

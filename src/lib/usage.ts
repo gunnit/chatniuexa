@@ -1,12 +1,14 @@
 import { prisma } from '@/lib/db'
 
-// Approximate cost per 1K tokens (in USD) - Updated for GPT-5 family (Feb 2026)
-// Prices are averaged between input/output costs
+// Cost per 1K tokens (USD) - averaged (input+output)/2 from official OpenAI pricing
 const COST_PER_1K_TOKENS = {
-  'gpt-5.2': 0.003,        // Latest flagship model
-  'gpt-5-mini': 0.001,     // Fast & affordable
-  'gpt-5-nano': 0.0002,    // Budget option
-  // Legacy models (deprecated Feb 13, 2026)
+  'gpt-5.4': 0.00875,       // Flagship: $2.50 in / $15.00 out per 1M
+  'gpt-5.4-mini': 0.002625, // Recommended: $0.75 in / $4.50 out per 1M
+  'gpt-5.4-nano': 0.000725, // Cheapest: $0.20 in / $1.25 out per 1M
+  'gpt-5.2': 0.007875,      // Prev frontier: $1.75 in / $14.00 out per 1M
+  'gpt-5-mini': 0.001125,   // Legacy: $0.25 in / $2.00 out per 1M
+  'gpt-5-nano': 0.0002,     // Legacy budget
+  // Deprecated
   'gpt-4o': 0.005,
   'gpt-4o-mini': 0.00015,
   'text-embedding-3-small': 0.00002,
