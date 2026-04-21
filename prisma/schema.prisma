@@ -272,6 +272,7 @@ model Chatbot {
   secondaryColor   String?  @default("#6366f1")
   welcomeMessage   String?  @default("Hello! How can I help you?")
   showBranding     Boolean  @default(true)
+  showSources      Boolean  @default(true)  // Show "Sources:" citations on public chat/widget
   suggestedPrompts String[] @default([])  // Quick reply suggestions
 
   // Chat icon customization

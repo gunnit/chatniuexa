@@ -15,6 +15,7 @@ interface Chatbot {
   secondaryColor: string | null
   welcomeMessage: string | null
   showBranding: boolean
+  showSources: boolean
   suggestedPrompts: string[]
   chatIconType: string | null
   chatIconPreset: string | null
@@ -168,6 +169,7 @@ export default function ChatbotConfigPage({
   const [secondaryColor, setSecondaryColor] = useState('#6366f1')
   const [welcomeMessage, setWelcomeMessage] = useState('')
   const [showBranding, setShowBranding] = useState(true)
+  const [showSources, setShowSources] = useState(true)
   const [suggestedPrompts, setSuggestedPrompts] = useState<string[]>([])
   const [newPrompt, setNewPrompt] = useState('')
   const [selectedTemplate, setSelectedTemplate] = useState('custom')
@@ -214,6 +216,7 @@ export default function ChatbotConfigPage({
           setSecondaryColor(c.secondaryColor || '#6366f1')
           setWelcomeMessage(c.welcomeMessage || 'Hello! How can I help you?')
           setShowBranding(c.showBranding)
+          setShowSources(c.showSources ?? true)
           setSuggestedPrompts(c.suggestedPrompts || [])
           setChatIconType(c.chatIconType || 'default')
           setChatIconPreset(c.chatIconPreset || null)
@@ -257,6 +260,7 @@ export default function ChatbotConfigPage({
           secondaryColor: secondaryColor || undefined,
           welcomeMessage: welcomeMessage || undefined,
           showBranding,
+          showSources,
           suggestedPrompts,
           chatIconType,
           chatIconPreset: chatIconType === 'preset' ? chatIconPreset : null,
@@ -785,6 +789,14 @@ export default function ChatbotConfigPage({
                 <input type="checkbox" id="showBranding" checked={showBranding} onChange={(e) => setShowBranding(e.target.checked)} className="w-5 h-5 rounded text-teal-600 focus:ring-teal-500" />
                 <label htmlFor="showBranding" className="text-sm text-slate-700">
                   {t('showBranding')}
+                </label>
+              </div>
+
+              <div className="flex items-start gap-3 p-4 rounded-xl bg-slate-50">
+                <input type="checkbox" id="showSources" checked={showSources} onChange={(e) => setShowSources(e.target.checked)} className="w-5 h-5 mt-0.5 rounded text-teal-600 focus:ring-teal-500" />
+                <label htmlFor="showSources" className="text-sm text-slate-700">
+                  <div className="font-medium">{t('showSources')}</div>
+                  <div className="text-xs text-slate-500 mt-0.5">{t('showSourcesDesc')}</div>
                 </label>
               </div>
 

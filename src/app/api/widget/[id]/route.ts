@@ -20,6 +20,7 @@ export async function GET(
         primaryColor: true,
         secondaryColor: true,
         showBranding: true,
+        showSources: true,
         suggestedPrompts: true,
         chatIconType: true,
         chatIconPreset: true,

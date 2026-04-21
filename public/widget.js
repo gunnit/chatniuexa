@@ -999,7 +999,7 @@
       html += `<div class="confidence-indicator confidence-${confidence}">${labels[confidence]}</div>`;
     }
 
-    if (sources && sources.length > 0) {
+    if (sources && sources.length > 0 && chatbot && chatbot.showSources !== false) {
       const uniqueSources = deduplicateSourcesClient(sources);
       html += `<div class="message-sources">
         <div class="message-sources-title">Sources:</div>
@@ -1186,7 +1186,7 @@
     }
 
     // Add sources
-    if (sources && sources.length > 0) {
+    if (sources && sources.length > 0 && chatbot && chatbot.showSources !== false) {
       const uniqueSources = deduplicateSourcesClient(sources);
       const sourcesDiv = document.createElement('div');
       sourcesDiv.className = 'message-sources';

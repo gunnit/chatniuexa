@@ -255,6 +255,8 @@
     "iconTypePreset": "Preset",
     "iconTypeCustom": "Immagine Personalizzata",
     "showBranding": "Mostra branding ChatAziendale.it",
+    "showSources": "Mostra fonti dalla knowledge base",
+    "showSourcesDesc": "Visualizza il nome del documento usato per rispondere a ogni messaggio. Deseleziona per nascondere le fonti se i nomi dei file non sono adatti agli utenti.",
     "saving": "Salvataggio...",
     "saveChanges": "Salva Modifiche",
     "embedTitle": "Incorpora nel Tuo Sito Web",

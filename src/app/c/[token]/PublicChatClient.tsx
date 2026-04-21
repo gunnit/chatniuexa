@@ -28,6 +28,7 @@ interface ChatbotConfig {
   primaryColor: string | null
   secondaryColor: string | null
   showBranding: boolean
+  showSources: boolean
   suggestedPrompts: string[]
   chatIconType: string | null
   chatIconPreset: string | null
@@ -700,8 +701,8 @@ export default function PublicChatClient({ chatbot }: { chatbot: ChatbotConfig }
                   key={m.id}
                   accent={accent}
                   initials={initials}
-                  source={m.sources && m.sources.length > 0 ? m.sources[0].documentTitle : undefined}
-                  extraSources={m.sources && m.sources.length > 1 ? m.sources.length - 1 : 0}
+                  source={chatbot.showSources && m.sources && m.sources.length > 0 ? m.sources[0].documentTitle : undefined}
+                  extraSources={chatbot.showSources && m.sources && m.sources.length > 1 ? m.sources.length - 1 : 0}
                   showActions={i === messages.length - 1 && !m.isStreaming && !loading && m.id !== 'welcome'}
                   onReact={(r) => handleReaction(m.id, m.messageId, r)}
                   reaction={m.reaction}

@@ -255,6 +255,8 @@
     "iconTypePreset": "Preset",
     "iconTypeCustom": "Custom Image",
     "showBranding": "Show ChatAziendale.it branding",
+    "showSources": "Show knowledge base sources",
+    "showSourcesDesc": "Display the document name used to answer each message. Uncheck to hide if filenames aren't user-friendly.",
     "saving": "Saving...",
     "saveChanges": "Save Changes",
     "embedTitle": "Embed on Your Website",
