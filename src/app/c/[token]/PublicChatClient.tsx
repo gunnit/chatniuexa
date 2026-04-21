@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo, CSSProperties } from 'react'
 
 interface Source {
   chunkId: string
@@ -34,23 +34,6 @@ interface ChatbotConfig {
   chatIconImage: string | null
 }
 
-function hexToHSL(hex: string): { h: number; s: number; l: number } {
-  hex = hex.replace('#', '')
-  const r = parseInt(hex.substring(0, 2), 16) / 255
-  const g = parseInt(hex.substring(2, 4), 16) / 255
-  const b = parseInt(hex.substring(4, 6), 16) / 255
-  const max = Math.max(r, g, b), min = Math.min(r, g, b)
-  const l = (max + min) / 2
-  if (max === min) return { h: 0, s: 0, l }
-  const d = max - min
-  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-  let h = 0
-  if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6
-  else if (max === g) h = ((b - r) / d + 2) / 6
-  else h = ((r - g) / d + 4) / 6
-  return { h: h * 360, s, l }
-}
-
 function escapeHtml(text: string): string {
   return text
     .replace(/&/g, '&amp;')
@@ -59,54 +42,33 @@ function escapeHtml(text: string): string {
     .replace(/"/g, '&quot;')
 }
 
-function parseMarkdown(text: string, primaryColor: string): string {
+function parseMarkdown(text: string, accent: string): string {
   let html = escapeHtml(text)
 
-  // Code blocks (``` ... ```)
   html = html.replace(/```(\w*)\n?([\s\S]*?)```/g, (_m, _lang, code) =>
     `<pre class="md-code-block"><code>${code.trim()}</code></pre>`
   )
-
-  // Inline code (`code`)
   html = html.replace(/`([^`]+)`/g, '<code class="md-inline-code">$1</code>')
-
-  // Bold (**text** or __text__)
-  html = html.replace(/\*\*([^*]+)\*\*/g, `<strong style="font-weight:700;color:${primaryColor}">$1</strong>`)
-  html = html.replace(/__([^_]+)__/g, `<strong style="font-weight:700;color:${primaryColor}">$1</strong>`)
-
-  // Italic (*text* or _text_)
+  html = html.replace(/\*\*([^*]+)\*\*/g, `<strong style="font-weight:700;color:${accent}">$1</strong>`)
+  html = html.replace(/__([^_]+)__/g, `<strong style="font-weight:700;color:${accent}">$1</strong>`)
   html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>')
   html = html.replace(/(?<![a-zA-Z])_([^_]+)_(?![a-zA-Z])/g, '<em>$1</em>')
-
-  // Headers
   html = html.replace(/^### (.+)$/gm, '<h4 class="md-h4">$1</h4>')
   html = html.replace(/^## (.+)$/gm, '<h3 class="md-h3">$1</h3>')
   html = html.replace(/^# (.+)$/gm, '<h2 class="md-h2">$1</h2>')
-
-  // Unordered lists (- item or * item)
   html = html.replace(/^[\-\*] (.+)$/gm, '<li class="md-li">$1</li>')
   html = html.replace(/(<li class="md-li">.*<\/li>\n?)+/g, '<ul class="md-ul">$&</ul>')
-
-  // Ordered lists (1. item)
   html = html.replace(/^\d+\. (.+)$/gm, '<li class="md-oli">$1</li>')
   html = html.replace(/(<li class="md-oli">.*<\/li>\n?)+/g, '<ol class="md-ol">$&</ol>')
-
-  // Links [text](url)
   html = html.replace(
     /\[([^\]]+)\]\(([^)]+)\)/g,
-    `<a href="$2" target="_blank" rel="noopener noreferrer" style="color:${primaryColor};text-decoration:underline;text-underline-offset:2px">$1</a>`
+    `<a href="$2" target="_blank" rel="noopener noreferrer" style="color:${accent};text-decoration:underline;text-underline-offset:2px">$1</a>`
   )
-
-  // Double newline = paragraph break
   html = html.replace(/\n\n/g, '</p><p class="md-p">')
   html = '<p class="md-p">' + html + '</p>'
-
-  // Clean up empty paragraphs and fix block elements inside paragraphs
   html = html.replace(/<p class="md-p"><\/p>/g, '')
   html = html.replace(/<p class="md-p">(<(?:ul|ol|pre|h[2-4])[^>]*>)/g, '$1')
   html = html.replace(/(<\/(?:ul|ol|pre|h[2-4])>)<\/p>/g, '$1')
-
-  // Single line breaks
   html = html.replace(/\n/g, '<br>')
 
   return html
@@ -124,166 +86,195 @@ const PRESET_ICONS: Record<string, string> = {
   'message-circle': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>',
 }
 
+function getInitials(name: string): string {
+  const stripped = name.replace(/^ask\s+/i, '').trim()
+  const parts = stripped.split(/\s+/)
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
+  return stripped.slice(0, 2).toUpperCase()
+}
+
+function displayBotName(name: string): string {
+  return name.replace(/^ask\s+/i, '').trim() || name
+}
+
+const FONT_STACK = "var(--font-inter), 'Inter', var(--font-body), -apple-system, BlinkMacSystemFont, sans-serif"
+
 export default function PublicChatClient({ chatbot }: { chatbot: ChatbotConfig }) {
-  const primary = chatbot.primaryColor || '#3B82F6'
-  const secondary = chatbot.secondaryColor || '#6366f1'
-  const hsl = hexToHSL(primary)
-  const hsl2 = hexToHSL(secondary)
+  const accent = chatbot.primaryColor || '#E43A3A'
+  const botName = chatbot.name
+  const welcome = chatbot.welcomeMessage || chatbot.description || `Ask me anything about ${botName}.`
+  const prompts = chatbot.suggestedPrompts || []
+  const initials = getInitials(botName)
+  const displayName = displayBotName(botName)
   const storageKey = `chataziendale-pub-${chatbot.id}`
 
-  const defaultMessages: Message[] = [
-    { id: 'welcome', role: 'assistant', content: chatbot.welcomeMessage || 'Hello! How can I help you?' },
-  ]
-
-  const [messages, setMessages] = useState<Message[]>(defaultMessages)
+  const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [sessionId, setSessionId] = useState(() => `pub-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
-  const [hasInteracted, setHasInteracted] = useState(false)
+  const [sessionId, setSessionId] = useState(
+    () => `pub-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  )
   const [showClearConfirm, setShowClearConfirm] = useState(false)
-  const [reactionFeedback, setReactionFeedback] = useState<string | null>(null)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [lang, setLang] = useState('EN')
+  const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Restore from localStorage on mount
   useEffect(() => {
     try {
       const stored = localStorage.getItem(storageKey)
       if (stored) {
         const data = JSON.parse(stored)
         if (data.timestamp && Date.now() - data.timestamp < STORAGE_TTL) {
-          if (data.messages?.length > 0) {
-            setMessages(data.messages)
-            setHasInteracted(true)
-          }
-          if (data.sessionId) {
-            setSessionId(data.sessionId)
-          }
+          if (data.messages?.length > 0) setMessages(data.messages)
+          if (data.sessionId) setSessionId(data.sessionId)
         }
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, [storageKey])
 
-  // Persist to localStorage on message changes
   useEffect(() => {
     try {
-      const toSave = messages.filter(m => !m.isStreaming)
+      const toSave = messages.filter((m) => !m.isStreaming)
       if (toSave.length > 0) {
-        localStorage.setItem(storageKey, JSON.stringify({
-          messages: toSave,
-          sessionId,
-          timestamp: Date.now(),
-        }))
+        localStorage.setItem(
+          storageKey,
+          JSON.stringify({ messages: toSave, sessionId, timestamp: Date.now() })
+        )
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, [messages, sessionId, storageKey])
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    const el = scrollRef.current
+    if (el) el.scrollTop = el.scrollHeight
+  }, [messages, loading])
 
   useEffect(() => {
     inputRef.current?.focus()
+    if (typeof navigator !== 'undefined') {
+      const code = (navigator.language || 'en').slice(0, 2).toLowerCase()
+      setLang(code === 'it' ? 'IT' : 'EN')
+    }
   }, [])
 
   const clearChat = useCallback(() => {
-    setMessages(defaultMessages)
-    setHasInteracted(false)
+    setMessages([])
     setShowClearConfirm(false)
-    try { localStorage.removeItem(storageKey) } catch { /* ignore */ }
-  }, [storageKey, chatbot.welcomeMessage])
-
-  const handleReaction = useCallback(async (msgId: string, dbMessageId: string | undefined, reaction: 'up' | 'down') => {
-    setMessages(prev => prev.map(m => m.id === msgId ? { ...m, reaction } : m))
-    setReactionFeedback(msgId)
-    setTimeout(() => setReactionFeedback(prev => prev === msgId ? null : prev), 3000)
-
-    if (dbMessageId) {
-      try {
-        await fetch('/api/chat/reaction', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messageId: dbMessageId, reaction, sessionId }),
-        })
-      } catch { /* ignore */ }
-    }
-  }, [sessionId])
-
-  const sendMessage = useCallback(async (text: string) => {
-    if (!text.trim() || loading) return
-    setHasInteracted(true)
-    setInput('')
-    setLoading(true)
-
-    const assistantMsgId = `assistant-${Date.now()}`
-
-    setMessages(prev => [
-      ...prev,
-      { id: `user-${Date.now()}`, role: 'user', content: text.trim() },
-    ])
-
     try {
-      const res = await fetch('/api/chat/stream', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chatbotId: chatbot.id, sessionId, message: text.trim() }),
-      })
+      localStorage.removeItem(storageKey)
+    } catch {
+      /* ignore */
+    }
+  }, [storageKey])
 
-      if (!res.ok) {
-        // Fallback to non-streaming endpoint
-        const fallbackRes = await fetch('/api/chat', {
+  const handleReaction = useCallback(
+    async (msgId: string, dbMessageId: string | undefined, reaction: 'up' | 'down') => {
+      setMessages((prev) =>
+        prev.map((m) => (m.id === msgId ? { ...m, reaction: m.reaction === reaction ? undefined : reaction } : m))
+      )
+      if (dbMessageId) {
+        try {
+          await fetch('/api/chat/reaction', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messageId: dbMessageId, reaction, sessionId }),
+          })
+        } catch {
+          /* ignore */
+        }
+      }
+    },
+    [sessionId]
+  )
+
+  const handleCopy = useCallback(async (msgId: string, text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedId(msgId)
+      setTimeout(() => setCopiedId((p) => (p === msgId ? null : p)), 1800)
+    } catch {
+      /* ignore */
+    }
+  }, [])
+
+  const sendMessage = useCallback(
+    async (text: string) => {
+      if (!text.trim() || loading) return
+      setInput('')
+      setLoading(true)
+      const assistantMsgId = `assistant-${Date.now()}`
+      setMessages((prev) => [
+        ...prev,
+        { id: `user-${Date.now()}`, role: 'user', content: text.trim() },
+      ])
+
+      try {
+        const res = await fetch('/api/chat/stream', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ chatbotId: chatbot.id, sessionId, message: text.trim() }),
         })
 
-        if (!fallbackRes.ok) {
-          const data = await fallbackRes.json().catch(() => ({}))
-          throw new Error(data.error || 'Failed to send message')
+        if (!res.ok) {
+          const fallbackRes = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chatbotId: chatbot.id, sessionId, message: text.trim() }),
+          })
+          if (!fallbackRes.ok) {
+            const data = await fallbackRes.json().catch(() => ({}))
+            throw new Error(data.error || 'Failed to send message')
+          }
+          const data = await fallbackRes.json()
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: assistantMsgId,
+              role: 'assistant',
+              content: data.message.content,
+              sources: data.message.sources,
+              messageId: data.message.id,
+            },
+          ])
+          return
         }
 
-        const data = await fallbackRes.json()
-        setMessages(prev => [
+        setMessages((prev) => [
           ...prev,
-          {
-            id: assistantMsgId,
-            role: 'assistant',
-            content: data.message.content,
-            sources: data.message.sources,
-            messageId: data.message.id,
-          },
+          { id: assistantMsgId, role: 'assistant', content: '', isStreaming: true },
         ])
-        return
-      }
 
-      setMessages(prev => [
-        ...prev,
-        { id: assistantMsgId, role: 'assistant', content: '', isStreaming: true },
-      ])
+        const reader = res.body?.getReader()
+        if (!reader) throw new Error('No response body')
+        const decoder = new TextDecoder()
+        let buffer = ''
+        let metadata: { sources?: Source[]; messageId?: string } | null = null
 
-      const reader = res.body?.getReader()
-      if (!reader) throw new Error('No response body')
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split('\n')
+          buffer = lines.pop() || ''
 
-      const decoder = new TextDecoder()
-      let buffer = ''
-      let metadata: { sources?: Source[]; messageId?: string } | null = null
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue
             const data = line.slice(6)
             if (data === '[DONE]') {
-              setMessages(prev =>
-                prev.map(msg =>
+              setMessages((prev) =>
+                prev.map((msg) =>
                   msg.id === assistantMsgId
-                    ? { ...msg, isStreaming: false, sources: metadata?.sources, messageId: metadata?.messageId }
+                    ? {
+                        ...msg,
+                        isStreaming: false,
+                        sources: metadata?.sources,
+                        messageId: metadata?.messageId,
+                      }
                     : msg
                 )
               )
@@ -297,407 +288,609 @@ export default function PublicChatClient({ chatbot }: { chatbot: ChatbotConfig }
                 metadata = metadata || {}
                 metadata.messageId = parsed.messageId
               } else if (parsed.content) {
-                setMessages(prev =>
-                  prev.map(msg =>
-                    msg.id === assistantMsgId
-                      ? { ...msg, content: msg.content + parsed.content }
-                      : msg
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === assistantMsgId ? { ...msg, content: msg.content + parsed.content } : msg
                   )
                 )
               }
-            } catch { /* ignore parse errors */ }
+            } catch {
+              /* ignore parse errors */
+            }
           }
         }
+      } catch (err) {
+        setMessages((prev) => {
+          const filtered = prev.filter((m) => m.id !== assistantMsgId)
+          return [
+            ...filtered,
+            {
+              id: `error-${Date.now()}`,
+              role: 'assistant',
+              content: `Something went wrong. ${err instanceof Error ? err.message : 'Please try again.'}`,
+            },
+          ]
+        })
+      } finally {
+        setLoading(false)
+        inputRef.current?.focus()
       }
-    } catch (err) {
-      setMessages(prev => {
-        const filtered = prev.filter(m => m.id !== assistantMsgId)
-        return [
-          ...filtered,
-          {
-            id: `error-${Date.now()}`,
-            role: 'assistant',
-            content: `Something went wrong. ${err instanceof Error ? err.message : 'Please try again.'}`,
-          },
-        ]
-      })
-    } finally {
-      setLoading(false)
-      inputRef.current?.focus()
-    }
-  }, [loading, chatbot.id, sessionId])
+    },
+    [loading, chatbot.id, sessionId]
+  )
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    sendMessage(input)
+  const handleSubmit = () => {
+    const v = input.trim()
+    if (!v) return
+    sendMessage(v)
   }
 
-  const renderIcon = () => {
+  const isEmpty = messages.length === 0
+
+  const bgTint = `${accent}14`
+  const bgTint2 = `${accent}08`
+
+  const avatarInner = (size: number): React.ReactNode => {
     if (chatbot.chatIconType === 'custom' && chatbot.chatIconImage) {
       return (
         <img
           src={chatbot.chatIconImage}
-          alt={chatbot.name}
-          className="w-full h-full object-cover rounded-full"
+          alt={botName}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: size * 0.32 }}
         />
       )
     }
-    if (chatbot.chatIconType === 'preset' && chatbot.chatIconPreset && PRESET_ICONS[chatbot.chatIconPreset]) {
+    if (
+      chatbot.chatIconType === 'preset' &&
+      chatbot.chatIconPreset &&
+      PRESET_ICONS[chatbot.chatIconPreset]
+    ) {
       return (
-        <div
-          className="w-5 h-5 text-white"
+        <span
+          style={{
+            width: size * 0.5,
+            height: size * 0.5,
+            color: '#fff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
           dangerouslySetInnerHTML={{ __html: PRESET_ICONS[chatbot.chatIconPreset] }}
         />
       )
     }
     return (
-      <span className="text-sm font-semibold text-white" style={{ fontFamily: 'var(--font-body)' }}>
-        {chatbot.name.charAt(0).toUpperCase()}
+      <span style={{ fontSize: size * 0.38, fontWeight: 700, letterSpacing: -0.3, color: '#fff' }}>
+        {initials}
       </span>
     )
   }
 
-  return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ fontFamily: 'var(--font-body)' }}>
-      {/* ── Animated gradient background ── */}
-      <div className="fixed inset-0 -z-10">
-        <div className="absolute inset-0" style={{
-          background: `linear-gradient(135deg,
-            hsl(${hsl.h}, ${Math.round(hsl.s * 20)}%, 97%) 0%,
-            hsl(${hsl2.h}, ${Math.round(hsl2.s * 15)}%, 95%) 50%,
-            hsl(${hsl.h + 30}, 15%, 96%) 100%)`
-        }} />
-        <div className="absolute top-[-20%] right-[-10%] w-[60vw] h-[60vw] rounded-full opacity-[0.07]"
-          style={{
-            background: `radial-gradient(circle, ${primary} 0%, transparent 70%)`,
-            animation: 'float-orb 25s ease-in-out infinite',
-          }}
-        />
-        <div className="absolute bottom-[-15%] left-[-10%] w-[50vw] h-[50vw] rounded-full opacity-[0.05]"
-          style={{
-            background: `radial-gradient(circle, ${secondary} 0%, transparent 70%)`,
-            animation: 'float-orb 30s ease-in-out infinite reverse',
-          }}
-        />
-        <div className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-          }}
-        />
-      </div>
-
-      {/* ── Header ── */}
-      <header className="relative z-10">
-        <div className="max-w-3xl mx-auto px-5 py-5">
-          <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg ring-1 ring-white/20 flex-shrink-0"
-              style={{ background: `linear-gradient(135deg, ${primary}, ${secondary})` }}
-            >
-              {renderIcon()}
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-[15px] font-semibold text-slate-900 truncate leading-tight">
-                {chatbot.name}
-              </h1>
-              {chatbot.description && (
-                <p className="text-xs text-slate-500 truncate mt-0.5">{chatbot.description}</p>
-              )}
-            </div>
-            <div className="ml-auto flex items-center gap-3">
-              {/* Clear chat button */}
-              {hasInteracted && (
-                <div className="relative">
-                  <button
-                    onClick={() => setShowClearConfirm(true)}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-white/50 transition-all"
-                    title="Clear chat"
-                  >
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="3 6 5 6 21 6" />
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                    </svg>
-                  </button>
-                  {showClearConfirm && (
-                    <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-lg ring-1 ring-slate-900/10 p-3 z-50 w-48">
-                      <p className="text-xs text-slate-600 mb-2">Clear all messages?</p>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={clearChat}
-                          className="flex-1 text-xs px-3 py-1.5 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors"
-                        >
-                          Clear
-                        </button>
-                        <button
-                          onClick={() => setShowClearConfirm(false)}
-                          className="flex-1 text-xs px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-              {/* Online indicator */}
-              <div className="flex items-center gap-1.5">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
-                    style={{ backgroundColor: primary }} />
-                  <span className="relative inline-flex rounded-full h-2 w-2"
-                    style={{ backgroundColor: primary }} />
-                </span>
-                <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Online</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="h-px bg-gradient-to-r from-transparent via-slate-200/60 to-transparent" />
-      </header>
-
-      {/* ── Messages ── */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 scroll-smooth"
+  const breathingAvatar = (size: number) => (
+    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+      <div
         style={{
-          scrollbarWidth: 'thin',
-          scrollbarColor: `${primary}30 transparent`,
+          position: 'absolute',
+          inset: -4,
+          borderRadius: size * 0.4,
+          background: `radial-gradient(circle, ${accent}55 0%, transparent 70%)`,
+          filter: 'blur(6px)',
+          animation: 'v2breathe 4s infinite ease-in-out',
+          pointerEvents: 'none',
+        }}
+      />
+      <div
+        style={{
+          position: 'relative',
+          width: size,
+          height: size,
+          borderRadius: size * 0.32,
+          background: `linear-gradient(135deg, ${accent} 0%, ${accent}dd 100%)`,
+          color: '#fff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+          boxShadow: `0 4px 16px ${accent}40, inset 0 1px 0 rgba(255,255,255,0.25)`,
         }}
       >
-        <div className="max-w-3xl mx-auto space-y-5">
-          {messages.map((message, idx) => (
+        {avatarInner(size)}
+      </div>
+    </div>
+  )
+
+  const noiseSvg = useMemo(
+    () =>
+      `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.4 0 0 0 0 0.3 0 0 0 0 0.25 0 0 0 0.1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+    []
+  )
+
+  return (
+    <div
+      style={{
+        height: '100%',
+        position: 'relative',
+        overflow: 'hidden',
+        fontFamily: FONT_STACK,
+        color: '#1a1410',
+        background: '#fbf8f5',
+      }}
+    >
+      {/* Atmospheric gradient */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: `
+            radial-gradient(ellipse 700px 460px at 18% 14%, ${bgTint} 0%, transparent 62%),
+            radial-gradient(ellipse 800px 560px at 86% 88%, ${bgTint2} 0%, transparent 58%),
+            radial-gradient(ellipse 420px 320px at 52% 52%, ${accent}05 0%, transparent 70%)
+          `,
+          pointerEvents: 'none',
+        }}
+      />
+      {/* Noise */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          opacity: 0.4,
+          mixBlendMode: 'multiply',
+          backgroundImage: noiseSvg,
+          pointerEvents: 'none',
+        }}
+      />
+
+      {/* Top bar */}
+      <div
+        style={{
+          position: 'relative',
+          height: 58,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 24px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+          {breathingAvatar(30)}
+          <div style={{ minWidth: 0 }}>
             <div
-              key={message.id}
-              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               style={{
-                animation: idx > 0 ? 'message-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards' : undefined,
-                opacity: idx > 0 ? 0 : 1,
+                fontSize: 14.5,
+                fontWeight: 600,
+                letterSpacing: -0.2,
+                color: '#1a1410',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
               }}
             >
-              {/* Assistant avatar */}
-              {message.role === 'assistant' && (
-                <div className="w-7 h-7 rounded-xl flex items-center justify-center mr-2.5 mt-1 flex-shrink-0 shadow-sm ring-1 ring-white/30"
-                  style={{ background: `linear-gradient(135deg, ${primary}, ${secondary})` }}
+              {botName}
+            </div>
+            {chatbot.description && (
+              <div
+                style={{
+                  fontSize: 11.5,
+                  color: 'rgba(26,20,16,0.55)',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  marginTop: 1,
+                }}
+              >
+                {chatbot.description}
+              </div>
+            )}
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              marginLeft: 6,
+              padding: '3px 10px',
+              background: `${accent}14`,
+              borderRadius: 999,
+              fontSize: 10.5,
+              color: accent,
+              fontWeight: 700,
+              letterSpacing: 0.4,
+              flexShrink: 0,
+            }}
+          >
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: 3,
+                background: accent,
+                animation: 'v2pulse 2s infinite ease-in-out',
+              }}
+            />
+            ONLINE
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+          <div
+            style={{
+              fontSize: 11.5,
+              color: 'rgba(26,20,16,0.65)',
+              padding: '4px 10px',
+              borderRadius: 999,
+              border: '1px solid rgba(0,0,0,0.08)',
+              fontWeight: 500,
+              letterSpacing: 0.3,
+            }}
+          >
+            {lang}
+          </div>
+          {messages.length > 0 && (
+            <div style={{ position: 'relative' }}>
+              <TopIconBtn
+                title="New conversation"
+                onClick={() => setShowClearConfirm((v) => !v)}
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
                 >
-                  <div className="w-3.5 h-3.5 text-white" dangerouslySetInnerHTML={{
-                    __html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4zm0 2a2 2 0 0 1 2 2v2h-4V6a2 2 0 0 1 2-2z"/></svg>'
-                  }} />
+                  <path d="M2.5 13.5L4 10l8-8 2 2-8 8-3.5 1.5z" />
+                  <path d="M10 3.5L12.5 6" />
+                </svg>
+              </TopIconBtn>
+              {showClearConfirm && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    right: 0,
+                    marginTop: 6,
+                    background: '#fff',
+                    borderRadius: 12,
+                    boxShadow: '0 12px 32px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)',
+                    padding: 12,
+                    width: 200,
+                    zIndex: 20,
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: 12.5,
+                      color: 'rgba(26,20,16,0.7)',
+                      margin: '0 0 10px 0',
+                    }}
+                  >
+                    Start a new conversation?
+                  </p>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button
+                      onClick={clearChat}
+                      style={{
+                        flex: 1,
+                        fontSize: 12,
+                        padding: '7px 10px',
+                        borderRadius: 8,
+                        background: accent,
+                        color: '#fff',
+                        border: 'none',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      New
+                    </button>
+                    <button
+                      onClick={() => setShowClearConfirm(false)}
+                      style={{
+                        flex: 1,
+                        fontSize: 12,
+                        padding: '7px 10px',
+                        borderRadius: 8,
+                        background: 'rgba(0,0,0,0.04)',
+                        color: 'rgba(26,20,16,0.7)',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
               )}
+            </div>
+          )}
+        </div>
+      </div>
 
-              <div className={`max-w-[78%]`}>
-                <div
-                  className={`px-4 py-3 text-[14.5px] leading-[1.65] ${
-                    message.role === 'user'
-                      ? 'text-white rounded-[20px] rounded-br-md shadow-md'
-                      : 'text-slate-800 bg-white/70 backdrop-blur-xl rounded-[20px] rounded-bl-md shadow-sm ring-1 ring-slate-900/[0.04]'
-                  }`}
-                  style={
-                    message.role === 'user'
-                      ? { background: `linear-gradient(135deg, ${primary}, ${secondary})` }
-                      : undefined
-                  }
+      {/* Centered conversation */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 58,
+          bottom: 0,
+          left: 0,
+          right: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          padding: '24px 24px 0',
+        }}
+      >
+        <div
+          style={{
+            width: '100%',
+            maxWidth: 720,
+            flex: 1,
+            minHeight: 0,
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          {isEmpty && (
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                textAlign: 'center',
+                padding: '20px 0 36px',
+              }}
+            >
+              {breathingAvatar(68)}
+              <h1
+                style={{
+                  fontSize: 32,
+                  fontWeight: 600,
+                  letterSpacing: -1.2,
+                  lineHeight: 1.12,
+                  margin: '26px 0 10px',
+                  color: '#1a1410',
+                  maxWidth: 480,
+                  textWrap: 'balance' as CSSProperties['textWrap'],
+                }}
+              >
+                Hi — I&apos;m <span style={{ color: accent }}>{displayName}</span>
+                {displayName.endsWith('s') ? "'" : "'s"} assistant.
+              </h1>
+              <p
+                style={{
+                  fontSize: 15.5,
+                  lineHeight: 1.55,
+                  color: 'rgba(26,20,16,0.65)',
+                  margin: 0,
+                  maxWidth: 460,
+                  textWrap: 'pretty' as CSSProperties['textWrap'],
+                }}
+              >
+                {welcome}
+              </p>
+            </div>
+          )}
+
+          <div
+            ref={scrollRef}
+            style={{
+              flex: 1,
+              overflowY: 'auto',
+              overflowX: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 14,
+              paddingBottom: 12,
+              scrollbarWidth: 'thin',
+              scrollbarColor: 'rgba(0,0,0,0.08) transparent',
+            }}
+          >
+            {messages.map((m, i) =>
+              m.role === 'user' ? (
+                <UserRow key={m.id} accent={accent}>
+                  {m.content}
+                </UserRow>
+              ) : (
+                <BotRow
+                  key={m.id}
+                  accent={accent}
+                  initials={initials}
+                  source={m.sources && m.sources.length > 0 ? m.sources[0].documentTitle : undefined}
+                  extraSources={m.sources && m.sources.length > 1 ? m.sources.length - 1 : 0}
+                  showActions={i === messages.length - 1 && !m.isStreaming && !loading && m.id !== 'welcome'}
+                  onReact={(r) => handleReaction(m.id, m.messageId, r)}
+                  reaction={m.reaction}
+                  copied={copiedId === m.id}
+                  onCopy={() => handleCopy(m.id, m.content)}
                 >
-                  {message.role === 'user' ? (
-                    <span className="whitespace-pre-wrap">{message.content}</span>
+                  {m.isStreaming && !m.content ? (
+                    <Typing accent={accent} />
                   ) : (
                     <>
                       <div
                         className="md-content"
-                        dangerouslySetInnerHTML={{ __html: parseMarkdown(message.content, primary) }}
+                        dangerouslySetInnerHTML={{ __html: parseMarkdown(m.content, accent) }}
                       />
-                      {message.isStreaming && (
-                        <span className="inline-block w-[2px] h-[18px] ml-0.5 align-text-bottom rounded-full animate-pulse"
-                          style={{ backgroundColor: primary }}
+                      {m.isStreaming && (
+                        <span
+                          style={{
+                            display: 'inline-block',
+                            width: 2,
+                            height: 16,
+                            marginLeft: 2,
+                            verticalAlign: 'text-bottom',
+                            borderRadius: 2,
+                            background: accent,
+                            animation: 'v2caret 1s infinite steps(2)',
+                          }}
                         />
                       )}
                     </>
                   )}
-                </div>
+                </BotRow>
+              )
+            )}
+            {loading && !messages.some((m) => m.isStreaming) && (
+              <BotRow accent={accent} initials={initials}>
+                <Typing accent={accent} />
+              </BotRow>
+            )}
+          </div>
 
-                {/* Reactions */}
-                {message.role === 'assistant' && !message.isStreaming && message.id !== 'welcome' && (
-                  <div className="flex items-center gap-1 mt-1.5 ml-1">
-                    <button
-                      onClick={() => handleReaction(message.id, message.messageId, 'up')}
-                      className={`p-1 rounded-md transition-all ${
-                        message.reaction === 'up'
-                          ? 'text-emerald-600 bg-emerald-50'
-                          : 'text-slate-300 hover:text-slate-500 hover:bg-white/50'
-                      }`}
-                      title="Helpful"
-                    >
-                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => handleReaction(message.id, message.messageId, 'down')}
-                      className={`p-1 rounded-md transition-all ${
-                        message.reaction === 'down'
-                          ? 'text-red-500 bg-red-50'
-                          : 'text-slate-300 hover:text-slate-500 hover:bg-white/50'
-                      }`}
-                      title="Not helpful"
-                    >
-                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17" />
-                      </svg>
-                    </button>
-                    {reactionFeedback === message.id && (
-                      <span className="text-[11px] text-slate-400 ml-1" style={{ animation: 'message-in 0.3s ease forwards' }}>
-                        {message.reaction === 'up' ? 'Thanks!' : 'Thanks for the feedback'}
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                {/* Sources */}
-                {message.sources && message.sources.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {message.sources.map((source, sIdx) => (
-                      <div key={sIdx}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/60 backdrop-blur-sm ring-1 ring-slate-900/[0.04] text-[11px] text-slate-500"
-                      >
-                        <svg className="w-3 h-3 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                          <polyline points="14 2 14 8 20 8" />
-                        </svg>
-                        <span className="font-medium text-slate-600 truncate max-w-[140px]">{source.documentTitle}</span>
-                        <span className="opacity-50">{Math.round(source.similarity * 100)}%</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-
-          {/* Typing indicator */}
-          {loading && !messages.some(m => m.isStreaming) && (
-            <div className="flex items-start" style={{ animation: 'message-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards', opacity: 0 }}>
-              <div className="w-7 h-7 rounded-xl flex items-center justify-center mr-2.5 mt-1 flex-shrink-0 shadow-sm ring-1 ring-white/30"
-                style={{ background: `linear-gradient(135deg, ${primary}, ${secondary})` }}
+          <div style={{ paddingBottom: 22 }}>
+            {isEmpty && prompts.length > 0 && (
+              <div
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 8,
+                  justifyContent: 'center',
+                  marginBottom: 14,
+                }}
               >
-                <div className="w-3.5 h-3.5 text-white" dangerouslySetInnerHTML={{
-                  __html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4zm0 2a2 2 0 0 1 2 2v2h-4V6a2 2 0 0 1 2-2z"/></svg>'
-                }} />
+                {prompts.map((p, i) => (
+                  <PromptChip key={i} accent={accent} onClick={() => sendMessage(p)} disabled={loading}>
+                    {p}
+                  </PromptChip>
+                ))}
               </div>
-              <div className="bg-white/70 backdrop-blur-xl rounded-[20px] rounded-bl-md px-5 py-3.5 shadow-sm ring-1 ring-slate-900/[0.04]">
-                <div className="flex items-center gap-1">
-                  {[0, 1, 2].map(i => (
-                    <div key={i} className="w-[6px] h-[6px] rounded-full"
-                      style={{
-                        backgroundColor: `${primary}80`,
-                        animation: `typing-dot 1.4s ease-in-out ${i * 0.16}s infinite`,
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
+            )}
 
-          {/* Suggested prompts */}
-          {!hasInteracted && chatbot.suggestedPrompts.length > 0 && (
-            <div className="flex flex-wrap gap-2 pt-2" style={{ animation: 'message-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards', opacity: 0 }}>
-              {chatbot.suggestedPrompts.map((prompt, i) => (
-                <button
-                  key={i}
-                  onClick={() => sendMessage(prompt)}
-                  disabled={loading}
-                  className="group px-4 py-2 rounded-full bg-white/60 backdrop-blur-sm text-[13px] font-medium text-slate-600 ring-1 ring-slate-900/[0.06] hover:ring-2 hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ animationDelay: `${0.4 + i * 0.08}s` }}
-                  onMouseEnter={e => {
-                    (e.target as HTMLButtonElement).style.borderColor = primary
-                    ;(e.target as HTMLButtonElement).style.color = primary
-                  }}
-                  onMouseLeave={e => {
-                    (e.target as HTMLButtonElement).style.borderColor = ''
-                    ;(e.target as HTMLButtonElement).style.color = ''
-                  }}
-                >
-                  <span className="mr-1.5 opacity-40 group-hover:opacity-70 transition-opacity">&#8594;</span>
-                  {prompt}
-                </button>
-              ))}
-            </div>
-          )}
-
-          <div ref={messagesEndRef} />
-        </div>
-      </div>
-
-      {/* ── Input ── */}
-      <div className="relative z-10">
-        <div className="h-px bg-gradient-to-r from-transparent via-slate-200/60 to-transparent" />
-        <div className="px-4 py-4 bg-white/40 backdrop-blur-xl">
-          <form onSubmit={handleSubmit} className="max-w-3xl mx-auto">
-            <div className="flex items-center gap-2.5 bg-white/80 backdrop-blur-sm rounded-2xl ring-1 ring-slate-900/[0.06] shadow-sm px-4 transition-all duration-200 focus-within:ring-2 focus-within:shadow-md"
-              style={{ '--tw-ring-color': `${primary}40` } as React.CSSProperties}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                background: '#fff',
+                borderRadius: 18,
+                padding: '6px 6px 6px 18px',
+                boxShadow:
+                  '0 2px 4px rgba(0,0,0,0.04), 0 10px 28px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)',
+              }}
             >
               <input
                 ref={inputRef}
                 type="text"
+                placeholder="Ask a question…"
                 value={input}
-                onChange={e => setInput(e.target.value)}
-                placeholder="Type your message..."
                 disabled={loading}
-                className="flex-1 py-3.5 bg-transparent text-[14.5px] text-slate-800 placeholder-slate-400 focus:outline-none disabled:opacity-50"
-                style={{ fontFamily: 'var(--font-body)' }}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSubmit()
+                }}
+                style={{
+                  flex: 1,
+                  border: 'none',
+                  outline: 'none',
+                  background: 'transparent',
+                  fontSize: 15,
+                  color: '#1a1410',
+                  fontFamily: 'inherit',
+                  padding: '10px 0',
+                }}
               />
               <button
-                type="submit"
-                disabled={loading || !input.trim()}
-                className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-white transition-all duration-200 disabled:opacity-30 disabled:scale-95 hover:scale-105 active:scale-95 shadow-sm"
+                onClick={handleSubmit}
+                disabled={!input.trim() || loading}
                 style={{
-                  background: input.trim() && !loading
-                    ? `linear-gradient(135deg, ${primary}, ${secondary})`
-                    : `linear-gradient(135deg, ${primary}60, ${secondary}60)`,
+                  width: 40,
+                  height: 40,
+                  borderRadius: 14,
+                  border: 'none',
+                  cursor: input.trim() && !loading ? 'pointer' : 'not-allowed',
+                  background: input.trim() && !loading ? accent : 'rgba(0,0,0,0.06)',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow:
+                    input.trim() && !loading
+                      ? `0 4px 14px ${accent}50, inset 0 1px 0 rgba(255,255,255,0.2)`
+                      : 'none',
+                  transition: 'all 0.15s',
                 }}
+                aria-label="Send"
               >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="22" y1="2" x2="11" y2="13" />
-                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M8 13V3M3 8l5-5 5 5" />
                 </svg>
               </button>
             </div>
-          </form>
-        </div>
 
-        {/* Branding */}
-        {chatbot.showBranding && (
-          <div className="text-center pb-3 pt-0.5 bg-white/40 backdrop-blur-xl">
-            <a
-              href="https://chataziendale.it"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[11px] text-slate-400 hover:text-slate-500 transition-colors"
-            >
-              Powered by <span className="font-semibold">ChatAziendale</span>
-            </a>
+            {chatbot.showBranding && (
+              <div
+                style={{
+                  textAlign: 'center',
+                  marginTop: 10,
+                  fontSize: 11,
+                  color: 'rgba(26,20,16,0.42)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 5,
+                }}
+              >
+                Powered by{' '}
+                <a
+                  href="https://chataziendale.it"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    fontWeight: 600,
+                    color: 'rgba(26,20,16,0.65)',
+                    textDecoration: 'none',
+                  }}
+                >
+                  ChatAziendale
+                </a>
+                <span style={{ opacity: 0.4 }}>·</span>
+                Answers may be inaccurate
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
-      {/* ── Styles ── */}
-      <style jsx>{`
-        @keyframes float-orb {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          33% { transform: translate(30px, -40px) scale(1.05); }
-          66% { transform: translate(-20px, 20px) scale(0.95); }
+      <style jsx global>{`
+        @keyframes v2pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
         }
-        @keyframes message-in {
-          from { opacity: 0; transform: translateY(8px); }
+        @keyframes v2breathe {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.045); }
+        }
+        @keyframes v2msgIn {
+          from { opacity: 0; transform: translateY(6px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes typing-dot {
-          0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-          30% { transform: translateY(-4px); opacity: 1; }
+        @keyframes v2dot {
+          0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+          40% { opacity: 1; transform: scale(1.1); }
         }
-      `}</style>
-      <style jsx global>{`
-        .md-content .md-p { margin: 0 0 12px 0; }
+        @keyframes v2caret {
+          50% { opacity: 0; }
+        }
+        .md-content .md-p { margin: 0 0 10px 0; }
         .md-content .md-p:last-child { margin-bottom: 0; }
-        .md-content .md-h2, .md-content .md-h3, .md-content .md-h4 {
-          margin: 14px 0 6px 0;
+        .md-content .md-h2,
+        .md-content .md-h3,
+        .md-content .md-h4 {
+          margin: 12px 0 6px 0;
           font-weight: 600;
           line-height: 1.3;
         }
@@ -724,17 +917,399 @@ export default function PublicChatClient({ chatbot }: { chatbot: ChatbotConfig }
           font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
           font-size: 13px;
         }
-        .md-content .md-ul, .md-content .md-ol {
+        .md-content .md-ul,
+        .md-content .md-ol {
           margin: 8px 0;
           padding-left: 20px;
         }
         .md-content .md-ul { list-style-type: disc; }
         .md-content .md-ol { list-style-type: decimal; }
-        .md-content .md-li, .md-content .md-oli {
+        .md-content .md-li,
+        .md-content .md-oli {
           margin: 4px 0;
-          line-height: 1.5;
+          line-height: 1.55;
+        }
+        .v2-scroll::-webkit-scrollbar { width: 6px; }
+        .v2-scroll::-webkit-scrollbar-thumb {
+          background: rgba(0,0,0,0.12);
+          border-radius: 3px;
         }
       `}</style>
+    </div>
+  )
+}
+
+function UserRow({ accent, children }: { accent: string; children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'flex-end',
+        animation: 'v2msgIn 0.3s ease-out',
+      }}
+    >
+      <div
+        style={{
+          background: accent,
+          color: '#fff',
+          borderRadius: '18px 6px 18px 18px',
+          padding: '11px 16px',
+          fontSize: 14.5,
+          lineHeight: 1.5,
+          maxWidth: 460,
+          boxShadow: `0 2px 10px ${accent}30, inset 0 1px 0 rgba(255,255,255,0.15)`,
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  )
+}
+
+interface BotRowProps {
+  accent: string
+  initials: string
+  source?: string
+  extraSources?: number
+  showActions?: boolean
+  onReact?: (r: 'up' | 'down') => void
+  reaction?: 'up' | 'down'
+  copied?: boolean
+  onCopy?: () => void
+  children: React.ReactNode
+}
+
+function BotRow({
+  accent,
+  initials,
+  source,
+  extraSources = 0,
+  showActions,
+  onReact,
+  reaction,
+  copied,
+  onCopy,
+  children,
+}: BotRowProps) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        gap: 10,
+        alignItems: 'flex-start',
+        animation: 'v2msgIn 0.3s ease-out',
+      }}
+    >
+      <div
+        style={{
+          width: 28,
+          height: 28,
+          borderRadius: 10,
+          background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
+          color: '#fff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 10.5,
+          fontWeight: 700,
+          letterSpacing: -0.2,
+          flexShrink: 0,
+          boxShadow: `0 2px 6px ${accent}30`,
+        }}
+      >
+        {initials}
+      </div>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 6,
+          flex: 1,
+          minWidth: 0,
+        }}
+      >
+        <div
+          style={{
+            background: 'rgba(255,255,255,0.88)',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid rgba(0,0,0,0.04)',
+            borderRadius: '6px 18px 18px 18px',
+            padding: '12px 16px',
+            fontSize: 14.5,
+            lineHeight: 1.55,
+            color: '#1a1410',
+            maxWidth: 560,
+            alignSelf: 'flex-start',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+            wordBreak: 'break-word',
+          }}
+        >
+          {children}
+          {source && (
+            <div
+              style={{
+                marginTop: 10,
+                paddingTop: 10,
+                borderTop: '1px dashed rgba(0,0,0,0.08)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 12,
+                color: 'rgba(26,20,16,0.65)',
+                flexWrap: 'wrap',
+              }}
+            >
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke={accent} strokeWidth="1.8">
+                <path d="M7 1H3a1 1 0 00-1 1v8a1 1 0 001 1h6a1 1 0 001-1V4L7 1z" />
+                <path d="M7 1v3h3" />
+              </svg>
+              <span style={{ color: accent, fontWeight: 600 }}>Source:</span>
+              <span
+                style={{
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  maxWidth: 280,
+                }}
+              >
+                {source}
+              </span>
+              {extraSources > 0 && (
+                <span style={{ opacity: 0.6 }}>+ {extraSources} more</span>
+              )}
+            </div>
+          )}
+        </div>
+        {showActions && (
+          <div style={{ display: 'flex', gap: 2, paddingLeft: 4 }}>
+            <ActionBtn
+              title="Helpful"
+              active={reaction === 'up'}
+              activeColor="#059669"
+              onClick={() => onReact?.('up')}
+            >
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 14 14"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M4 6.5v5H2.5a.5.5 0 01-.5-.5v-4a.5.5 0 01.5-.5H4zM4 6.5L6.5 2a1.5 1.5 0 011.5 1v3h3a1 1 0 011 1l-1 4a1 1 0 01-1 .5H4" />
+              </svg>
+            </ActionBtn>
+            <ActionBtn
+              title="Not helpful"
+              active={reaction === 'down'}
+              activeColor="#dc2626"
+              onClick={() => onReact?.('down')}
+            >
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 14 14"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ transform: 'rotate(180deg)' }}
+              >
+                <path d="M4 6.5v5H2.5a.5.5 0 01-.5-.5v-4a.5.5 0 01.5-.5H4zM4 6.5L6.5 2a1.5 1.5 0 011.5 1v3h3a1 1 0 011 1l-1 4a1 1 0 01-1 .5H4" />
+              </svg>
+            </ActionBtn>
+            <ActionBtn title={copied ? 'Copied!' : 'Copy'} onClick={onCopy}>
+              {copied ? (
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 14 14"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M3 7l3 3 5-6" />
+                </svg>
+              ) : (
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 14 14"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="4" y="4" width="8" height="8" rx="1.5" />
+                  <path d="M2 10V3a1 1 0 011-1h7" />
+                </svg>
+              )}
+            </ActionBtn>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function ActionBtn({
+  children,
+  title,
+  onClick,
+  active,
+  activeColor,
+}: {
+  children: React.ReactNode
+  title?: string
+  onClick?: () => void
+  active?: boolean
+  activeColor?: string
+}) {
+  return (
+    <button
+      title={title}
+      onClick={onClick}
+      style={{
+        width: 24,
+        height: 24,
+        borderRadius: 6,
+        border: 'none',
+        background: active ? 'rgba(0,0,0,0.04)' : 'transparent',
+        color: active ? activeColor ?? '#1a1410' : 'rgba(26,20,16,0.42)',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        transition: 'all 0.12s',
+        fontFamily: 'inherit',
+      }}
+      onMouseEnter={(e) => {
+        if (!active) {
+          e.currentTarget.style.background = 'rgba(255,255,255,0.7)'
+          e.currentTarget.style.color = '#1a1410'
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!active) {
+          e.currentTarget.style.background = 'transparent'
+          e.currentTarget.style.color = 'rgba(26,20,16,0.42)'
+        }
+      }}
+    >
+      {children}
+    </button>
+  )
+}
+
+function TopIconBtn({
+  children,
+  title,
+  onClick,
+}: {
+  children: React.ReactNode
+  title?: string
+  onClick?: () => void
+}) {
+  return (
+    <button
+      title={title}
+      onClick={onClick}
+      style={{
+        width: 32,
+        height: 32,
+        borderRadius: 10,
+        border: 'none',
+        background: 'transparent',
+        color: 'rgba(26,20,16,0.65)',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        transition: 'all 0.12s',
+        fontFamily: 'inherit',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = 'rgba(255,255,255,0.7)'
+        e.currentTarget.style.color = '#1a1410'
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = 'transparent'
+        e.currentTarget.style.color = 'rgba(26,20,16,0.65)'
+      }}
+    >
+      {children}
+    </button>
+  )
+}
+
+function PromptChip({
+  accent,
+  onClick,
+  disabled,
+  children,
+}: {
+  accent: string
+  onClick: () => void
+  disabled?: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        padding: '10px 15px',
+        borderRadius: 999,
+        border: '1px solid rgba(0,0,0,0.08)',
+        background: 'rgba(255,255,255,0.7)',
+        backdropFilter: 'blur(6px)',
+        fontSize: 13,
+        color: '#1a1410',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.5 : 1,
+        fontFamily: 'inherit',
+        letterSpacing: -0.1,
+        boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+        transition: 'all 0.15s',
+      }}
+      onMouseEnter={(e) => {
+        if (disabled) return
+        e.currentTarget.style.borderColor = accent
+        e.currentTarget.style.color = accent
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = 'rgba(0,0,0,0.08)'
+        e.currentTarget.style.color = '#1a1410'
+      }}
+    >
+      {children}
+    </button>
+  )
+}
+
+function Typing({ accent }: { accent: string }) {
+  return (
+    <div style={{ display: 'flex', gap: 4, padding: '4px 2px' }}>
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          style={{
+            width: 7,
+            height: 7,
+            borderRadius: 4,
+            background: accent,
+            animation: `v2dot 1.3s ${i * 0.18}s infinite ease-in-out`,
+          }}
+        />
+      ))}
     </div>
   )
 }

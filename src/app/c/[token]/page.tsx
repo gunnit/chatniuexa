@@ -1,7 +1,15 @@
 import { Metadata } from 'next'
+import { Inter } from 'next/font/google'
 import { prisma } from '@/lib/db'
 import { notFound } from 'next/navigation'
 import PublicChatClient from './PublicChatClient'
+
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-inter',
+})
 
 type Props = { params: Promise<{ token: string }> }
 
@@ -41,5 +49,9 @@ export default async function PublicChatPage({ params }: Props) {
     select: chatbotSelect,
   })
   if (!chatbot) notFound()
-  return <PublicChatClient chatbot={chatbot} />
+  return (
+    <div className={inter.variable} style={{ height: '100vh' }}>
+      <PublicChatClient chatbot={chatbot} />
+    </div>
+  )
 }
