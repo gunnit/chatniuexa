@@ -16,6 +16,7 @@ export async function GET(
       select: {
         id: true,
         name: true,
+        description: true,
         welcomeMessage: true,
         primaryColor: true,
         secondaryColor: true,

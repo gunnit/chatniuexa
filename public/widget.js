@@ -33,9 +33,6 @@
     close: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>',
     arrow: '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg>',
     send: '<svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 12V2M3 6l4-4 4 4"/></svg>',
-    attach: '<svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M11 6.5L6 11.5a3 3 0 01-4-4L7.5 2a2 2 0 012.8 2.8L4.8 10.4a1 1 0 11-1.4-1.4L8.5 4"/></svg>',
-    voice: '<svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="4" height="7" rx="2"/><path d="M3 7v1a4 4 0 008 0V7M7 12v1"/></svg>',
-    emoji: '<svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="5"/><circle cx="5.3" cy="6" r="0.5" fill="currentColor"/><circle cx="8.7" cy="6" r="0.5" fill="currentColor"/><path d="M5 9c0.5 1 1.5 1.5 2 1.5s1.5-0.5 2-1.5"/></svg>',
     thumbUp: '<svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5v5H2.5a.5.5 0 01-.5-.5v-4a.5.5 0 01.5-.5H4zM4 6.5L6.5 2a1.5 1.5 0 011.5 1v3h3a1 1 0 011 1l-1 4a1 1 0 01-1 .5H4"/></svg>',
     thumbDown: '<svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(180deg)"><path d="M4 6.5v5H2.5a.5.5 0 01-.5-.5v-4a.5.5 0 01.5-.5H4zM4 6.5L6.5 2a1.5 1.5 0 011.5 1v3h3a1 1 0 011 1l-1 4a1 1 0 01-1 .5H4"/></svg>',
     copy: '<svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="8" height="8" rx="1.5"/><path d="M2 10V3a1 1 0 011-1h7"/></svg>',
@@ -62,6 +59,19 @@
       return '<img src="' + config.chatIconImage + '" alt="" width="32" height="32" style="display:block;pointer-events:none;border-radius:8px;" onerror="this.parentElement.innerHTML=\'' + fallback + '\'">';
     }
     return ICONS.spark;
+  }
+
+  // Avatar icon — fills the gradient square. Preset SVGs render white via currentColor;
+  // custom images cover the full square. Falls back to the spark mark.
+  function getAvatarIconHTML(config) {
+    if (config && config.chatIconType === 'preset' && config.chatIconPreset && PRESET_LAUNCHER_ICONS[config.chatIconPreset]) {
+      return PRESET_LAUNCHER_ICONS[config.chatIconPreset];
+    }
+    if (config && config.chatIconType === 'custom' && config.chatIconImage) {
+      const fallback = ICONS.avatarMark.replace(/'/g, "\\'");
+      return '<img src="' + config.chatIconImage + '" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.parentElement.innerHTML=\'' + fallback + '\'">';
+    }
+    return ICONS.avatarMark;
   }
 
   // ── State ────────────────────────────────────────────────────────
@@ -121,8 +131,10 @@
         0 14px 30px -8px var(--shadow-glow),
         0 6px 14px -4px var(--shadow-soft),
         inset 0 1px 0 rgba(255,255,255,0.25);
-      transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
+      transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+      opacity: 0;
     }
+    .launcher.ready { opacity: 1; }
     .launcher:hover { transform: scale(1.06); }
     .launcher:active { transform: scale(0.96); }
     .launcher.hidden { opacity: 0; pointer-events: none; transform: scale(0.85); }
@@ -177,6 +189,7 @@
     .avatar {
       flex-shrink: 0; border-radius: 32%;
       background: linear-gradient(135deg, var(--accent-shade-pos), var(--accent-shade-neg));
+      color: #fff;
       display: flex; align-items: center; justify-content: center;
       box-shadow: 0 2px 8px var(--accent-soft), inset 0 1px 0 rgba(255,255,255,0.25);
       position: relative; overflow: hidden;
@@ -184,6 +197,7 @@
     .avatar.lg { width: 32px; height: 32px; }
     .avatar.sm { width: 26px; height: 26px; }
     .avatar svg { width: 62%; height: 62%; }
+    .avatar img { display: block; }
     .avatar.thinking svg { animation: cw-pulse 1.2s infinite; }
     .header-meta { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
     .header-title { display: flex; align-items: center; gap: 7px; flex-wrap: nowrap; }
@@ -403,26 +417,14 @@
     .composer textarea:disabled { cursor: wait; }
     .composer-row {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 4px 6px 6px;
+      padding: 4px 8px 8px 14px;
     }
-    .composer-tools { display: flex; align-items: center; gap: 1px; flex: 1; min-width: 0; overflow: hidden; }
-    .composer-divider { width: 1px; height: 14px; background: var(--line); margin: 0 4px; flex-shrink: 0; }
+    .composer-tools { display: flex; align-items: center; flex: 1; min-width: 0; overflow: hidden; }
     .composer-hint {
       font-size: 10.5px; color: var(--fg-faint);
       font-family: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
-      padding-left: 2px; white-space: nowrap;
-      overflow: hidden; text-overflow: ellipsis;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .composer-icon-btn {
-      width: 28px; height: 28px; border-radius: 8px; border: none; cursor: pointer;
-      background: transparent; color: var(--fg-mute);
-      display: flex; align-items: center; justify-content: center;
-      transition: background-color 0.12s, color 0.12s;
-      flex-shrink: 0;
-    }
-    .composer-icon-btn:hover { background: var(--chip); color: var(--fg); }
-    .composer-icon-btn:disabled { opacity: 0.5; cursor: default; }
-    .composer-icon-btn:disabled:hover { background: transparent; color: var(--fg-mute); }
     .send-btn {
       width: 32px; height: 32px; border-radius: 10px; border: none; cursor: pointer;
       background: var(--chip); color: var(--fg-faint);
@@ -528,10 +530,6 @@
           <textarea id="input" rows="1" placeholder="Ask anything…" autocomplete="off"></textarea>
           <div class="composer-row">
             <div class="composer-tools">
-              <button class="composer-icon-btn" type="button" title="Attach (coming soon)" disabled>${ICONS.attach}</button>
-              <button class="composer-icon-btn" type="button" title="Voice (coming soon)" disabled>${ICONS.voice}</button>
-              <button class="composer-icon-btn" type="button" title="Emoji (coming soon)" disabled>${ICONS.emoji}</button>
-              <span class="composer-divider"></span>
               <span class="composer-hint">⏎ to send · ⇧⏎ for newline</span>
             </div>
             <button class="send-btn" id="send" type="button" disabled aria-label="Send">${ICONS.send}</button>
@@ -662,7 +660,7 @@
   function makeAvatar(small) {
     const div = document.createElement('div');
     div.className = 'avatar ' + (small ? 'sm' : 'lg');
-    div.innerHTML = ICONS.avatarMark;
+    div.innerHTML = getAvatarIconHTML(chatbot);
     return div;
   }
   function buildSourcesEl(sources) {
@@ -1073,12 +1071,17 @@
       applyTheme(primary, secondary);
 
       launcher.innerHTML = getLauncherIconHTML(chatbot);
+      launcher.classList.add('ready');
+      $('header-avatar').innerHTML = getAvatarIconHTML(chatbot);
 
       headerName.textContent = chatbot.name || 'Chat';
       const lang = (navigator.language || 'en').split('-')[0].toUpperCase();
       headerLang.textContent = lang;
       const promptName = (chatbot.name || '').replace(/^ask\s+/i, '').trim() || 'anything';
       input.placeholder = 'Ask ' + promptName + '…';
+
+      const desc = (chatbot.description || '').trim();
+      if (desc) $('header-status-text').textContent = desc;
 
       if (chatbot.showBranding === false) branding.style.display = 'none';
 
