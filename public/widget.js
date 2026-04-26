@@ -948,6 +948,8 @@
         return;
       }
 
+      // The server emits events in this order: metadata → content × N → [DONE] → messageId.
+      // We defer finalization until the stream actually closes so messageId is captured.
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let raw = '';
@@ -960,10 +962,7 @@
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue;
           const payload = line.slice(6);
-          if (payload === '[DONE]') {
-            finalizeStreaming(buffer, metadata && metadata.sources, metadata && metadata.confidence, metadata && metadata.messageId);
-            continue;
-          }
+          if (payload === '[DONE]') continue;
           try {
             const parsed = JSON.parse(payload);
             if (parsed.type === 'metadata') {
@@ -979,6 +978,9 @@
             }
           } catch {}
         }
+      }
+      if (streamingState) {
+        finalizeStreaming(buffer, metadata && metadata.sources, metadata && metadata.confidence, metadata && metadata.messageId);
       }
     } catch (err) {
       hideThinking();
