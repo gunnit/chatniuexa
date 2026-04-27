@@ -593,29 +593,67 @@
     d.textContent = String(text == null ? '' : text);
     return d.innerHTML;
   }
+  // Block-level markdown parser. Splits on blank lines, classifies each block
+  // (heading / list / code / paragraph), then runs inline transforms inside.
+  // This avoids the regex-soup pitfalls of the previous single-pass approach
+  // (extra <br> between <li> items, dangling </p> after lists, etc).
   function parseMarkdown(text) {
-    let html = escapeHtml(text);
-    html = html.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, l, c) => '<pre class="md-code-block"><code>' + c.trim() + '</code></pre>');
-    html = html.replace(/`([^`]+)`/g, '<code class="md-inline-code">$1</code>');
-    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-    html = html.replace(/__([^_]+)__/g, '<strong>$1</strong>');
-    html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-    html = html.replace(/(?<![a-zA-Z])_([^_]+)_(?![a-zA-Z])/g, '<em>$1</em>');
-    html = html.replace(/^### (.+)$/gm, '<h4 class="md-h4">$1</h4>');
-    html = html.replace(/^## (.+)$/gm, '<h3 class="md-h3">$1</h3>');
-    html = html.replace(/^# (.+)$/gm, '<h2 class="md-h2">$1</h2>');
-    html = html.replace(/^[\-\*] (.+)$/gm, '<li class="md-li">$1</li>');
-    html = html.replace(/(<li class="md-li">.*<\/li>\n?)+/g, '<ul class="md-ul">$&</ul>');
-    html = html.replace(/^\d+\. (.+)$/gm, '<li class="md-oli">$1</li>');
-    html = html.replace(/(<li class="md-oli">.*<\/li>\n?)+/g, '<ol class="md-ol">$&</ol>');
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener" class="md-link">$1</a>');
-    html = html.replace(/\n\n/g, '</p><p class="md-p">');
-    html = '<p class="md-p">' + html + '</p>';
-    html = html.replace(/<p class="md-p"><\/p>/g, '');
-    html = html.replace(/<p class="md-p">(<(?:ul|ol|pre|h[2-4])[^>]*>)/g, '$1');
-    html = html.replace(/(<\/(?:ul|ol|pre|h[2-4])>)<\/p>/g, '$1');
-    html = html.replace(/\n/g, '<br>');
-    return html;
+    const escaped = escapeHtml(text);
+
+    // Extract fenced code blocks first so their contents are not touched by
+    // inline transforms or block splitting.
+    const codeBlocks = [];
+    const stashed = escaped.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+      const i = codeBlocks.push('<pre class="md-code-block"><code>' + code.trim() + '</code></pre>') - 1;
+      return ' CB' + i + ' ';
+    });
+
+    function inline(s) {
+      s = s.replace(/`([^`]+)`/g, '<code class="md-inline-code">$1</code>');
+      s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      s = s.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+      s = s.replace(/(?<![*\w])\*([^*\n]+)\*(?![*\w])/g, '<em>$1</em>');
+      s = s.replace(/(?<![_\w])_([^_\n]+)_(?![_\w])/g, '<em>$1</em>');
+      s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener" class="md-link">$1</a>');
+      return s;
+    }
+
+    const blocks = stashed.split(/\n{2,}/);
+    const out = [];
+    for (const raw of blocks) {
+      const block = raw.replace(/^\n+|\n+$/g, '');
+      if (!block) continue;
+
+      // Restored code block placeholder
+      const codeMatch = block.match(/^ CB(\d+) $/);
+      if (codeMatch) { out.push(codeBlocks[+codeMatch[1]]); continue; }
+
+      // Heading: # → h2, ## → h3, ### → h4 (h1 reserved for the host page)
+      const h = block.match(/^(#{1,3}) (.+)$/);
+      if (h) {
+        const level = h[1].length + 1;
+        out.push('<h' + level + ' class="md-h' + level + '">' + inline(h[2]) + '</h' + level + '>');
+        continue;
+      }
+
+      // Unordered list — every line starts with "- " or "* "
+      if (block.split('\n').every(l => /^[\-*] /.test(l))) {
+        const items = block.split('\n').map(l => '<li class="md-li">' + inline(l.replace(/^[\-*] /, '')) + '</li>').join('');
+        out.push('<ul class="md-ul">' + items + '</ul>');
+        continue;
+      }
+
+      // Ordered list — every line starts with "N. "
+      if (block.split('\n').every(l => /^\d+\. /.test(l))) {
+        const items = block.split('\n').map(l => '<li class="md-oli">' + inline(l.replace(/^\d+\. /, '')) + '</li>').join('');
+        out.push('<ol class="md-ol">' + items + '</ol>');
+        continue;
+      }
+
+      // Plain paragraph — preserve single newlines as <br>
+      out.push('<p class="md-p">' + inline(block).replace(/\n/g, '<br>') + '</p>');
+    }
+    return out.join('');
   }
 
   function dedupSources(sources) {
