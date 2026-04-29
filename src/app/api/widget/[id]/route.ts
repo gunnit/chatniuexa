@@ -17,6 +17,8 @@ export async function GET(
         id: true,
         name: true,
         description: true,
+        welcomeEyebrow: true,
+        welcomeHeadline: true,
         welcomeMessage: true,
         primaryColor: true,
         secondaryColor: true,

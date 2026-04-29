@@ -24,6 +24,8 @@ interface ChatbotConfig {
   id: string
   name: string
   description: string | null
+  welcomeEyebrow: string | null
+  welcomeHeadline: string | null
   welcomeMessage: string | null
   primaryColor: string | null
   secondaryColor: string | null
@@ -41,6 +43,15 @@ function escapeHtml(text: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
+}
+
+// Renders a single line of "accent markdown" — *word* wraps the word in the accent color.
+// Used for the configurable welcome headline.
+function renderAccentMarkdown(text: string, accent: string): string {
+  return escapeHtml(text).replace(
+    /\*([^*\n]+)\*/g,
+    `<span style="color:${accent}">$1</span>`
+  )
 }
 
 function parseMarkdown(text: string, accent: string): string {
@@ -647,21 +658,37 @@ export default function PublicChatClient({ chatbot }: { chatbot: ChatbotConfig }
               }}
             >
               {breathingAvatar(68)}
+              {chatbot.welcomeEyebrow ? (
+                <div
+                  style={{
+                    fontSize: 11.5,
+                    fontWeight: 600,
+                    letterSpacing: 1.4,
+                    textTransform: 'uppercase',
+                    color: 'rgba(26,20,16,0.55)',
+                    margin: '20px 0 0',
+                  }}
+                >
+                  {chatbot.welcomeEyebrow}
+                </div>
+              ) : null}
               <h1
                 style={{
                   fontSize: 32,
                   fontWeight: 600,
                   letterSpacing: -1.2,
                   lineHeight: 1.12,
-                  margin: '26px 0 10px',
+                  margin: chatbot.welcomeEyebrow ? '10px 0 10px' : '26px 0 10px',
                   color: '#1a1410',
                   maxWidth: 480,
                   textWrap: 'balance' as CSSProperties['textWrap'],
                 }}
-              >
-                Hi — I&apos;m <span style={{ color: accent }}>{displayName}</span>
-                {displayName.endsWith('s') ? "'" : "'s"} assistant.
-              </h1>
+                dangerouslySetInnerHTML={{
+                  __html: chatbot.welcomeHeadline
+                    ? renderAccentMarkdown(chatbot.welcomeHeadline, accent)
+                    : `Hi — I&apos;m <span style="color:${accent}">${escapeHtml(displayName)}</span>${displayName.endsWith('s') ? "'" : "'s"} assistant.`,
+                }}
+              />
               <p
                 style={{
                   fontSize: 15.5,

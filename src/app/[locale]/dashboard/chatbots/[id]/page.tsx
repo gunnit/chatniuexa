@@ -13,6 +13,8 @@ interface Chatbot {
   model: string
   primaryColor: string | null
   secondaryColor: string | null
+  welcomeEyebrow: string | null
+  welcomeHeadline: string | null
   welcomeMessage: string | null
   showBranding: boolean
   showSources: boolean
@@ -167,6 +169,8 @@ export default function ChatbotConfigPage({
   const [model, setModel] = useState('gpt-5.4-mini')
   const [primaryColor, setPrimaryColor] = useState('#6366f1')
   const [secondaryColor, setSecondaryColor] = useState('#6366f1')
+  const [welcomeEyebrow, setWelcomeEyebrow] = useState('')
+  const [welcomeHeadline, setWelcomeHeadline] = useState('')
   const [welcomeMessage, setWelcomeMessage] = useState('')
   const [showBranding, setShowBranding] = useState(true)
   const [showSources, setShowSources] = useState(true)
@@ -214,6 +218,8 @@ export default function ChatbotConfigPage({
           setModel(c.model)
           setPrimaryColor(c.primaryColor || '#6366f1')
           setSecondaryColor(c.secondaryColor || '#6366f1')
+          setWelcomeEyebrow(c.welcomeEyebrow ?? 'Knowledge assistant')
+          setWelcomeHeadline(c.welcomeHeadline ?? 'Hi — what would you like to *know*?')
           setWelcomeMessage(c.welcomeMessage || 'Hello! How can I help you?')
           setShowBranding(c.showBranding)
           setShowSources(c.showSources ?? true)
@@ -258,6 +264,8 @@ export default function ChatbotConfigPage({
           model,
           primaryColor: primaryColor || undefined,
           secondaryColor: secondaryColor || undefined,
+          welcomeEyebrow: welcomeEyebrow,
+          welcomeHeadline: welcomeHeadline || undefined,
           welcomeMessage: welcomeMessage || undefined,
           showBranding,
           showSources,
@@ -483,6 +491,32 @@ export default function ChatbotConfigPage({
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">{t('welcomeEyebrow')}</label>
+                <input
+                  type="text"
+                  value={welcomeEyebrow}
+                  onChange={(e) => setWelcomeEyebrow(e.target.value.slice(0, 40))}
+                  maxLength={40}
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
+                  placeholder={t('welcomeEyebrowPlaceholder')}
+                />
+                <p className="text-xs text-slate-500 mt-1.5">{t('welcomeEyebrowHelp')}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">{t('welcomeHeadline')}</label>
+                <input
+                  type="text"
+                  value={welcomeHeadline}
+                  onChange={(e) => setWelcomeHeadline(e.target.value.slice(0, 80))}
+                  maxLength={80}
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
+                  placeholder={t('welcomeHeadlinePlaceholder')}
+                />
+                <p className="text-xs text-slate-500 mt-1.5">{t('welcomeHeadlineHelp')}</p>
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">{t('welcomeMessage')}</label>
                 <input
                   type="text"
@@ -491,6 +525,7 @@ export default function ChatbotConfigPage({
                   className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
                   placeholder={t('welcomeMessagePlaceholder')}
                 />
+                <p className="text-xs text-slate-500 mt-1.5">{t('welcomeMessageHelp')}</p>
               </div>
             </div>
           )}

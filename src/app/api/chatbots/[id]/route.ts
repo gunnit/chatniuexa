@@ -38,6 +38,8 @@ const updateChatbotSchema = z.object({
   model: z.string().optional(),
   primaryColor: z.string().nullish(),
   secondaryColor: z.string().nullish(),
+  welcomeEyebrow: z.string().max(40).nullish(),
+  welcomeHeadline: z.string().max(80).nullish(),
   welcomeMessage: z.string().nullish(),
   showBranding: z.boolean().optional(),
   showSources: z.boolean().optional(),

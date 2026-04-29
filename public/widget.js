@@ -749,21 +749,35 @@
   }
 
   // ── Empty state ─────────────────────────────────────────────────
+  // Renders a single line of "accent markdown" — *word* wraps the word in the accent color.
+  function renderAccentMarkdown(text) {
+    const escaped = escapeHtml(text);
+    return escaped.replace(/\*([^*\n]+)\*/g, '<span class="accent-text">$1</span>');
+  }
+
   function renderEmptyState() {
     body.classList.add('empty');
     body.innerHTML = '';
     const wrap = document.createElement('div');
     wrap.className = 'empty-state';
 
-    const greet = document.createElement('div');
-    greet.className = 'greeting';
-    greet.innerHTML = `
-      <div class="eyebrow"><span class="bar"></span>Knowledge assistant</div>
-      <div class="greet-title">Hi — what would you like to <span class="accent-text">know</span>?</div>
-      <div class="greet-body"></div>
-    `;
+    const eyebrowText = chatbot && typeof chatbot.welcomeEyebrow === 'string'
+      ? chatbot.welcomeEyebrow.trim()
+      : 'Knowledge assistant';
+    const headlineText = (chatbot && chatbot.welcomeHeadline && chatbot.welcomeHeadline.trim())
+      || 'Hi — what would you like to *know*?';
     const welcome = (chatbot && chatbot.welcomeMessage)
       || (chatbot && chatbot.name ? 'Ask me anything about ' + chatbot.name + '.' : 'Ask me anything.');
+
+    const greet = document.createElement('div');
+    greet.className = 'greeting';
+    const eyebrowHTML = eyebrowText
+      ? '<div class="eyebrow"><span class="bar"></span>' + escapeHtml(eyebrowText) + '</div>'
+      : '';
+    greet.innerHTML =
+      eyebrowHTML +
+      '<div class="greet-title">' + renderAccentMarkdown(headlineText) + '</div>' +
+      '<div class="greet-body"></div>';
     greet.querySelector('.greet-body').textContent = welcome;
     wrap.appendChild(greet);
 

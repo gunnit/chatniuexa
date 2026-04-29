@@ -270,6 +270,8 @@ model Chatbot {
   // Widget customization (Phase 5)
   primaryColor     String?  @default("#3B82F6")
   secondaryColor   String?  @default("#6366f1")
+  welcomeEyebrow   String?  @default("Knowledge assistant")    // Small label above headline (blank to hide)
+  welcomeHeadline  String?  @default("Hi — what would you like to *know*?")  // Big hero title; *word* renders in accent color
   welcomeMessage   String?  @default("Hello! How can I help you?")
   showBranding     Boolean  @default(true)
   showSources      Boolean  @default(true)  // Show "Sources:" citations on public chat/widget
