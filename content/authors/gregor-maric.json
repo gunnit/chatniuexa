@@ -1,0 +1,18 @@
+{
+  "id": "gregor-maric",
+  "name": "Gregor Maric",
+  "role": "Founder, ChatAziendale",
+  "bio": {
+    "en": "Gregor Maric founded ChatAziendale and operates Niuexa, an Italian AEO/GEO consultancy. He has built AI-driven SaaS products for European SMBs since 2018 and writes about retrieval-augmented chatbots, AI search, and applied LLM engineering.",
+    "it": "Gregor Maric ha fondato ChatAziendale e gestisce Niuexa, una consulenza italiana di AEO/GEO. Costruisce prodotti SaaS basati su AI per PMI europee dal 2018 e scrive di chatbot con retrieval-augmented generation, ricerca AI e ingegneria LLM applicata."
+  },
+  "avatar": "/images/authors/gregor-maric.jpg",
+  "sameAs": [
+    "https://www.linkedin.com/in/gregormaric",
+    "https://niuexa.ai"
+  ],
+  "url": {
+    "en": "/about/gregor-maric",
+    "it": "/it/about/gregor-maric"
+  }
+}

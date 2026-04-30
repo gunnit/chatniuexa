@@ -127,25 +127,12 @@ export default async function Home() {
     ],
   };
 
-  const howToSchema = {
-    "@context": "https://schema.org",
-    "@type": "HowTo",
-    name: t("howTitle"),
-    description: "Set up an AI chatbot trained on your business data in three simple steps.",
-    step: [
-      { "@type": "HowToStep", position: 1, name: t("step1Title"), text: t("step1Desc") },
-      { "@type": "HowToStep", position: 2, name: t("step2Title"), text: t("step2Desc") },
-      { "@type": "HowToStep", position: 3, name: t("step3Title"), text: t("step3Desc") },
-    ],
-  };
-
   return (
     <div className="relative min-h-screen bg-[#FAFAF7] text-[#1B1B1F] overflow-x-hidden" style={{ colorScheme: 'light' }}>
       <JsonLd data={organizationSchema} />
       <JsonLd data={websiteSchema} />
       <JsonLd data={softwareSchema} />
       <JsonLd data={faqSchema} />
-      <JsonLd data={howToSchema} />
       <Navbar />
 
       {/* ── HERO ── */}

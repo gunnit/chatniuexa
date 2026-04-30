@@ -4,9 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && node scripts/pre-migrate.js && prisma migrate deploy && node scripts/setup-database.js && next build",
+    "build": "prisma generate && node scripts/pre-migrate.js && prisma migrate deploy && node scripts/setup-database.js && npm run lint:articles && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "lint:articles": "tsx scripts/lint-articles.ts",
+    "aeo:ping": "tsx scripts/indexnow-ping.ts",
+    "aeo:baseline": "tsx scripts/analyze-crawler-logs.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
@@ -14,17 +17,25 @@
     "@prisma/client": "^5.22.0",
     "@splinetool/react-spline": "^4.1.0",
     "@splinetool/runtime": "^1.12.61",
+    "@tailwindcss/typography": "^0.5.19",
     "@vercel/blob": "^2.0.1",
     "bcryptjs": "^3.0.3",
+    "github-slugger": "^2.0.0",
+    "gray-matter": "^4.0.3",
     "mammoth": "^1.11.0",
     "next": "^16.1.6",
     "next-auth": "^5.0.0-beta.30",
     "next-intl": "^4.8.3",
+    "next-mdx-remote": "^6.0.0",
     "openai": "^6.16.0",
     "pdf-parse": "^1.1.1",
     "prisma": "^5.22.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "reading-time": "^1.5.0",
+    "rehype-autolink-headings": "^7.1.0",
+    "rehype-slug": "^6.0.0",
+    "remark-gfm": "^4.0.1",
     "resend": "^6.9.2",
     "zod": "^4.3.6"
   },
@@ -39,6 +50,7 @@
     "eslint-config-next": "16.1.6",
     "playwright": "^1.58.1",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

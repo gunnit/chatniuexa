@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 /* ============================================
    CHATAZIENDALE.IT DESIGN SYSTEM 2026

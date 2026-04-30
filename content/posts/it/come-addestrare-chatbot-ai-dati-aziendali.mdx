@@ -1,0 +1,140 @@
+---
+title: "Come Addestrare un Chatbot AI sui Dati della Tua Azienda: Guida 2026"
+description: "Una guida pratica e con fonti citate alle cinque fasi della costruzione di un chatbot retrieval-augmented sui tuoi documenti — e gli errori da evitare."
+slug: "come-addestrare-chatbot-ai-dati-aziendali"
+locale: "it"
+hreflangSlug: "how-to-train-ai-chatbot-business-data"
+type: "how-to"
+publishedAt: "2026-04-29"
+updatedAt: "2026-04-29"
+author: "gregor-maric"
+tags: ["chatbot", "rag", "ai", "tutorial", "embeddings"]
+heroImage: null
+---
+
+Un chatbot che risponde con accuratezza alle domande sulla tua azienda non è un modello fine-tuned. È un sistema retrieval-augmented: un LLM generico che, al momento della query, riceve i passaggi rilevanti della tua documentazione e produce una risposta ancorata a essi. Questa guida copre le cinque fasi per costruirne uno e gli errori che si presentano in ciascuna.
+
+## Perché i chatbot generici non sono la risposta
+
+Un LLM generico addestrato sul web pubblico non sa cosa dice la tua policy di spedizione, quali sono i termini di garanzia, o quale dei tuoi prodotti è in arrivo. Fargli queste domande produce sciocchezze sicure di sé — talvolta chiamate "allucinazioni" ma più onestamente descritte come il modello che riempie i vuoti con pattern plausibili dai dati di training.
+
+<Definition term="Retrieval-Augmented Generation (RAG)">
+La soluzione standard: al momento della query, recupera i passaggi più rilevanti dal tuo corpus, passali all'LLM come contesto, e fai sì che il modello risponda usando quei passaggi — citandoli nella risposta. L'LLM non deve memorizzare i tuoi dati; deve solo ragionare su ciò che è stato recuperato.
+</Definition>
+
+RAG non è nuovo — il lavoro accademico risale a <SourceCite href="https://arxiv.org/abs/2005.11401">Lewis et al., 2020</SourceCite> — ma il tooling è maturato abbastanza tra il 2023 e il 2026 da consentire a una PMI di mettere in piedi un chatbot RAG funzionante in un pomeriggio. Le cinque fasi sotto sono universali, sia che tu lo costruisca sia che usi una piattaforma hosted.
+
+<Stat
+  value="3,6×"
+  label="ChatGPT-User (il crawler in tempo reale attivato dalle domande degli utenti) ha effettuato 3,6 volte più richieste di Googlebot all'inizio del 2026 — un segnale che gli agenti AI ora si appoggiano alla tua documentazione tanto quanto i motori di ricerca."
+  source="AllAI / Search Engine Journal, Feb 2026"
+  href="https://www.searchenginejournal.com/chatgpt-googlebot-crawl-data-alliai-spa/570885/"
+/>
+
+## Fase 1 — Prepara i dati
+
+Il singolo predittore più forte della qualità del chatbot è ciò che ci metti dentro. Errori comuni:
+
+**Contenuti obsoleti.** Vecchi PDF, FAQ deprecate e policy che contraddicono il sito attuale confonderanno il bot esattamente come confondono i clienti. Audita prima di ingerire.
+
+**Rumore HTML.** Boilerplate, navigazione, banner cookie e footer soffocano il segnale. Se fai crawling di un sito, rimuovili.
+
+**Quasi-duplicati.** Una FAQ che esiste con formulazioni leggermente diverse in tre punti restituirà tre match "rilevanti" al momento del retrieval, nessuno canonico. Deduplica.
+
+**Lingue miste.** Una knowledge base bilingue dove lo stesso contenuto esiste in italiano e inglese richiede tag espliciti di lingua. Altrimenti una domanda in italiano può recuperare un passaggio in inglese e l'LLM tradurrà, male.
+
+**Contenuti tabellari e visivi.** Tabelle prezzi, matrici di confronto e diagrammi degradano male in testo grezzo. Converti le tabelle in markdown strutturato; descrivi i diagrammi in prosa; preserva le intestazioni di colonna.
+
+Una baseline pratica: prendi le 20 domande più frequenti dei tuoi clienti dell'ultimo trimestre, audita quali documenti le risponderebbero, e parti da lì. <SourceCite href="https://www.firecrawl.dev/blog/best-chunking-strategies-rag">La guida al chunking di Firecrawl</SourceCite> offre una buona panoramica su come convertire siti in testo pronto per RAG.
+
+## Fase 2 — Embedding e indicizzazione
+
+<Definition term="Embedding">
+Una rappresentazione numerica ad alta dimensionalità di un chunk di testo. Due passaggi con significato simile finiscono vicini nello spazio degli embedding, anche se non condividono parole chiave. È ciò che fa funzionare la "ricerca semantica" — ed è il substrato di ogni sistema RAG.
+</Definition>
+
+La pipeline standard: dividi ogni documento pulito in chunk (tipicamente 200-500 token, con un po' di overlap), chiama un modello di embedding su ciascun chunk e memorizza il vettore risultante insieme al testo originale in un indice vettoriale.
+
+Scelte che contano nel 2026:
+
+**Modello di embedding.** `text-embedding-3-large` di OpenAI, `embed-multilingual-v4` di Cohere e `voyage-3` di Voyage sono i default pratici. Per i contenuti in italiano, i modelli multilingua superano nettamente quelli solo inglese — `text-embedding-3-large` e il modello multilingua di Cohere sono le scelte sicure.
+
+**Dimensione dei chunk.** Chunk ricorsivi da 512 token con overlap di 64 hanno vinto la maggior parte dei benchmark accademici nel 2026, <SourceCite href="https://www.firecrawl.dev/blog/best-chunking-strategies-rag">secondo il benchmark Firecrawl</SourceCite>. Sotto i 100 token si perde contesto; sopra i 1.000 si diluisce il focus semantico.
+
+**Vector store.** Fino a ~10M chunk: Postgres con `pgvector`, Pinecone o Qdrant Cloud. Per knowledge base PMI minuscole (sotto 10.000 chunk), un indice flat in-memory dentro la tua applicazione va benissimo ed evita overhead operativo.
+
+L'input di questa fase sono i tuoi file di testo puliti; l'output è un indice interrogabile dove "vorrei sapere se posso restituire un prodotto dopo 30 giorni" trova i passaggi rilevanti dalla tua policy di reso indipendentemente da come è formulata.
+
+## Fase 3 — Retrieval
+
+Al momento della query, la domanda dell'utente viene a sua volta embeddata con lo stesso modello usato per il corpus, e l'indice restituisce i top-k chunk più simili (tipicamente k=4-8).
+
+<Quote
+  author="Gregor Maric"
+  authorRole="Founder, ChatAziendale"
+  source="note di engineering ChatAziendale"
+  href="https://chataziendale.it"
+>
+  Il retrieval è dove la maggior parte dei sistemi RAG fatti in casa fallisce
+  silenziosamente. Lo score di similarità è alto, il documento giusto è nei
+  top-3, ma il paragrafo giusto no — perché il confine del chunk ha tagliato
+  la risposta a metà. Spendi più tempo sul chunking che sui prompt.
+</Quote>
+
+Tecniche di retrieval da conoscere:
+
+**Hybrid search.** La similarità vettoriale pura sbaglia sui casi di match esatto come SKU di prodotto, codici di errore o nomi propri. Combina ricerca vettoriale con ricerca a parole chiave (BM25) e fondi i risultati. Quasi tutti i sistemi in produzione lo fanno.
+
+**Reranking.** Dopo il retrieval iniziale top-k, esegui un cross-encoder reranker sui candidati per spingere i più rilevanti in cima. <SourceCite href="https://cohere.com/rerank">Cohere Rerank</SourceCite> e Voyage Rerank sono le due opzioni commerciali più usate.
+
+**Query rewriting.** Per le conversazioni multi-turn, riscrivi l'ultima domanda in una query autonoma prima del retrieval. "E del piano pro?" deve diventare "Quali funzioni include il piano Pro?" prima di essere una query utile.
+
+## Fase 4 — Componi il system prompt
+
+Una volta in mano i passaggi rilevanti, li infili nella context window dell'LLM con un system prompt che gli dice: resta ancorato al contesto fornito, cita quale passaggio hai usato e rifiutati di rispondere se il contesto non contiene la risposta. Un system prompt funzionante ha quattro parti:
+
+1. **Identità.** "Sei un assistente per [Azienda]. Aiuti i clienti su [dominio]."
+2. **Istruzione di grounding.** "Rispondi usando solo il contesto sotto. Se il contesto non contiene la risposta, dì che non lo sai e suggerisci di contattare il supporto."
+3. **Istruzione di citazione.** "Cita il passaggio specifico che hai usato includendo l'ID della fonte tra parentesi quadre alla fine di ogni affermazione."
+4. **Tono e lingua.** "Rispondi nella stessa lingua della domanda dell'utente. Sii conciso — massimo 2 paragrafi brevi."
+
+La temperatura dovrebbe essere bassa (0-0,3) per i casi d'uso di supporto — vuoi consistenza, non creatività. <SourceCite href="https://platform.openai.com/docs/guides/prompt-engineering">La guida al prompt engineering di OpenAI</SourceCite> copre pattern più avanzati.
+
+## Fase 5 — Valuta
+
+La maggior parte dei team manda in produzione un chatbot RAG basandosi su "gli ho fatto cinque domande e suonava bene." Poi i clienti reali trovano ogni buco entro una settimana.
+
+Un setup di valutazione funzionante:
+
+**Un test set di 50-100 query rappresentative.** Pesca da ticket di supporto reali se ne hai, o scrivili con il team di supporto. Ogni query ha un pattern di risposta atteso (non una stringa esatta — le generazioni RAG variano in base all'ordine dei prompt).
+
+**Tre metriche, valutate da 1 a 5 da un umano o da un LLM-as-judge solido:**
+- *Faithfulness*: la risposta segue davvero dal contesto recuperato?
+- *Relevance*: la risposta affronta la domanda posta?
+- *Accuratezza della citazione*: l'ID della fonte citata è davvero la fonte dell'affermazione?
+
+**Riesegui la suite dopo ogni cambio** di chunking, embedding, prompt o modello. Senza, stai modificando alla cieca.
+
+La libreria open-source <SourceCite href="https://docs.ragas.io">Ragas</SourceCite> automatizza buona parte di questo ed è il punto di partenza de-facto per la valutazione RAG nel 2026.
+
+## Errori comuni
+
+Le cinque cose che vanno storte nell'80% dei chatbot RAG fatti in casa:
+
+**Il bot allucina perché il retrieval ha restituito un contesto vuoto o quasi.** Fix: aggiungi una soglia di rilevanza; se nessun chunk è sopra la soglia, rifiutati di rispondere.
+
+**Il bot si contraddice su domande successive.** Fix: system prompt stabile, temperatura bassa e stessi parametri di retrieval per ogni query.
+
+**Il bot risponde nella lingua sbagliata.** Fix: aggiungi un'istruzione esplicita "Rispondi nella lingua della domanda dell'utente" e assicurati che il corpus sia taggato per lingua, così il retrieval non porta in superficie la versione sbagliata.
+
+**Il bot va in loop sulle domande di follow-up.** Fix: query rewriting — trasforma "e la seconda?" in "Qual è la seconda funzione del piano Pro?" prima del retrieval.
+
+**Il bot trapela informazioni riservate.** Fix: non mettere mai documenti solo-interni nello stesso indice di quelli rivolti ai clienti; se devi farlo, tagga i chunk con metadati `audience` e filtra al momento del retrieval.
+
+## Build vs buy
+
+Puoi implementare tutte e cinque le fasi in circa una settimana di engineering. Puoi anche usare una piattaforma hosted che lo fa per te — incluso [ChatAziendale](https://chataziendale.it), Botpress, Voiceflow, GPT personalizzati, o uno qualsiasi degli incumbent del customer messaging che [abbiamo confrontato qui](/it/blog/migliori-chatbot-ai-pmi-italiane-2026).
+
+Il percorso build ha senso se hai sorgenti dati inusuali (database proprietari, PDF con tabelle, Notion interno), requisiti stringenti di residenza dati o una roadmap che include azioni agentiche oltre il retrieval. Il percorso buy ha senso se la tua knowledge base è un normale sito web e una pila di PDF, e preferisci spendere il tuo tempo sulla qualità dei contenuti piuttosto che sui parametri di chunking.
+
+In entrambi i casi, i principi di questa guida valgono: la preparazione dei dati conta più della scelta del modello, il retrieval conta più del prompt e la valutazione conta più del giorno del lancio. Fai bene queste tre cose e avrai un chatbot di cui i clienti si fideranno davvero.
