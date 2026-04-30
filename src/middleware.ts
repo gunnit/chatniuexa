@@ -19,7 +19,10 @@ import { routing } from '@/i18n/routing'
 const intlMiddleware = createMiddleware(routing)
 
 // Routes that don't require authentication (without locale prefix)
-const publicRoutes = ['/', '/login', '/signup', '/signup/check-email', '/auth/error', '/widget.js', '/privacy', '/terms', '/forgot-password', '/reset-password', '/docs']
+const publicRoutes = ['/', '/login', '/signup', '/signup/check-email', '/auth/error', '/widget.js', '/privacy', '/terms', '/forgot-password', '/reset-password', '/docs', '/blog', '/indexnow-verification']
+
+// Page paths starting with these prefixes are public (article slugs, author pages)
+const publicPagePrefixes = ['/blog/', '/about/']
 
 // Routes that start with these prefixes are public
 const publicPrefixes = ['/api/auth', '/api/widget', '/api/chat', '/api/public', '/api/webhooks']
@@ -76,7 +79,9 @@ export default function middleware(req: NextRequest) {
   const strippedPath = stripLocale(pathname)
   const isLoggedIn = isAuthenticated(req)
 
-  const isPublicRoute = publicRoutes.includes(strippedPath)
+  const isPublicRoute =
+    publicRoutes.includes(strippedPath) ||
+    publicPagePrefixes.some((prefix) => strippedPath.startsWith(prefix))
 
   if (isPublicRoute) {
     // Redirect logged-in users away from auth pages to dashboard
