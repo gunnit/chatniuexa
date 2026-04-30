@@ -71,7 +71,7 @@ export default async function OgImage({ params }: { params: Params }) {
               background: '#0F766E',
             }}
           />
-          <div style={{ fontSize: 28, fontWeight: 700, letterSpacing: -0.5 }}>
+          <div style={{ display: 'flex', fontSize: 28, fontWeight: 700, letterSpacing: -0.5 }}>
             ChatAziendale<span style={{ color: '#0F766E' }}>.it</span>
           </div>
           <div
