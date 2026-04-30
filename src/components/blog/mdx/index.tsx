@@ -159,9 +159,18 @@ function MdxLink({
   ...rest
 }: { href?: string; children?: ReactNode } & React.AnchorHTMLAttributes<HTMLAnchorElement>) {
   if (!href) return <a {...rest}>{children}</a>
-  if (href.startsWith('http://') || href.startsWith('https://')) {
+  const isExternal = /^https?:\/\//.test(href)
+  const isNonNavigational = /^(mailto:|tel:|sms:|#)/.test(href)
+  if (isExternal) {
     return (
       <a href={href} target="_blank" rel="noopener noreferrer" {...rest}>
+        {children}
+      </a>
+    )
+  }
+  if (isNonNavigational) {
+    return (
+      <a href={href} {...rest}>
         {children}
       </a>
     )
