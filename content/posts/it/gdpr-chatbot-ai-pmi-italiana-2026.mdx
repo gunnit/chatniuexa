@@ -1,0 +1,244 @@
+---
+title: "GDPR e Chatbot AI: Guida 2026 alla Conformità per le PMI Italiane"
+description: "Cosa deve fare davvero una PMI italiana — sul piano legale e pratico — per implementare un chatbot AI conforme a GDPR, AI Act europeo e linee guida del Garante nel 2026."
+slug: "gdpr-chatbot-ai-pmi-italiana-2026"
+locale: "it"
+hreflangSlug: "gdpr-ai-chatbot-italian-smb-2026"
+type: "how-to"
+publishedAt: "2026-05-02"
+updatedAt: "2026-05-02"
+author: "gregor-maric"
+tags: ["chatbot", "gdpr", "ai-act", "compliance", "italia", "pmi"]
+heroImage: "/blog/gdpr-chatbot-hero.png"
+---
+
+<img
+  src="/blog/gdpr-chatbot-hero.png"
+  alt="Illustrazione editoriale di una bolla di chat chiusa da un lucchetto con un sottile accento tricolore italiano, in toni teal e crema."
+  className="my-8 w-full rounded-2xl border border-[#E4E4E7]"
+/>
+
+La maggior parte delle PMI italiane che mette online un chatbot AI nel 2026 si trova a toccare contemporaneamente tre regimi normativi: il GDPR, l'AI Act europeo (in vigore dal 1° agosto 2024, con applicazione graduale fino al 2026 e oltre) e le linee guida in evoluzione del Garante italiano sull'AI e sui dati personali. La buona notizia: un chatbot rivolto al cliente che risponde su prodotti e servizi è quasi sempre un sistema a basso rischio. La cattiva: "basso rischio" richiede comunque un Data Processing Agreement reale, un'informativa privacy trasparente e una posizione difendibile su training, retention e trasferimenti internazionali.
+
+Questa guida copre cosa si applica davvero a un'azienda italiana con 5-50 dipendenti che fa girare un chatbot sul proprio sito o su WhatsApp Business, mettendo i riferimenti normativi e le azioni pratiche fianco a fianco.
+
+## Cosa è cambiato tra il 2024 e il 2026
+
+Tre cose contano per una PMI nel 2026 che non contavano nel 2023.
+
+**L'AI Act europeo è legge.** Il Regolamento (UE) 2024/1689 è entrato in vigore il 1° agosto 2024. I divieti sui sistemi a rischio inaccettabile (es. social scoring, scraping non mirato di immagini facciali) si applicano dal 2 febbraio 2025; gli obblighi sui modelli AI di uso generale dal 2 agosto 2025; il grosso degli obblighi sui sistemi ad alto e limitato rischio dal 2 agosto 2026. <SourceCite href="https://artificialintelligenceact.eu/implementation-timeline/">Timeline applicazione AI Act</SourceCite>
+
+**Il Garante ha sanzionato attivamente.** L'autorità italiana ha bloccato ChatGPT a marzo 2023, ha sanzionato OpenAI per 15 milioni di euro a dicembre 2024 per trattamento illecito durante l'addestramento, e ha pubblicato linee guida ripetute su trasparenza dei chatbot, minimizzazione dei dati di training e ruolo del legittimo interesse. <SourceCite href="https://www.garanteprivacy.it/web/guest/home/docweb/-/docweb-display/docweb/10085455">Provvedimento Garante OpenAI, dic 2024</SourceCite>
+
+**Schrems II è risolto ma resta strutturale.** L'EU-US Data Privacy Framework (in vigore da luglio 2023) offre un percorso riconosciuto per i trasferimenti verso fornitori statunitensi certificati, ma resta dovuta una valutazione documentata dei trasferimenti e un DPA allineato alle SCC per ogni fornitore extra-SEE.
+
+<Stat
+  value="€15M"
+  label="Il Garante italiano ha sanzionato OpenAI per 15 milioni di euro a dicembre 2024 per trattamento illecito di dati personali durante il training di ChatGPT — la più alta sanzione GDPR contro un fornitore di AI generativa al momento."
+  source="Garante per la protezione dei dati personali, dic 2024"
+  href="https://www.garanteprivacy.it/web/guest/home/docweb/-/docweb-display/docweb/10085455"
+/>
+
+## Cosa elabora un chatbot (la parte che la maggior parte delle PMI ignora)
+
+La prima domanda di compliance non è "il mio chatbot è sicuro?" — è "quali dati personali tratta davvero?" In pratica, un tipico chatbot per PMI italiana tratta tre categorie.
+
+**Contenuto delle conversazioni.** Le domande dell'utente e le risposte del bot. Quasi sempre contengono dati personali una volta che un cliente reale inizia a usarlo: un'email che chiede di un ordine, un nome introdotto in un reclamo, un numero di telefono lasciato per un richiamo. Tratta i log delle conversazioni come dati personali per default, anche se il tuo uso "previsto" era la navigazione anonima.
+
+**Identificativi e metadati.** Indirizzo IP, fingerprint del browser, ID di sessione, timestamp, URL delle pagine. Sotto il GDPR sono dati personali quando identificano una persona fisica, direttamente o indirettamente.
+
+**Input di training e di retrieval.** I documenti che carichi nella knowledge base del bot. Se quei documenti contengono dati personali — nomi del personale in una pagina contatti, testimonianze clienti con foto, policy interne che citano dipendenti identificati — quel trattamento richiede una propria base giuridica. È la parte che la maggior parte dei deployment "abbiamo solo caricato il sito" si dimentica.
+
+<Definition term="Titolare del trattamento (data controller)">
+La parte che determina finalità e mezzi del trattamento dei dati personali. Quando metti un chatbot sul tuo sito, sei il titolare per le conversazioni che avvengono lì. Il fornitore del chatbot è tipicamente un responsabile (processor) che agisce su tue istruzioni — ma solo se hai un DPA scritto.
+</Definition>
+
+## Il flusso dati che devi documentare
+
+Un flusso dati standard per un chatbot hosted è questo: l'utente finale digita una domanda sul tuo sito; il widget invia il messaggio all'API del fornitore; il fornitore recupera i passaggi corrispondenti dalla knowledge base che hai caricato, manda la domanda più quei passaggi a un fornitore di LLM (OpenAI, Anthropic, Mistral, ecc.), riceve una risposta generata, registra lo scambio e restituisce la risposta al widget. Ogni freccia è un'operazione di trattamento che richiede una base, una finalità e una regola di retention.
+
+<svg viewBox="0 0 720 320" className="not-prose my-10 w-full max-w-3xl mx-auto h-auto" role="img" aria-labelledby="gdpr-flow-title-it">
+  <title id="gdpr-flow-title-it">Flusso dati: trattamento conversazioni chatbot ai sensi del GDPR</title>
+  <defs>
+    <marker id="gdpr-arrow-it" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0F766E" />
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="720" height="320" fill="#F8F8F7" rx="16" />
+  <g fontFamily="ui-sans-serif, system-ui, sans-serif" fontSize="13" fill="#18181B">
+    <g>
+      <rect x="20" y="120" width="120" height="80" rx="12" fill="#FFFFFF" stroke="#0F766E" strokeWidth="1.5" />
+      <text x="80" y="155" textAnchor="middle" fontWeight="600">Utente finale</text>
+      <text x="80" y="175" textAnchor="middle" fill="#52525B">Italia / SEE</text>
+    </g>
+    <g>
+      <rect x="180" y="120" width="140" height="80" rx="12" fill="#FFFFFF" stroke="#0F766E" strokeWidth="1.5" />
+      <text x="250" y="150" textAnchor="middle" fontWeight="600">Tuo sito</text>
+      <text x="250" y="170" textAnchor="middle" fill="#52525B">Widget caricato</text>
+      <text x="250" y="186" textAnchor="middle" fill="#52525B">(Titolare)</text>
+    </g>
+    <g>
+      <rect x="360" y="60" width="160" height="90" rx="12" fill="#FFFFFF" stroke="#0F766E" strokeWidth="1.5" />
+      <text x="440" y="92" textAnchor="middle" fontWeight="600">Fornitore chatbot</text>
+      <text x="440" y="112" textAnchor="middle" fill="#52525B">RAG hosted UE</text>
+      <text x="440" y="128" textAnchor="middle" fill="#52525B">(Responsabile)</text>
+    </g>
+    <g>
+      <rect x="360" y="180" width="160" height="90" rx="12" fill="#FFFFFF" stroke="#A14040" strokeWidth="1.5" />
+      <text x="440" y="212" textAnchor="middle" fontWeight="600">Fornitore LLM</text>
+      <text x="440" y="232" textAnchor="middle" fill="#52525B">es. OpenAI / USA</text>
+      <text x="440" y="248" textAnchor="middle" fill="#52525B">(Sub-responsabile)</text>
+    </g>
+    <g>
+      <rect x="560" y="120" width="140" height="80" rx="12" fill="#FFFFFF" stroke="#0F766E" strokeWidth="1.5" />
+      <text x="630" y="150" textAnchor="middle" fontWeight="600">Knowledge</text>
+      <text x="630" y="170" textAnchor="middle" fontWeight="600">base</text>
+      <text x="630" y="186" textAnchor="middle" fill="#52525B">Storage UE</text>
+    </g>
+  </g>
+  <g stroke="#0F766E" strokeWidth="1.5" fill="none">
+    <line x1="140" y1="160" x2="180" y2="160" markerEnd="url(#gdpr-arrow-it)" />
+    <line x1="320" y1="155" x2="360" y2="115" markerEnd="url(#gdpr-arrow-it)" />
+    <line x1="440" y1="150" x2="440" y2="180" markerEnd="url(#gdpr-arrow-it)" />
+    <line x1="520" y1="105" x2="560" y2="140" markerEnd="url(#gdpr-arrow-it)" />
+    <line x1="560" y1="160" x2="520" y2="125" markerEnd="url(#gdpr-arrow-it)" />
+  </g>
+  <g fontFamily="ui-sans-serif, system-ui, sans-serif" fontSize="11" fill="#52525B">
+    <text x="160" y="148" textAnchor="middle">messaggio</text>
+    <text x="350" y="142" textAnchor="middle">+ chunk recuperati</text>
+    <text x="455" y="170" textAnchor="middle">prompt</text>
+  </g>
+</svg>
+
+Il bordo rosso sul fornitore LLM conta: se la chiamata all'LLM esce dal SEE, hai un trasferimento internazionale da documentare. I percorsi solo-UE (Mistral, Anthropic via AWS Francoforte, OpenAI Azure UE) eliminano la valutazione dei trasferimenti. Gli LLM hosted in USA restano legali sotto l'EU-US Data Privacy Framework ma richiedono certificazione DPF esplicita lato fornitore e una valutazione d'impatto sui trasferimenti lato tuo.
+
+## Passo 1 — Scegli la base giuridica (e mettila per iscritto)
+
+L'articolo 6 del GDPR offre sei basi. Per un chatbot rivolto al cliente, due sono realistiche e una è una trappola.
+
+**Legittimo interesse (Art. 6(1)(f))** è la scelta naturale per un chatbot che aiuta un cliente attuale o potenziale a ottenere risposte sui tuoi prodotti. Funziona perché (a) l'utente ha iniziato il contatto, (b) il trattamento è necessario per fornire la risposta e (c) un utente ragionevole se lo aspetterebbe. Il punto: il legittimo interesse richiede un test di bilanciamento (LIA) scritto agli atti. Tre paragrafi su una pagina Notion bastano — è l'atto stesso di scriverlo che è l'atto di compliance.
+
+**Esecuzione di un contratto (Art. 6(1)(b))** si applica quando l'utente è già un cliente che usa il chatbot per supporto su un prodotto contrattualizzato. Più pulito del legittimo interesse dove si applica.
+
+**Consenso (Art. 6(1)(a))** è la trappola. Le PMI ci puntano perché sembra il più sicuro, ma il consenso per un chatbot crea due problemi: deve essere libero (non puoi bloccare l'accesso alla pagina finché non lo accettano) e può essere revocato, costringendoti a cancellare l'intera conversazione. Usa il consenso solo per funzionalità davvero opzionali (es. registrare le conversazioni per addestrare un futuro bot).
+
+<Definition term="Legitimate Interest Assessment (LIA)">
+Un breve test scritto che fai prima di basarti sull'Art. 6(1)(f). Documenta tre cose: (1) l'interesse legittimo che persegui, (2) perché il trattamento è necessario per raggiungerlo, (3) perché i diritti e gli interessi dell'interessato non prevalgono sui tuoi. Non si deposita da nessuna parte — ma deve esistere per iscritto se il Garante lo chiede.
+</Definition>
+
+## Passo 2 — Ottieni un Data Processing Agreement reale
+
+L'articolo 28 del GDPR richiede un contratto scritto tra te (titolare) e il fornitore del chatbot (responsabile). Un DPA reale copre:
+
+- **Lista sub-responsabili e notifica.** Chi altri tocca i dati — il fornitore LLM, l'infrastruttura di hosting, gli analytics. Il fornitore deve pubblicare la lista e notificarti ogni cambiamento.
+- **Residenza dei dati.** Dove sono i dati a riposo? Dove vengono trattati? "Francoforte" è una risposta significativa; "il cloud" no.
+- **Trasferimenti internazionali.** Se un sub-responsabile è fuori dal SEE, il DPA deve fare riferimento alle Standard Contractual Clauses (Modulo 3 per processor-to-processor) o alla certificazione DPF.
+- **Misure di sicurezza.** Cifratura a riposo e in transito, controlli di accesso, audit log.
+- **Notifica delle violazioni.** Il fornitore deve avvisarti entro una finestra definita (24-72 ore è lo standard) per permetterti di rispettare il termine GDPR di 72 ore.
+- **Cancellazione a fine contratto.** Cancellazione effettiva, non solo "disattivazione".
+
+Se il tuo fornitore offre solo Termini di Servizio e nessun DPA separato, è un campanello d'allarme. I fornitori europei seri (ChatAziendale, Customerly, Userlike, Crisp) pubblicano i loro DPA apertamente. <SourceCite href="https://chataziendale.it/legal/dpa">DPA di ChatAziendale</SourceCite>
+
+## Passo 3 — Aggiorna l'informativa privacy
+
+Il Garante è esplicito dal 2023: il trattamento AI deve essere visibile nell'informativa pubblica, con dettaglio sufficiente perché l'utente capisca cosa succede. Contenuti minimi per un chatbot:
+
+- Che il sito usa un chatbot AI, chi è il fornitore e quali dati il chatbot tratta.
+- Le finalità e le basi giuridiche (es. "rispondere a domande sui prodotti, sulla base del legittimo interesse").
+- Periodo di retention dei log delle conversazioni (90 giorni è un default difendibile per finalità di supporto; 30 giorni è più sicuro se non li usi per migliorare il prodotto).
+- Se e come le conversazioni sono usate per addestrare modelli. Se la risposta è "in nessun modo", dillo esplicitamente — è una preoccupazione chiave del Garante.
+- I sub-responsabili coinvolti, incluso ogni fornitore LLM extra-SEE, con il meccanismo di trasferimento in linguaggio chiaro.
+- I diritti dell'utente e come esercitarli, incluso il diritto di opporsi al trattamento basato sul legittimo interesse.
+
+<Quote
+  author="Garante per la protezione dei dati personali"
+  authorRole="Autorità italiana per la protezione dei dati"
+  source="Provvedimento ChatGPT, marzo 2023"
+  href="https://www.garanteprivacy.it/web/guest/home/docweb/-/docweb-display/docweb/9870832"
+>
+  L'informativa fornita agli utenti deve essere completa, immediatamente
+  accessibile e contenere ogni elemento idoneo a rendere edotti gli utenti
+  circa le caratteristiche del trattamento posto in essere.
+</Quote>
+
+## Passo 4 — Affronta l'obbligo di trasparenza dell'AI Act
+
+Per la maggior parte dei chatbot per PMI, l'AI Act si applica in un punto specifico: l'articolo 50, l'obbligo di trasparenza. Dal 2 agosto 2026, fornitori e deployer di sistemi AI che interagiscono con persone fisiche devono informare quelle persone che stanno interagendo con un sistema AI, salvo che sia ovvio dal contesto.
+
+In pratica significa una riga di disclosure nel widget di chat o accanto — "Stai parlando con un assistente AI" — e la stessa cosa in informativa. <SourceCite href="https://artificialintelligenceact.eu/article/50/">AI Act Articolo 50</SourceCite>
+
+Un tipico chatbot per PMI **non** è un sistema ad alto rischio ai sensi dell'Allegato III, quindi gli obblighi pesanti (gestione del rischio, valutazione di conformità, marcatura CE, monitoraggio post-mercato) non si applicano. Due casi in cui potrebbero:
+
+- **Chatbot di recruiting** che screenano candidati ricadono nell'Allegato III, punto 4 — alto rischio. Se il tuo chatbot smista candidature di lavoro, è un'altra conversazione.
+- **Chatbot che gestiscono credito al consumo o assottoscrizione assicurativa** — anch'essi alto rischio sotto Allegato III.
+
+Se il tuo chatbot risponde semplicemente a domande sui prodotti, fissa appuntamenti o smista richieste di supporto, sei nella fascia a rischio limitato e l'articolo 50 è l'obbligo principale.
+
+## Passo 5 — Imposta retention e cancella su richiesta
+
+La minimizzazione dei dati (Art. 5(1)(c)) e la limitazione della conservazione (Art. 5(1)(e)) significano che i log delle conversazioni non possono essere tenuti indefinitamente solo perché lo storage è economico. Default difendibili per una PMI:
+
+- **Log conversazioni:** 90 giorni per qualità del supporto, poi cancellazione automatica. 30 giorni se non li analizzi.
+- **Aggregati analytics:** indefiniti, perché anonimizzati.
+- **Lead catturati dal bot** (email, telefono): rientrano nella retention CRM normale, tipicamente 24 mesi dall'ultimo contatto.
+
+Inserisci il diritto di cancellazione direttamente nella piattaforma. La maggior parte dei fornitori seri espone un'API di cancellazione per conversazione e un flusso "dimenticami" per utente identificato da email o ID di contatto — verifica che il tuo lo faccia, perché ai sensi dell'Art. 17 un utente può chiederti di cancellare i suoi dati e devi farlo entro 30 giorni.
+
+## Passo 6 — Documenta il trattamento dei dati di training
+
+È qui che morde la decisione del Garante di dicembre 2024 contro OpenAI. L'autorità ha stabilito che il trattamento di dati personali raschiati dal web pubblico per addestrare un modello era illecito in assenza di una base giuridica chiara. Per una PMI tipica questo conta in due varianti:
+
+**Tu come cliente di un fornitore LLM.** Verifica (per iscritto) che le conversazioni tra i tuoi utenti e il tuo chatbot non siano usate per addestrare i modelli foundation del fornitore. L'API di OpenAI per default non addestra sugli input API; lo stesso vale per l'API di Anthropic e il tier enterprise di Mistral. I tier free o "ChatGPT Team" possono avere default diversi — leggi la pagina.
+
+**Tu come builder di una knowledge base.** Se la tua knowledge base contiene dati personali (nomi di dipendenti, testimonianze clienti, esempi identificati), documenta la base giuridica per ingerire quei dati nel sistema RAG e per farli emergere nelle risposte. Il legittimo interesse di solito funziona per i nomi del personale su una pagina contatti pubblica; le testimonianze richiedono consenso se chi le rilascia è identificabile.
+
+## Una baseline di compliance difendibile
+
+Sotto c'è una baseline realistica per una PMI italiana di 5-50 dipendenti con un chatbot rivolto al cliente. Non è consulenza legale, ma è una struttura che regge a un'ispezione ordinaria del Garante.
+
+<ProsCons
+  pros={[
+    "Fornitore hosted in UE con DPA pubblicato e documentazione DPF o SCC",
+    "Informativa privacy aggiornata con sezione chatbot, retention, lista sub-responsabili",
+    "LIA scritta agli atti (una pagina basta)",
+    "Disclosure AI visibile nel widget o accanto",
+    "Cancellazione automatica a 90 giorni delle conversazioni, più rapida su richiesta",
+    "Endpoint di cancellazione testato almeno una volta",
+    "Esclusione dal training confermata per iscritto col fornitore LLM",
+  ]}
+  cons={[
+    "Saltare la LIA perché 'siamo troppo piccoli per essere ispezionati'",
+    "Affidarsi al DPA del fornitore senza leggerlo",
+    "Informativa generica 'usiamo cookie' che non menziona il chatbot",
+    "Loggare le conversazioni indefinitamente 'nel caso servano'",
+    "Mettere online un chatbot di recruiting o credit-scoring sulla stessa baseline",
+  ]}
+/>
+
+## Domande frequenti
+
+### Devo nominare un DPO perché ho un chatbot?
+
+Non di per sé. L'articolo 37 richiede un DPO solo se l'attività principale comporta monitoraggio regolare e sistematico su larga scala di interessati, o trattamento su larga scala di categorie particolari. Un chatbot di customer service tipico per PMI non supera quella soglia. Se hai già un DPO per altri motivi, coinvolgilo.
+
+### L'AI Act europeo si applica a un piccolo chatbot?
+
+Sì, ma solo gli obblighi di trasparenza limitata dell'articolo 50. Gli obblighi pesanti sui sistemi ad alto rischio (Allegato III) non si applicano salvo che il chatbot sia usato in screening di candidati, credito, assicurazioni, accesso all'istruzione o altri casi elencati.
+
+### È legale usare un fornitore LLM hosted in USA nel 2026?
+
+Sì, se il fornitore è certificato sotto l'EU-US Data Privacy Framework (la maggior parte dei provider principali lo è) e hai un DPA che fa riferimento a DPF o Standard Contractual Clauses. Devi anche avere agli atti una valutazione d'impatto sui trasferimenti. Il routing solo-UE (Mistral, OpenAI Azure UE, Anthropic via AWS Francoforte) evita del tutto il trasferimento ed è la baseline più sicura.
+
+### Devo chiedere consenso esplicito prima di mostrare un widget chatbot?
+
+In generale no — sotto legittimo interesse puoi mostrare il widget. Serve consenso per cookie o tracker non essenziali che il widget imposta, e la disclosure AI richiesta dall'articolo 50 dell'AI Act è indipendente dal consenso.
+
+### Cosa succede se metto online tutto senza fare niente di tutto questo?
+
+Storicamente il Garante non ha perseguito singole PMI per deployment di chatbot ordinari — l'attenzione è stata sui fornitori LLM e sui deployment ad alto rischio. Resti però personalmente responsabile per ogni violazione, e nel momento in cui un esposto arriva al Garante (un utente arrabbiato, un concorrente, un ex-dipendente) l'assenza di DPA, LIA e aggiornamento dell'informativa trasforma un incidente minore in un fascicolo aperto. Il costo della compliance è due giornate di lavoro; il costo di un fascicolo aperto al Garante è di mesi.
+
+## In sintesi
+
+Il quadro di compliance italiano 2026 per i chatbot delle PMI è meno spaventoso di quanto suggeriscano i titoli, ma non è opzionale. Il lavoro è quasi tutto cartaceo, fatto una volta: un DPA, una LIA, un aggiornamento dell'informativa, una disclosure AI sul widget, una policy di retention documentata e una valutazione dei trasferimenti se la chiamata LLM esce dal SEE. Le piattaforme che lo rendono più facile sono hosted in UE, pubblicano il DPA e instradano le chiamate LLM verso regioni UE per default. Quelle che lo rendono più difficile nascondono la lista dei sub-responsabili e instradano tutto su infrastruttura statunitense senza certificazione DPF.
+
+Se vuoi una revisione di una pagina del tuo setup contro la baseline qui sopra, scrivi a <a href="mailto:hello@chataziendale.it">hello@chataziendale.it</a> e ti rimandiamo una checklist con i gap evidenziati. Lo facciamo anche per clienti di piattaforme concorrenti — l'obiettivo è meno PMI sorprese, non più vendite.
