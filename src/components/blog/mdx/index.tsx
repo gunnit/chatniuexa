@@ -113,11 +113,11 @@ export function Definition({ term, children }: DefinitionProps) {
 
 /* --------------------------- ProsCons -------------------------- */
 type ProsConsProps = {
-  pros: string[]
-  cons: string[]
+  pros?: string[]
+  cons?: string[]
 }
 
-export function ProsCons({ pros, cons }: ProsConsProps) {
+export function ProsCons({ pros = [], cons = [] }: ProsConsProps) {
   return (
     <div className="not-prose my-8 grid gap-px overflow-hidden rounded-2xl border border-[#E4E4E7] bg-[#E4E4E7] sm:grid-cols-2">
       <div className="bg-white p-6">
@@ -126,7 +126,7 @@ export function ProsCons({ pros, cons }: ProsConsProps) {
           Pro
         </div>
         <ul className="mt-4 space-y-2.5 text-[15px] leading-relaxed text-[#18181B]">
-          {pros.map((p, i) => (
+          {(pros ?? []).map((p, i) => (
             <li key={i} className="flex gap-2.5">
               <span aria-hidden="true" className="mt-[10px] h-1 w-1 flex-shrink-0 rounded-full bg-[#0F766E]" />
               <span>{p}</span>
@@ -140,7 +140,7 @@ export function ProsCons({ pros, cons }: ProsConsProps) {
           Contro
         </div>
         <ul className="mt-4 space-y-2.5 text-[15px] leading-relaxed text-[#18181B]">
-          {cons.map((c, i) => (
+          {(cons ?? []).map((c, i) => (
             <li key={i} className="flex gap-2.5">
               <span aria-hidden="true" className="mt-[10px] h-1 w-1 flex-shrink-0 rounded-full bg-[#A14040]" />
               <span>{c}</span>
