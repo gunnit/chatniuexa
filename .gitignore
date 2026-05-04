@@ -49,6 +49,7 @@ next-env.d.ts
 # screenshots (but allow public assets and app icons)
 *.png
 !public/images/*.png
+!public/blog/*.png
 !src/app/icon.png
 !src/app/apple-icon.png
 audit-*.jpeg
