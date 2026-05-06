@@ -48,7 +48,9 @@ export async function GET(
       id: config.id,
       phoneNumberId: config.phoneNumberId,
       whatsappBusinessAccountId: config.whatsappBusinessAccountId,
-      accessTokenMasked: '••••' + config.accessToken.slice(-8),
+      // The stored token is AES ciphertext; never return it (or any prefix of
+      // it) to the client. Just signal that a token is configured.
+      accessTokenMasked: '[configured]',
       webhookVerifyToken: config.webhookVerifyToken,
       isActive: config.isActive,
       webhookUrl,
@@ -122,7 +124,7 @@ export async function POST(
         id: config.id,
         phoneNumberId: config.phoneNumberId,
         whatsappBusinessAccountId: config.whatsappBusinessAccountId,
-        accessTokenMasked: '••••' + encryptedToken.slice(-8),
+        accessTokenMasked: '[configured]',
         webhookVerifyToken: config.webhookVerifyToken,
         isActive: config.isActive,
         webhookUrl,

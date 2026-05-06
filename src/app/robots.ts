@@ -3,6 +3,7 @@ import type { MetadataRoute } from 'next'
 const PRIVATE_PATHS = ['/dashboard', '/admin', '/api', '/c/']
 
 const ALLOW_BOTS = [
+  // Search retrieval (drives citations in AI answers)
   'OAI-SearchBot',
   'ChatGPT-User',
   'PerplexityBot',
@@ -15,21 +16,24 @@ const ALLOW_BOTS = [
   'Applebot',
   'DuckDuckBot',
   'YandexBot',
-]
-
-const BLOCK_BOTS = [
+  // Training/grounding crawlers — allowed because being cited by AI assistants
+  // is the explicit business goal (this site promotes AEO/GEO).
   'GPTBot',
   'Google-Extended',
   'Applebot-Extended',
   'CCBot',
-  'Bytespider',
+  'anthropic-ai',
   'Meta-ExternalAgent',
+]
+
+const BLOCK_BOTS = [
+  // Bots that scrape aggressively without offering visibility benefit
+  'Bytespider',
   'Meta-ExternalFetcher',
   'Amazonbot',
   'FacebookBot',
   'Diffbot',
   'cohere-ai',
-  'anthropic-ai',
 ]
 
 export default function robots(): MetadataRoute.Robots {

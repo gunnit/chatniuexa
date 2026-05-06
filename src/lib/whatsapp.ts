@@ -36,7 +36,8 @@ export function decryptToken(ciphertext: string): string {
   const encrypted = Buffer.from(parts[2], 'base64')
   const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv)
   decipher.setAuthTag(tag)
-  return decipher.update(encrypted) + decipher.final('utf8')
+  const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()])
+  return decrypted.toString('utf8')
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -49,15 +50,24 @@ export function verifyWebhookSignature(
   appSecret: string
 ): boolean {
   if (!signatureHeader) return false
+  const provided = signatureHeader.replace('sha256=', '')
+  // HMAC-SHA256 hex is exactly 64 chars; reject anything else before timingSafeEqual
+  // (which throws on length mismatch).
+  if (!/^[0-9a-f]{64}$/i.test(provided)) return false
+
   const expected = crypto
     .createHmac('sha256', appSecret)
     .update(rawBody)
     .digest('hex')
-  const provided = signatureHeader.replace('sha256=', '')
-  return crypto.timingSafeEqual(
-    Buffer.from(expected, 'hex'),
-    Buffer.from(provided, 'hex')
-  )
+
+  try {
+    return crypto.timingSafeEqual(
+      Buffer.from(expected, 'hex'),
+      Buffer.from(provided, 'hex')
+    )
+  } catch {
+    return false
+  }
 }
 
 // ─────────────────────────────────────────────────────────────

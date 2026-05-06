@@ -91,23 +91,27 @@ export function getPlanLimits(plan: PlanId): PlanLimits {
 export async function applyPlanLimits(tenantId: string, plan: PlanId) {
   const limits = getPlanLimits(plan)
 
-  await prisma.usageLimit.upsert({
-    where: { tenantId },
-    update: {
-      monthlyTokenLimit: limits.monthlyTokenLimit,
-      dailyMessageLimit: limits.dailyMessageLimit,
-      monthlyCostLimit: limits.monthlyCostLimit,
-    },
-    create: {
-      tenantId,
-      monthlyTokenLimit: limits.monthlyTokenLimit,
-      dailyMessageLimit: limits.dailyMessageLimit,
-      monthlyCostLimit: limits.monthlyCostLimit,
-    },
-  })
-
-  await prisma.tenant.update({
-    where: { id: tenantId },
-    data: { plan },
-  })
+  // Single transaction so the tenant.plan field can never diverge from the
+  // usage limits row (e.g. crash between the two writes would leave them out
+  // of sync, granting old limits with a new plan name or vice versa).
+  await prisma.$transaction([
+    prisma.usageLimit.upsert({
+      where: { tenantId },
+      update: {
+        monthlyTokenLimit: limits.monthlyTokenLimit,
+        dailyMessageLimit: limits.dailyMessageLimit,
+        monthlyCostLimit: limits.monthlyCostLimit,
+      },
+      create: {
+        tenantId,
+        monthlyTokenLimit: limits.monthlyTokenLimit,
+        dailyMessageLimit: limits.dailyMessageLimit,
+        monthlyCostLimit: limits.monthlyCostLimit,
+      },
+    }),
+    prisma.tenant.update({
+      where: { id: tenantId },
+      data: { plan },
+    }),
+  ])
 }

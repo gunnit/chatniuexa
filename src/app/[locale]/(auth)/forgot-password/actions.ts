@@ -1,8 +1,10 @@
 'use server'
 
+import { headers } from 'next/headers'
 import { prisma } from '@/lib/db'
 import { sendPasswordResetEmail } from '@/lib/email'
 import { logger } from '@/lib/logger'
+import { rateLimitCustom } from '@/lib/rate-limit'
 import { z } from 'zod'
 import crypto from 'crypto'
 
@@ -27,6 +29,17 @@ export async function forgotPassword(
 
   const { email } = parsed.data
 
+  // Rate-limit by both IP and email so a single IP can't grind every email,
+  // and a single victim email can't be flooded from many IPs.
+  const hdrs = await headers()
+  const ip = hdrs.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+  const ipLimit = rateLimitCustom('forgotPwIp', ip, 5, 60 * 60) // 5 per hour per IP
+  const emailLimit = rateLimitCustom('forgotPwEmail', email.toLowerCase(), 3, 60 * 60) // 3 per hour per email
+  if (!ipLimit.allowed || !emailLimit.allowed) {
+    // Show success regardless to avoid signaling whether the email exists.
+    return { error: '', success: true }
+  }
+
   try {
     const user = await prisma.user.findUnique({ where: { email } })
 
@@ -48,7 +61,7 @@ export async function forgotPassword(
       },
     })
 
-    const baseUrl = process.env.NEXTAUTH_URL || 'https://chataziendale.onrender.com'
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'https://chataziendale.it'
     const resetUrl = `${baseUrl}/reset-password?token=${token}`
 
     await sendPasswordResetEmail(email, user.name || 'there', resetUrl)

@@ -4,6 +4,8 @@ import { prisma } from '@/lib/db'
 import { put } from '@vercel/blob'
 import { isSupportedMimeType } from '@/lib/documents/parser'
 import { processFile } from '@/lib/documents/processor'
+import { logUsage } from '@/lib/usage'
+import { logger } from '@/lib/logger'
 
 // Max file size: 10MB
 const MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -13,6 +15,19 @@ export async function POST(request: NextRequest) {
   const session = await auth()
   if (!session?.user?.tenantId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Plan gate — file ingestion runs embeddings which cost real money per chunk.
+  // Free tier may not upload files; URL crawling is also gated separately.
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: session.user.tenantId },
+    select: { plan: true },
+  })
+  if (!tenant || tenant.plan === 'free') {
+    return NextResponse.json(
+      { error: 'PLAN_UPGRADE_REQUIRED' },
+      { status: 403 }
+    )
   }
 
   try {
@@ -54,8 +69,24 @@ export async function POST(request: NextRequest) {
       fileUrl = blob.url
     } catch (blobError) {
       // If Vercel Blob is not configured, store URL as placeholder
-      console.warn('Vercel Blob not configured, using placeholder URL')
+      logger.warn('Vercel Blob not configured, using placeholder URL', { error: String(blobError) })
       fileUrl = `local://${file.name}`
+    }
+
+    // Reserve embedding usage up front: rough heuristic of ~0.3 tokens/byte for
+    // the source document, plus the embedding cost on the same volume.
+    const estimatedTokens = Math.min(Math.ceil(file.size * 0.3), 200_000)
+    const usage = await logUsage({
+      tenantId: session.user.tenantId,
+      type: 'embedding',
+      tokens: estimatedTokens,
+      model: 'text-embedding-3-small',
+    })
+    if (!usage.allowed) {
+      return NextResponse.json(
+        { error: usage.reason || 'Usage limit exceeded' },
+        { status: 429 }
+      )
     }
 
     // Create data source record
@@ -82,7 +113,7 @@ export async function POST(request: NextRequest) {
         fileName: file.name,
       })
     } catch (processError) {
-      console.error('Error processing file:', processError)
+      logger.error('Error processing file', { error: String(processError) })
       // Status is already set to FAILED by processFile
     }
 
@@ -93,7 +124,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ dataSource: updatedDataSource }, { status: 201 })
   } catch (error) {
-    console.error('Error uploading file:', error)
+    logger.error('Error uploading file', { error: String(error) })
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

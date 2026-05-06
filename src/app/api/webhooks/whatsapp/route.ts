@@ -63,18 +63,18 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const rawBody = await request.text()
 
-  // Verify signature if META_APP_SECRET is configured
+  // Signature verification is mandatory — never accept unsigned webhooks.
   const appSecret = process.env.META_APP_SECRET
-  if (appSecret) {
-    const signature = request.headers.get('x-hub-signature-256')
-    if (!verifyWebhookSignature(rawBody, signature, appSecret)) {
-      logger.error('WhatsApp webhook signature verification failed')
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
-    }
+  if (!appSecret) {
+    logger.error('META_APP_SECRET not configured — rejecting webhook')
+    return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 })
+  }
+  const signature = request.headers.get('x-hub-signature-256')
+  if (!verifyWebhookSignature(rawBody, signature, appSecret)) {
+    logger.error('WhatsApp webhook signature verification failed')
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
   }
 
-  // Always return 200 quickly to prevent Meta retries
-  // Process messages after parsing
   let payload: unknown
   try {
     payload = JSON.parse(rawBody)
@@ -84,23 +84,26 @@ export async function POST(request: NextRequest) {
 
   const messages = parseIncomingMessages(payload)
 
-  // Process each message
-  for (const msg of messages) {
-    // Deduplication
+  // Filter duplicates synchronously (so Meta retry within 60s is rejected before
+  // we kick off another job), then process the rest in the background.
+  const newMessages = messages.filter((msg) => {
     if (recentMessageIds.has(msg.messageId)) {
       logger.info('Skipping duplicate WhatsApp message', { messageId: msg.messageId })
-      continue
+      return false
     }
     markProcessed(msg.messageId)
+    return true
+  })
 
-    try {
-      await processWhatsAppMessage(msg)
-    } catch (error) {
+  // Fire-and-forget — Meta's deadline is 20s, RAG inference can exceed it.
+  // Returning 200 immediately prevents retry storms.
+  for (const msg of newMessages) {
+    void processWhatsAppMessage(msg).catch((error) => {
       logger.error('Failed to process WhatsApp message', {
         messageId: msg.messageId,
         error: String(error),
       })
-    }
+    })
   }
 
   return NextResponse.json({ received: true })

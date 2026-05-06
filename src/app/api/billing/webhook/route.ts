@@ -110,6 +110,24 @@ export async function POST(request: NextRequest) {
         break
       }
 
+      case 'BILLING.SUBSCRIPTION.EXPIRED': {
+        // Fires when a CANCELLED subscription reaches the end of its paid
+        // period — this is where the actual downgrade happens.
+        const subscriptionId = resource.id
+        const sub = await prisma.subscription.findUnique({
+          where: { paypalSubscriptionId: subscriptionId },
+        })
+
+        if (sub) {
+          await prisma.subscription.update({
+            where: { paypalSubscriptionId: subscriptionId },
+            data: { status: 'EXPIRED' },
+          })
+          await applyPlanLimits(sub.tenantId, 'free')
+        }
+        break
+      }
+
       case 'PAYMENT.SALE.COMPLETED': {
         // Payment received - extend the period
         const billingAgreementId = resource.billing_agreement_id

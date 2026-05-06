@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { generateChatResponse } from '@/lib/chat/rag'
 import { logUsage } from '@/lib/usage'
 import { getCorsHeaders } from '@/lib/cors'
+import { isChatbotOriginAllowed } from '@/lib/origin'
 import { rateLimit } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
 import { z } from 'zod'
@@ -20,7 +21,8 @@ export async function OPTIONS(request: NextRequest) {
 
 // POST /api/chat - Send a message and get a response
 export async function POST(request: NextRequest) {
-  const corsHeaders = getCorsHeaders(request.headers.get('origin'))
+  const origin = request.headers.get('origin')
+  const referer = request.headers.get('referer')
 
   // Rate limit by IP
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
@@ -28,7 +30,7 @@ export async function POST(request: NextRequest) {
   if (!rl.allowed) {
     return NextResponse.json(
       { error: 'Too many requests' },
-      { status: 429, headers: corsHeaders }
+      { status: 429, headers: getCorsHeaders(origin) }
     )
   }
 
@@ -44,7 +46,16 @@ export async function POST(request: NextRequest) {
     if (!chatbot) {
       return NextResponse.json(
         { error: 'Chatbot not found' },
-        { status: 404, headers: corsHeaders }
+        { status: 404, headers: getCorsHeaders(origin) }
+      )
+    }
+
+    const corsHeaders = getCorsHeaders(origin, 'POST, OPTIONS', chatbot.allowedDomains)
+
+    if (!isChatbotOriginAllowed({ origin, referer, allowedDomains: chatbot.allowedDomains, chatbotId: chatbot.id })) {
+      return NextResponse.json(
+        { error: 'Origin not allowed for this chatbot' },
+        { status: 403, headers: corsHeaders }
       )
     }
 
@@ -139,16 +150,17 @@ export async function POST(request: NextRequest) {
       { headers: corsHeaders }
     )
   } catch (error) {
+    const fallbackHeaders = getCorsHeaders(origin)
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid input', details: error.issues },
-        { status: 400, headers: corsHeaders }
+        { status: 400, headers: fallbackHeaders }
       )
     }
     logger.error('Chat error', { error: String(error) })
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500, headers: corsHeaders }
+      { status: 500, headers: fallbackHeaders }
     )
   }
 }

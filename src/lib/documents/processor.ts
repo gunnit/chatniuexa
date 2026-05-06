@@ -27,6 +27,10 @@ export async function processFile({
   mimeType,
   fileName,
 }: ProcessFileInput): Promise<void> {
+  // Clear any existing documents/chunks from a prior failed run so we never
+  // leave half-embedded chunks orphaned in the search index.
+  await prisma.document.deleteMany({ where: { dataSourceId } })
+
   try {
     // Update status to processing
     await prisma.dataSource.update({
@@ -70,17 +74,11 @@ export async function processFile({
         })
 
         // Store embedding using raw SQL (pgvector)
-        try {
-          const result = await prisma.$executeRawUnsafe(
-            `UPDATE chunks SET embedding = $1::vector WHERE id = $2`,
-            `[${embedding.join(',')}]`,
-            chunkRecord.id
-          )
-          console.log(`Stored embedding for chunk ${chunkRecord.id}, result: ${result}`)
-        } catch (embeddingError) {
-          console.error(`Failed to store embedding for chunk ${chunkRecord.id}:`, embeddingError)
-          throw new Error(`Failed to store embedding: ${embeddingError instanceof Error ? embeddingError.message : 'Unknown error'}. Make sure pgvector extension is installed.`)
-        }
+        await prisma.$executeRawUnsafe(
+          `UPDATE chunks SET embedding = $1::vector WHERE id = $2`,
+          `[${embedding.join(',')}]`,
+          chunkRecord.id
+        )
       }
     }
 
@@ -114,6 +112,9 @@ export async function processUrl({
   content,
   title,
 }: ProcessUrlInput): Promise<void> {
+  // Clear any partial output from a prior failed run.
+  await prisma.document.deleteMany({ where: { dataSourceId } })
+
   try {
     // Update status to processing
     await prisma.dataSource.update({
@@ -153,17 +154,11 @@ export async function processUrl({
         })
 
         // Store embedding using raw SQL (pgvector)
-        try {
-          const result = await prisma.$executeRawUnsafe(
-            `UPDATE chunks SET embedding = $1::vector WHERE id = $2`,
-            `[${embedding.join(',')}]`,
-            chunkRecord.id
-          )
-          console.log(`Stored embedding for chunk ${chunkRecord.id}, result: ${result}`)
-        } catch (embeddingError) {
-          console.error(`Failed to store embedding for chunk ${chunkRecord.id}:`, embeddingError)
-          throw new Error(`Failed to store embedding: ${embeddingError instanceof Error ? embeddingError.message : 'Unknown error'}. Make sure pgvector extension is installed.`)
-        }
+        await prisma.$executeRawUnsafe(
+          `UPDATE chunks SET embedding = $1::vector WHERE id = $2`,
+          `[${embedding.join(',')}]`,
+          chunkRecord.id
+        )
       }
     }
 

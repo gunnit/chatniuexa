@@ -59,9 +59,9 @@ function LoginForm() {
           {/* Feature highlights */}
           <div className="space-y-4 animate-slide-up" style={{ animationDelay: '200ms' }}>
             {[
-              { icon: '⚡', text: 'AI-powered chatbots for your business' },
-              { icon: '🔒', text: 'Enterprise-grade security & privacy' },
-              { icon: '🌍', text: 'Multi-language support built in' },
+              { icon: '⚡', text: t('feature1') },
+              { icon: '🔒', text: t('feature2') },
+              { icon: '🌍', text: t('feature3') },
             ].map((feature, i) => (
               <div key={i} className="flex items-center gap-3 text-[#52525B]">
                 <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-teal-50 border border-teal-200/60 text-lg">

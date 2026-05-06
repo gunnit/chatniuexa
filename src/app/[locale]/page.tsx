@@ -31,6 +31,7 @@ export async function generateMetadata() {
       url: `${baseUrl}${path || "/"}`,
       siteName: "ChatAziendale",
       locale: locale === "it" ? "it_IT" : "en_US",
+      alternateLocale: locale === "it" ? ["en_US"] : ["it_IT"],
       type: "website",
       images: [
         {
@@ -257,7 +258,7 @@ export default async function Home() {
                 <div className="w-3 h-3 rounded-full bg-[#EF4444]/60" />
                 <div className="w-3 h-3 rounded-full bg-[#F59E0B]/60" />
                 <div className="w-3 h-3 rounded-full bg-[#22C55E]/60" />
-                <div className="ml-3 px-3 py-1 rounded-md bg-white border border-[#E4E4E7] text-[11px] text-[#A1A1AA] font-mono">
+                <div className="ml-3 px-3 py-1 rounded-md bg-white border border-[#E4E4E7] text-[11px] text-[#71717A] font-mono">
                   {t("previewUrl")}
                 </div>
               </div>
@@ -447,7 +448,7 @@ export default async function Home() {
                   {t("pricingMostPopular")}
                 </div>
                 <p className="text-sm font-semibold text-[#18181B] mb-1">{t("pricingPro")}</p>
-                <p className="text-xs text-[#71717A] mb-4">{t("pricingMostPopular")}</p>
+                <p className="text-xs text-[#52525B] mb-4">{t("pricingProDesc")}</p>
                 <div className="flex items-baseline gap-1 mb-6">
                   <span className="text-4xl font-bold text-[#18181B]">{t("pricingProPrice")}</span>
                   <span className="text-sm text-[#71717A]">{t("pricingPerMonth")}</span>

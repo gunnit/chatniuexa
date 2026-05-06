@@ -10,6 +10,7 @@ function getResend() {
 }
 
 const FROM_EMAIL = 'ChatAziendale.it <noreply@chataziendale.it>'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://chataziendale.it'
 
 export async function sendWelcomeEmail(to: string, name: string) {
   try {
@@ -26,7 +27,7 @@ export async function sendWelcomeEmail(to: string, name: string) {
           <p style="color: #475569; font-size: 16px; line-height: 1.6;">
             Get started by adding a data source and creating your first chatbot.
           </p>
-          <a href="https://chataziendale.onrender.com/dashboard"
+          <a href="${APP_URL}/dashboard"
              style="display: inline-block; padding: 12px 24px; background: linear-gradient(to right, #6366f1, #8b5cf6); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; margin-top: 16px;">
             Go to Dashboard
           </a>
@@ -88,7 +89,7 @@ export async function sendBillingConfirmation(to: string, name: string, planName
           <p style="color: #475569; font-size: 16px; line-height: 1.6;">
             You now have access to all ${planName} features. Enjoy!
           </p>
-          <a href="https://chataziendale.onrender.com/dashboard/billing"
+          <a href="${APP_URL}/dashboard/billing"
              style="display: inline-block; padding: 12px 24px; background: linear-gradient(to right, #6366f1, #8b5cf6); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; margin-top: 16px;">
             View Billing
           </a>

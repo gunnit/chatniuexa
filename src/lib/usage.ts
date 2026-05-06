@@ -35,87 +35,84 @@ export async function logUsage(params: {
   const now = new Date()
   const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+  const isChat = type === 'chat'
 
-  return await prisma.$transaction(async (tx) => {
-    // Get or create usage limits
-    let limits = await tx.usageLimit.findUnique({
-      where: { tenantId },
-    })
+  // Ensure the row exists (idempotent — concurrent first-call from same tenant
+  // is safe because @unique on tenantId rejects the second insert).
+  await prisma.usageLimit.upsert({
+    where: { tenantId },
+    update: {},
+    create: { tenantId },
+  })
 
-    if (!limits) {
-      try {
-        limits = await tx.usageLimit.create({
-          data: { tenantId },
-        })
-      } catch {
-        // Handle race condition where another request created it
-        limits = await tx.usageLimit.findUnique({
-          where: { tenantId },
-        })
-        if (!limits) return { allowed: false, reason: 'Failed to create usage limits' }
-      }
-    }
+  // Atomic conditional UPDATE: counters are reset and incremented in a single
+  // statement, and the WHERE clause refuses the update if any cap would be
+  // exceeded. This eliminates the read-then-check-then-write race that allowed
+  // concurrent requests to both pass the cap check and both increment.
+  const isChatInt = isChat ? 1 : 0
+  const result = await prisma.$queryRaw<Array<{ id: string }>>`
+    UPDATE usage_limits SET
+      "currentMonthTokens" = CASE
+        WHEN "lastMonthReset" < ${monthStart} THEN ${tokens}
+        ELSE "currentMonthTokens" + ${tokens}
+      END,
+      "currentMonthCost" = CASE
+        WHEN "lastMonthReset" < ${monthStart} THEN ${cost}
+        ELSE "currentMonthCost" + ${cost}
+      END,
+      "lastMonthReset" = CASE
+        WHEN "lastMonthReset" < ${monthStart} THEN ${monthStart}
+        ELSE "lastMonthReset"
+      END,
+      "currentDayMessages" = CASE
+        WHEN "lastDayReset" < ${dayStart} THEN ${isChatInt}
+        WHEN ${isChat} THEN "currentDayMessages" + 1
+        ELSE "currentDayMessages"
+      END,
+      "lastDayReset" = CASE
+        WHEN "lastDayReset" < ${dayStart} THEN ${dayStart}
+        ELSE "lastDayReset"
+      END,
+      "updatedAt" = NOW()
+    WHERE "tenantId" = ${tenantId}
+      AND (
+        "lastMonthReset" < ${monthStart}
+        OR "currentMonthTokens" + ${tokens} <= "monthlyTokenLimit"
+      )
+      AND (
+        "lastMonthReset" < ${monthStart}
+        OR "currentMonthCost" + ${cost} <= "monthlyCostLimit"
+      )
+      AND (
+        NOT ${isChat}
+        OR "lastDayReset" < ${dayStart}
+        OR "currentDayMessages" < "dailyMessageLimit"
+      )
+    RETURNING id
+  `
 
-    // Reset counters if needed
-    const updates: Parameters<typeof prisma.usageLimit.update>[0]['data'] = {}
-    let needsUpdate = false
-
-    if (limits.lastDayReset < dayStart) {
-      updates.currentDayMessages = 0
-      updates.lastDayReset = dayStart
-      needsUpdate = true
-    }
-
-    if (limits.lastMonthReset < monthStart) {
-      updates.currentMonthTokens = 0
-      updates.currentMonthCost = 0
-      updates.lastMonthReset = monthStart
-      needsUpdate = true
-    }
-
-    if (needsUpdate) {
-      limits = await tx.usageLimit.update({
-        where: { tenantId },
-        data: updates,
-      })
-    }
-
-    // Check limits
+  if (result.length === 0) {
+    // Determine which limit was hit so we can surface a helpful reason.
+    const limits = await prisma.usageLimit.findUnique({ where: { tenantId } })
+    if (!limits) return { allowed: false, reason: 'Failed to create usage limits' }
     if (limits.currentMonthTokens + tokens > limits.monthlyTokenLimit) {
       return { allowed: false, reason: 'Monthly token limit exceeded' }
     }
-
     if (limits.currentMonthCost + cost > limits.monthlyCostLimit) {
       return { allowed: false, reason: 'Monthly cost limit exceeded' }
     }
-
-    if (type === 'chat' && limits.currentDayMessages >= limits.dailyMessageLimit) {
+    if (isChat && limits.currentDayMessages >= limits.dailyMessageLimit) {
       return { allowed: false, reason: 'Daily message limit exceeded' }
     }
+    return { allowed: false, reason: 'Usage limit exceeded' }
+  }
 
-    // Log the usage
-    await tx.usageLog.create({
-      data: {
-        tenantId,
-        chatbotId,
-        type,
-        tokens,
-        cost,
-      },
-    })
-
-    // Update counters atomically
-    await tx.usageLimit.update({
-      where: { tenantId },
-      data: {
-        currentMonthTokens: { increment: tokens },
-        currentMonthCost: { increment: cost },
-        ...(type === 'chat' ? { currentDayMessages: { increment: 1 } } : {}),
-      },
-    })
-
-    return { allowed: true }
+  // Log the usage event (best effort — counters are already committed)
+  await prisma.usageLog.create({
+    data: { tenantId, chatbotId, type, tokens, cost },
   })
+
+  return { allowed: true }
 }
 
 /**

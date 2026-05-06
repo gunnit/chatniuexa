@@ -3,7 +3,9 @@ import { prisma } from '@/lib/db'
 import { generateQueryEmbedding, prepareStreamingContextWithEmbedding, generateStreamingChatResponse } from '@/lib/chat/rag'
 import { logUsage } from '@/lib/usage'
 import { getCorsHeaders } from '@/lib/cors'
+import { isChatbotOriginAllowed } from '@/lib/origin'
 import { rateLimit } from '@/lib/rate-limit'
+import { logger } from '@/lib/logger'
 import { z } from 'zod'
 
 const chatSchema = z.object({
@@ -19,7 +21,8 @@ export async function OPTIONS(request: NextRequest) {
 
 // POST /api/chat/stream - Send a message and get a streaming response
 export async function POST(request: NextRequest) {
-  const corsHeaders = getCorsHeaders(request.headers.get('origin'))
+  const origin = request.headers.get('origin')
+  const referer = request.headers.get('referer')
 
   // Rate limit by IP
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
@@ -27,7 +30,7 @@ export async function POST(request: NextRequest) {
   if (!rl.allowed) {
     return NextResponse.json(
       { error: 'Too many requests' },
-      { status: 429, headers: corsHeaders }
+      { status: 429, headers: getCorsHeaders(origin) }
     )
   }
 
@@ -35,40 +38,38 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { chatbotId, sessionId, message } = chatSchema.parse(body)
 
-    // Phase 1: Fire all independent work in parallel
-    // Embedding generation (~300-500ms) overlaps with DB queries (~75ms total)
-    const embeddingPromise = generateQueryEmbedding(message)
-    const chatbotPromise = prisma.chatbot.findUnique({ where: { id: chatbotId } })
-    const conversationPromise = getOrCreateConversation(chatbotId, sessionId)
-
-    // Chain usage check off chatbot (starts as soon as chatbot resolves)
-    const usagePromise = chatbotPromise.then((bot) =>
-      bot
-        ? logUsage({ tenantId: bot.tenantId, chatbotId: bot.id, type: 'chat', tokens: 500, model: bot.model })
-        : null
-    )
-
-    // Chain RAG off chatbot + embedding (starts when both resolve)
-    const ragPromise = Promise.all([chatbotPromise, embeddingPromise]).then(([bot, embedding]) =>
-      bot
-        ? prepareStreamingContextWithEmbedding(bot.tenantId, embedding, { userMessage: message })
-        : null
-    )
-
-    // Await all results
-    const [chatbot, conversation, usageCheck, ragResult] = await Promise.all([
-      chatbotPromise,
-      conversationPromise,
-      usagePromise,
-      ragPromise,
-    ])
+    // Fetch chatbot first so we can verify origin before doing any expensive work
+    const chatbot = await prisma.chatbot.findUnique({ where: { id: chatbotId } })
 
     if (!chatbot) {
       return NextResponse.json(
         { error: 'Chatbot not found' },
-        { status: 404, headers: corsHeaders }
+        { status: 404, headers: getCorsHeaders(origin) }
       )
     }
+
+    const corsHeaders = getCorsHeaders(origin, 'POST, OPTIONS', chatbot.allowedDomains)
+
+    if (!isChatbotOriginAllowed({ origin, referer, allowedDomains: chatbot.allowedDomains, chatbotId: chatbot.id })) {
+      return NextResponse.json(
+        { error: 'Origin not allowed for this chatbot' },
+        { status: 403, headers: corsHeaders }
+      )
+    }
+
+    // Phase 2: Fire remaining independent work in parallel
+    const embeddingPromise = generateQueryEmbedding(message)
+    const conversationPromise = getOrCreateConversation(chatbotId, sessionId)
+    const usagePromise = logUsage({ tenantId: chatbot.tenantId, chatbotId: chatbot.id, type: 'chat', tokens: 500, model: chatbot.model })
+    const ragPromise = embeddingPromise.then((embedding) =>
+      prepareStreamingContextWithEmbedding(chatbot.tenantId, embedding, { userMessage: message }),
+    )
+
+    const [conversation, usageCheck, ragResult] = await Promise.all([
+      conversationPromise,
+      usagePromise,
+      ragPromise,
+    ])
 
     if (!usageCheck?.allowed) {
       return NextResponse.json(
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { context, streamingContext } = ragResult!
+    const { context, streamingContext } = ragResult
 
     // Build conversation history
     const history = conversation.messages.map((m) => ({
@@ -130,21 +131,25 @@ export async function POST(request: NextRequest) {
         }
       },
       async flush(controller) {
-        // Save the assistant message after stream completes
-        if (fullContent) {
+        // Save the assistant message after stream completes.
+        // Errors here must NOT be re-thrown into controller.error — the client
+        // already received the streamed content; failing the stream now would
+        // leave them with a rendered answer that's missing from history.
+        if (!fullContent) return
+        try {
           const savedMessage = await prisma.message.create({
             data: {
-              conversationId: conversation!.id,
+              conversationId: conversation.id,
               role: 'ASSISTANT',
               content: fullContent,
               sources: streamingContext.sources as object[],
             },
           })
           savedMessageId = savedMessage.id
-
-          // Send messageId event before [DONE]
           const encoder = new TextEncoder()
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ messageId: savedMessageId })}\n\n`))
+        } catch (err) {
+          logger.error('Failed to persist assistant message', { error: String(err) })
         }
       },
     })
@@ -200,16 +205,17 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
+    const fallbackHeaders = getCorsHeaders(origin)
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid input', details: error.issues },
-        { status: 400, headers: corsHeaders }
+        { status: 400, headers: fallbackHeaders }
       )
     }
-    console.error('Error in streaming chat:', error instanceof Error ? error.message : error)
+    logger.error('Streaming chat error', { error: String(error) })
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500, headers: corsHeaders }
+      { status: 500, headers: fallbackHeaders }
     )
   }
 }

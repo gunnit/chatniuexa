@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getCorsHeaders } from '@/lib/cors'
+import { isChatbotOriginAllowed } from '@/lib/origin'
 
 // GET /api/widget/[id] - Get public chatbot config for widget
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const corsHeaders = getCorsHeaders(request.headers.get('origin'), 'GET, OPTIONS')
+  const origin = request.headers.get('origin')
+  const referer = request.headers.get('referer')
   const { id } = await params
 
   try {
@@ -28,24 +30,38 @@ export async function GET(
         chatIconType: true,
         chatIconPreset: true,
         chatIconImage: true,
+        allowedDomains: true,
       },
     })
 
     if (!chatbot) {
       return NextResponse.json(
         { error: 'Chatbot not found' },
-        { status: 404, headers: corsHeaders }
+        { status: 404, headers: getCorsHeaders(origin, 'GET, OPTIONS') }
       )
     }
 
+    const corsHeaders = getCorsHeaders(origin, 'GET, OPTIONS', chatbot.allowedDomains)
+
+    if (!isChatbotOriginAllowed({ origin, referer, allowedDomains: chatbot.allowedDomains, chatbotId: chatbot.id })) {
+      return NextResponse.json(
+        { error: 'Origin not allowed for this chatbot' },
+        { status: 403, headers: corsHeaders }
+      )
+    }
+
+    // Strip allowedDomains before returning to client
+    const { allowedDomains: _allowed, ...publicConfig } = chatbot
+    void _allowed
+
     return NextResponse.json(
-      { chatbot },
+      { chatbot: publicConfig },
       { headers: corsHeaders }
     )
   } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500, headers: corsHeaders }
+      { status: 500, headers: getCorsHeaders(origin, 'GET, OPTIONS') }
     )
   }
 }

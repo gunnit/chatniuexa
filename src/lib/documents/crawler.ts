@@ -1,4 +1,6 @@
 import FirecrawlApp from '@mendable/firecrawl-js'
+import { logger } from '@/lib/logger'
+import { assertSafePublicUrl, UnsafeUrlError } from '@/lib/url-safety'
 
 interface CrawlResult {
   content: string
@@ -11,6 +13,17 @@ interface CrawlResult {
  * Falls back to basic fetch if Firecrawl is not configured
  */
 export async function crawlUrl(url: string): Promise<CrawlResult> {
+  // SSRF protection: reject URLs that resolve to private/loopback addresses
+  // before either crawler path touches them.
+  try {
+    await assertSafePublicUrl(url)
+  } catch (err) {
+    if (err instanceof UnsafeUrlError) {
+      throw new Error(`Refusing to fetch URL: ${err.message}`)
+    }
+    throw err
+  }
+
   // Try Firecrawl first if API key is available
   if (process.env.FIRECRAWL_API_KEY) {
     return crawlWithFirecrawl(url)
@@ -23,9 +36,6 @@ export async function crawlUrl(url: string): Promise<CrawlResult> {
 async function crawlWithFirecrawl(url: string): Promise<CrawlResult> {
   const apiKey = process.env.FIRECRAWL_API_KEY
 
-  // Log API key presence (not the key itself for security)
-  console.log('Firecrawl API key configured:', apiKey ? `yes (${apiKey.substring(0, 5)}...)` : 'NO - MISSING!')
-
   if (!apiKey) {
     throw new Error('Firecrawl error: FIRECRAWL_API_KEY environment variable is not set')
   }
@@ -33,14 +43,11 @@ async function crawlWithFirecrawl(url: string): Promise<CrawlResult> {
   const app = new FirecrawlApp({ apiKey })
 
   try {
-    console.log('Calling Firecrawl scrape for:', url)
     // SDK returns Document directly with markdown, metadata properties
     // Throws an error on failure (doesn't return success: false)
     const doc = await app.scrape(url, {
       formats: ['markdown'],
     })
-
-    console.log('Firecrawl scrape completed for:', url)
 
     return {
       content: doc.markdown || '',
@@ -48,14 +55,14 @@ async function crawlWithFirecrawl(url: string): Promise<CrawlResult> {
       url: doc.metadata?.sourceURL || url,
     }
   } catch (error) {
-    // Log full error for debugging
-    console.error('Firecrawl exception for URL:', url)
-    console.error('Error details:', error instanceof Error ? error.message : JSON.stringify(error))
-
+    logger.error('Firecrawl exception', {
+      url,
+      error: error instanceof Error ? error.message : 'unknown',
+    })
     if (error instanceof Error) {
       throw new Error(`Firecrawl error: ${error.message}`)
     }
-    throw new Error(`Firecrawl error: ${JSON.stringify(error)}`)
+    throw new Error('Firecrawl error: unknown failure')
   }
 }
 

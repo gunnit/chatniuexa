@@ -18,7 +18,6 @@ function staticEntry(
 ): MetadataRoute.Sitemap[number] {
   return {
     url: localizedUrl('en', path),
-    lastModified: new Date(),
     changeFrequency,
     priority,
     alternates: {

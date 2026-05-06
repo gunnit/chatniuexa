@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import { getOpenAI } from '@/lib/openai'
 import { logUsage } from '@/lib/usage'
 import { rateLimit } from '@/lib/rate-limit'
+import { logger } from '@/lib/logger'
 import { z } from 'zod'
 
 const requestSchema = z.object({
@@ -31,13 +32,22 @@ export async function POST(
 
   const { id } = await params
 
-  // Verify ownership
+  // Verify ownership and load plan in one query
   const chatbot = await prisma.chatbot.findFirst({
     where: { id, tenantId: session.user.tenantId },
+    include: { tenant: { select: { plan: true } } },
   })
 
   if (!chatbot) {
     return NextResponse.json({ error: 'Chatbot not found' }, { status: 404 })
+  }
+
+  // Plan gate — AI prompt enhancement burns real OpenAI dollars per call.
+  if (chatbot.tenant.plan === 'free') {
+    return NextResponse.json(
+      { error: 'PLAN_UPGRADE_REQUIRED' },
+      { status: 403 }
+    )
   }
 
   try {
@@ -83,48 +93,32 @@ export async function POST(
     for (const ds of dataSources) {
       if (sampledChunks.length >= maxTotalChunks) break
 
-      // Get document IDs for this data source
-      const documents = await prisma.document.findMany({
-        where: { dataSourceId: ds.id },
-        select: { id: true },
+      // Single batched fetch per data source — the previous implementation
+      // issued one findFirst+skip query per sampling position, producing up to
+      // maxPositions × dataSources sequential round-trips with table scans.
+      const allChunks = await prisma.chunk.findMany({
+        where: { document: { dataSourceId: ds.id } },
+        orderBy: { chunkIndex: 'asc' },
+        select: { content: true },
       })
 
-      if (documents.length === 0) continue
+      if (allChunks.length === 0) continue
+      const totalChunks = allChunks.length
 
-      const docIds = documents.map((d) => d.id)
-
-      // Count total chunks across all documents of this source
-      const totalChunks = await prisma.chunk.count({
-        where: { documentId: { in: docIds } },
-      })
-
-      if (totalChunks === 0) continue
-
-      // Stratified sampling: first, middle, last chunks
       const positions = [0]
       if (totalChunks > 1) positions.push(Math.floor(totalChunks / 2))
       if (totalChunks > 2) positions.push(totalChunks - 1)
 
-      // Add extra positions if we can take more per source
       if (chunksPerSource > 3 && totalChunks > 4) {
         positions.push(Math.floor(totalChunks / 4))
         if (chunksPerSource >= 5) positions.push(Math.floor((totalChunks * 3) / 4))
       }
 
-      // Deduplicate and sort positions
       const uniquePositions = [...new Set(positions)].sort((a, b) => a - b)
 
       for (const pos of uniquePositions) {
         if (sampledChunks.length >= maxTotalChunks) break
-
-        const chunk = await prisma.chunk.findFirst({
-          where: { documentId: { in: docIds } },
-          orderBy: { chunkIndex: 'asc' },
-          skip: pos,
-          take: 1,
-          select: { content: true },
-        })
-
+        const chunk = allChunks[pos]
         if (chunk) {
           sampledChunks.push({
             sourceName: ds.name,
@@ -182,12 +176,15 @@ Output ONLY the system prompt text. Do not include any preamble, explanation, or
       completion = await openai.chat.completions.create({
         model: 'gpt-5.4-mini',
         messages: [{ role: 'user', content: metaPrompt }],
+        max_completion_tokens: 2048,
       })
     } catch (openaiError: unknown) {
       const msg = openaiError instanceof Error ? openaiError.message : String(openaiError)
-      console.error('OpenAI API error in enhance-instructions:', msg)
+      // Log full detail server-side; return generic message to client so we
+      // don't leak model SKUs, org IDs, or refusal text.
+      logger.error('OpenAI API error in enhance-instructions', { error: msg })
       return NextResponse.json(
-        { error: `AI generation failed: ${msg}` },
+        { error: 'AI generation failed' },
         { status: 502 }
       )
     }
@@ -196,15 +193,14 @@ Output ONLY the system prompt text. Do not include any preamble, explanation, or
     const enhancedInstructions = choice?.message?.content?.trim()
 
     if (!enhancedInstructions) {
-      console.error('OpenAI returned empty content:', JSON.stringify({
+      logger.error('OpenAI returned empty content', {
         finish_reason: choice?.finish_reason,
         refusal: choice?.message?.refusal,
-        content: choice?.message?.content,
         model: completion.model,
         usage: completion.usage,
-      }))
+      })
       return NextResponse.json(
-        { error: `Failed to generate enhanced instructions (finish_reason: ${choice?.finish_reason || 'unknown'})` },
+        { error: 'Failed to generate enhanced instructions' },
         { status: 500 }
       )
     }
@@ -223,7 +219,7 @@ Output ONLY the system prompt text. Do not include any preamble, explanation, or
         { status: 400 }
       )
     }
-    console.error('Error enhancing instructions:', error)
+    logger.error('Error enhancing instructions', { error: String(error) })
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

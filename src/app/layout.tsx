@@ -34,13 +34,6 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
   },
-  alternates: {
-    canonical: "/",
-    languages: {
-      en: "/",
-      it: "/it",
-    },
-  },
 };
 
 export default async function RootLayout({
@@ -52,6 +45,11 @@ export default async function RootLayout({
 
   return (
     <html lang={locale}>
+      <head>
+        <link rel="preconnect" href="https://chatniuexa.onrender.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://prod.spline.design" />
+        <link rel="dns-prefetch" href="https://chatniuexa.onrender.com" />
+      </head>
       <body
         className={`${instrumentSerif.variable} ${plusJakarta.variable} ${geistMono.variable} antialiased`}
       >

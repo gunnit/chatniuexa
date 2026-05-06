@@ -83,6 +83,8 @@ export function Navbar() {
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Menu"
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-nav"
             className="p-2 text-[#52525B] hover:text-[#18181B] transition-colors"
           >
             {mobileOpen ? (
@@ -100,7 +102,7 @@ export function Navbar() {
           </button>
 
           {mobileOpen && (
-            <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-[#E4E4E7] py-2 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div id="mobile-nav" className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-[#E4E4E7] py-2 animate-in fade-in slide-in-from-top-2 duration-200">
               <Link
                 href="/blog"
                 onClick={() => setMobileOpen(false)}

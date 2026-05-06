@@ -42,37 +42,50 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Check chatbot limit against plan
-    const tenant = await prisma.tenant.findUnique({
-      where: { id: session.user.tenantId },
-      select: { plan: true },
-    })
-    const planLimits = getPlanLimits((tenant?.plan || 'free') as PlanId)
-    const chatbotCount = await prisma.chatbot.count({
-      where: { tenantId: session.user.tenantId },
-    })
-    if (chatbotCount >= planLimits.maxChatbots) {
+    const body = await request.json()
+    const data = createChatbotSchema.parse(body)
+    const tenantId = session.user.tenantId
+
+    // Wrap count + create in a serializable transaction so two concurrent POSTs
+    // can't both pass the limit check and end up creating one chatbot above
+    // the plan cap.
+    const result = await prisma.$transaction(
+      async (tx) => {
+        const tenant = await tx.tenant.findUnique({
+          where: { id: tenantId },
+          select: { plan: true },
+        })
+        const planLimits = getPlanLimits((tenant?.plan || 'free') as PlanId)
+        const chatbotCount = await tx.chatbot.count({ where: { tenantId } })
+
+        if (chatbotCount >= planLimits.maxChatbots) {
+          return {
+            ok: false as const,
+            plan: tenant?.plan || 'free',
+            maxChatbots: planLimits.maxChatbots,
+          }
+        }
+
+        const created = await tx.chatbot.create({
+          data: { tenantId, ...data },
+        })
+        return { ok: true as const, chatbot: created }
+      },
+      { isolationLevel: 'Serializable' },
+    )
+
+    if (!result.ok) {
       return NextResponse.json(
         {
           error: 'Chatbot limit reached',
-          message: `Your ${tenant?.plan || 'free'} plan allows up to ${planLimits.maxChatbots} chatbot${planLimits.maxChatbots === 1 ? '' : 's'}. Upgrade your plan to create more.`,
+          message: `Your ${result.plan} plan allows up to ${result.maxChatbots} chatbot${result.maxChatbots === 1 ? '' : 's'}. Upgrade your plan to create more.`,
           upgrade: true,
         },
         { status: 403 }
       )
     }
 
-    const body = await request.json()
-    const data = createChatbotSchema.parse(body)
-
-    const chatbot = await prisma.chatbot.create({
-      data: {
-        tenantId: session.user.tenantId,
-        ...data,
-      },
-    })
-
-    return NextResponse.json({ chatbot }, { status: 201 })
+    return NextResponse.json({ chatbot: result.chatbot }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
