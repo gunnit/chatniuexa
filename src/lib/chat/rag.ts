@@ -51,18 +51,29 @@ const PII_GUARDRAIL = `\n\nPRIVACY & PII RULES (MANDATORY):
 
 const SCOPE_GUARDRAIL = `\n\nIMPORTANT: You must ONLY answer questions based on the provided context above. If no relevant context was provided, or if the user's question is not related to the context, politely let them know you can only help with topics covered by your knowledge base. Never use your general training knowledge to answer questions.`
 
-const DIRECTORY_QUERY_PATTERN = /\b(list|show|all|every|which|what are|chi sono|quali sono|elenca|tutti|tutte|mostra)\b.{0,80}\b(partners?|members?|companies|companie|firms|aziende|partner|membri|soci|imprese|category|sector|categoria|settore)\b/i
+const DIRECTORY_QUERY_PATTERN = /\b(list|show|all|every|which|what are|find|look(ing)?(\s+(for|at|up))?|search(ing)?|tell\s+me|give\s+me|any|who(\s+are)?|about|in\s+the|chi\s+sono|quali\s+sono|elenca|elencami|tutti|tutte|mostra|mostrami|cerca|cercami|trova|trovami|dimmi|dammi|qualche|c'è|ci\s+sono)\b.{0,80}\b(partners?|members?|companies|companie|firms|aziende|partner|membri|soci|imprese|category|categories|sector|sectors|categoria|settore|settori|categorie|services?|servizi|industry|industries|industria|industrie)\b/i
+
+// Catches bare sector-style queries like "business services", "luxury retail",
+// "finance partners?" — short messages whose only signal is a directory noun.
+const DIRECTORY_NOUN_PATTERN = /\b(partners?|members?|companies|companie|firms|aziende|partner|membri|soci|imprese|category|categories|sector|sectors|categoria|settore|settori|categorie|services?|servizi|industry|industries|industria|industrie|retail|finance|finanza|healthcare|sanità|legal|shipping|manufacturing|manifattura|automotive|hospitality|tourism|turismo|construction|costruzioni|education|istruzione|energy|energia|chemicals|chemical|chimica|defence|defense|aerospace|aerospaziale|trading|consulting|consulenza|restaurants?|ristoranti|luxury|lusso|furniture|mobili)\b/i
 
 /**
  * Detect when the user is asking for a directory-style listing
- * (e.g. "list all partners in finance"). For these, retrieve more chunks
- * so multi-chunk sectors are returned in full.
+ * (e.g. "list all partners in finance", "business services", "look for finance members").
+ * For these, retrieve more chunks so multi-chunk sectors are returned in full.
  */
 function isDirectoryQuery(message: string): boolean {
-  return DIRECTORY_QUERY_PATTERN.test(message)
+  if (DIRECTORY_QUERY_PATTERN.test(message)) return true
+  // Short queries (<=12 words) that mention a sector/listing noun are
+  // almost always directory lookups — e.g. "business services".
+  const wordCount = message.trim().split(/\s+/).filter(Boolean).length
+  if (wordCount > 0 && wordCount <= 12 && DIRECTORY_NOUN_PATTERN.test(message)) {
+    return true
+  }
+  return false
 }
 
-const DIRECTORY_MAX_SOURCES = 15
+const DIRECTORY_MAX_SOURCES = 25
 
 /**
  * Generate a RAG-based chat response
