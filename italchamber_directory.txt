@@ -1,6 +1,6 @@
 # ItalChamber Singapore — Corporate Members Directory
 
-Public directory of 176 corporate member companies of the Italian Chamber of Commerce in Singapore (ItalChamber SG), organized into 24 sectors. When a user asks for partners/members in a specific sector or category, list ALL companies for that sector — each with its linked name and one-line description. Never summarize, never use "etc.", never omit any partner.
+Public directory of 175 corporate member companies of the Italian Chamber of Commerce in Singapore (ItalChamber SG), organized into 24 sectors. When a user asks for partners/members in a specific sector or category, list ALL companies for that sector — each with its linked name and one-line description. Never summarize, never use "etc.", never omit any partner.
 
 ## Sectors index
 
@@ -12,20 +12,20 @@ Public directory of 176 corporate member companies of the Italian Chamber of Com
 - EDUCATION (1 partners)
 - ENERGY (5 partners)
 - EVENTS AND COMMUNICATION (2 partners)
-- FINANCE (11 partners)
+- FINANCE (10 partners)
 - FOOD AND BEVERAGE (19 partners)
 - FURNITURE AND HOME APPLIANCES (9 partners)
 - HEALTHCARE (4 partners)
-- HOSPITALITY AND TOURISM (8 partners)
+- HOSPITALITY AND TOURISM (9 partners)
 - INFORMATION TECHNOLOGY (3 partners)
-- LEGAL AND ACCOUNTING FIRMS (12 partners)
-- LUXURY RETAIL (14 partners)
+- LEGAL AND ACCOUNTING FIRMS (11 partners)
+- LUXURY RETAIL (15 partners)
 - MANUFACTURING (10 partners)
 - MECHANICAL AND INDUSTRIAL/ENGINEERING (18 partners)
 - PUBLIC RELATIONS AND COMMUNICATIONS (1 partners)
-- RESTAURANTS (7 partners)
+- RESTAURANTS (8 partners)
 - SECURITY SYSTEMS (1 partners)
-- SHIPPING / FREIGHT FORWARDING (11 partners)
+- SHIPPING / FREIGHT FORWARDING (9 partners)
 - TRADING (1 partners)
 - TRANSLATION AND LANGUAGE SERVICES (1 partners)
 
@@ -48,8 +48,6 @@ Public directory of 176 corporate member companies of the Italian Chamber of Com
 [Sector: BUSINESS SERVICES] **[Adecco Italia SPA](https://italchamber.org.sg/membership-directory/corporate/2535035#page-member-ajax)** — We are the world’s leading workforce solutions company, offering flexible placement, permanent placement, outsourcing and managed services…
 
 [Sector: BUSINESS SERVICES] **[Aither Asia Pte Ltd](https://italchamber.org.sg/membership-directory/corporate/2369712#page-member-ajax)** — Aither AG/Asia is headquartered in Switzerland and has 15 years of experience in environmental commodities markets.Active as an aggregator…
-
-[Sector: BUSINESS SERVICES] **[AROCA Group Pte Ltd (Ag)](https://italchamber.org.sg/membership-directory/corporate/1438413#page-member-ajax)** — Aroca Group is a boutique public affairs firm established in 2019 through the merger of two consulting firms based in Australia and…
 
 [Sector: BUSINESS SERVICES] **[Bios Management APAC Pte. Ltd.](https://italchamber.org.sg/membership-directory/corporate/2427206#page-member-ajax)** — Bios Management is a boutique consultancy with over 280 employees, more than 1,800 projects delivered, and a network of over 600 customers…
 
@@ -89,6 +87,8 @@ Public directory of 176 corporate member companies of the Italian Chamber of Com
 
 [Sector: BUSINESS SERVICES] **[Sinapse Pte Ltd](https://italchamber.org.sg/membership-directory/corporate/232452#page-member-ajax)** — We provide assistance to Italian small or medium sized enterprises which require development of their business in the ASEAN area through…
 
+[Sector: BUSINESS SERVICES] **[WeNetwork Pte Ltd](https://italchamber.org.sg/membership-directory/corporate/3622898#page-member-ajax)** — WeNetwork is a specialist recruitment firm with advisory capabilities, operating across Southeast Asia and the broader APAC region. We work with MNCs, regional conglomerates, and high-growth businesses…
+
 ## Sector: CHEMICALS (4 partners)
 
 [Sector: CHEMICALS] **[Bi-Qem Pte Ltd](https://italchamber.org.sg/membership-directory/corporate/247537#page-member-ajax)** — Founded in Northern Italy back in 1955, BI-QEM (formerly known as Chemiplastica) has grown into a global leader in sustainable…
@@ -97,7 +97,7 @@ Public directory of 176 corporate member companies of the Italian Chamber of Com
 
 [Sector: CHEMICALS] **[FACI Asia Pacific Pte Ltd](https://italchamber.org.sg/membership-directory/corporate/247551#page-member-ajax)** — Manufacturers of Metallic soaps and Fatty acid esters such as: Calcium, Zinc, Magnesium, Sodium and Potassium Stearate as metallic soaps…
 
-[Sector: CHEMICALS] **[KT Tech - NEXTCHEM SPA](https://italchamber.org.sg/membership-directory/corporate/2469964#page-member-ajax)** — NEXTCHEM is the MAIRE’s company dedicated to Sustainable Technology Solutions. We enable energy transition through innovative technologies…
+[Sector: CHEMICALS] **[KT Tech S.p.A](https://italchamber.org.sg/membership-directory/corporate/2469964#page-member-ajax)** — KT Tech is a subsidiary of NextChem, part of the Italian multinational group MAIRE. Established in 2018, NextChem provides licensed technologies spanning both conventional fossil-based solutions and decarbonization…
 
 ## Sector: CONSTRUCTION AND INFRASTRUCTURE (4 partners)
 
@@ -137,7 +137,7 @@ Public directory of 176 corporate member companies of the Italian Chamber of Com
 
 [Sector: EVENTS AND COMMUNICATION] **[Visionnaire Pte Ltd](https://italchamber.org.sg/membership-directory/corporate/232458#page-member-ajax)** — VISIONNAIRE is a CREATIVE EVENT & EXPERIENCE MARKETING AGENCY, we work together with our clients to bring brands to life through immersive…
 
-## Sector: FINANCE (11 partners)
+## Sector: FINANCE (10 partners)
 
 [Sector: FINANCE] **[Bank Julius Baer & Co. Ltd](https://italchamber.org.sg/membership-directory/corporate/222303#page-member-ajax)** — Julius Baer is the leading independent Swiss wealth management group and a premium brand in this global sector, with a focus on servicing…
 
@@ -148,8 +148,6 @@ Public directory of 176 corporate member companies of the Italian Chamber of Com
 [Sector: FINANCE] **[Camera Di Commercio Industria Artigianato e Agricoltura di Bergamo](https://italchamber.org.sg/membership-directory/corporate/247539#page-member-ajax)** — Bergamo Chamber of commerce is an independent public institution. It represents and looks after the general interests of the province’s…
 
 [Sector: FINANCE] **[Intesa Sanpaolo S.p.A - Singapore Branch](https://italchamber.org.sg/membership-directory/corporate/222314#page-member-ajax)** — Present and active in Singapore since 1984, Intesa Sanpaolo’s Singapore Branch is part of the International Network of the IMI Corporate &…
-
-[Sector: FINANCE] **[REYL Singapore Pte Ltd](https://italchamber.org.sg/membership-directory/corporate/1514202#page-member-ajax)** — Born in 2009 at the heart of the Singapore financial district, REYL SINGAPORE PTE LTD offers upscale Swiss quality Wealth & Asset…
 
 [Sector: FINANCE] **[Sace S.P.A.](https://italchamber.org.sg/membership-directory/corporate/1890148#page-member-ajax)** — SACE is the Italian insurance-financial company specialized in supporting the national economic fabric through a wide range of solutions to…
 
@@ -231,7 +229,9 @@ Public directory of 176 corporate member companies of the Italian Chamber of Com
 
 [Sector: HEALTHCARE] **[SURGE SR Anson Pte Ltd](https://italchamber.org.sg/membership-directory/corporate/1456078#page-member-ajax)** — Surge: Strength & Results is Singapore’s leading personal training company, built on one mission: transform lives through strength, health…
 
-## Sector: HOSPITALITY AND TOURISM (8 partners)
+## Sector: HOSPITALITY AND TOURISM (9 partners)
+
+[Sector: HOSPITALITY AND TOURISM] **[Conrad Singapore Marina Bay](https://italchamber.org.sg/membership-directory/corporate/3589975#page-member-ajax)** — Conrad Singapore Marina Bay is a premier destination for business travel and purposeful events, combining refined luxury with exceptional connectivity. Located next to Suntec Singapore Convention &…
 
 [Sector: HOSPITALITY AND TOURISM] **[Ergo: Travel Pte Ltd](https://italchamber.org.sg/membership-directory/corporate/820576#page-member-ajax)** — Specialist travel consultancy providing custom travel solutions and specially-organised tours to Italy for individuals and small groups…
 
@@ -257,7 +257,7 @@ Public directory of 176 corporate member companies of the Italian Chamber of Com
 
 [Sector: INFORMATION TECHNOLOGY] **[TI Sparkle Singapore Pte Ltd](https://italchamber.org.sg/membership-directory/corporate/2587624#page-member-ajax)** — Sparkle is TIM Group’s global operator, first international service provider in Italy and among the top worldwide, offering a full range of…
 
-## Sector: LEGAL AND ACCOUNTING FIRMS (12 partners)
+## Sector: LEGAL AND ACCOUNTING FIRMS (11 partners)
 
 [Sector: LEGAL AND ACCOUNTING FIRMS] **[Algebra Pte Ltd](https://italchamber.org.sg/membership-directory/corporate/232404#page-member-ajax)** — Founded in 2015 by a group of Italian professionals, Algebra Pte Ltd is a boutique consulting firm based in Singapore, dedicated to support…
 
@@ -268,8 +268,6 @@ Public directory of 176 corporate member companies of the Italian Chamber of Com
 [Sector: LEGAL AND ACCOUNTING FIRMS] **[Dentons Rodyk & Davidson LLP](https://italchamber.org.sg/membership-directory/corporate/232415#page-member-ajax)** — Dentons Rodyk is a global law firm in Singapore with a team of around 200 lawyers, offering clients a full suite of legal services…
 
 [Sector: LEGAL AND ACCOUNTING FIRMS] **[dMTV Global Pte Ltd](https://italchamber.org.sg/membership-directory/corporate/237584#page-member-ajax)** — dMTV is the brand of the international legal and tax advisory firm dMTV Global, headquartered in Singapore, founded by avv. Federico…
-
-[Sector: LEGAL AND ACCOUNTING FIRMS] **[DT & Partners Srl](https://italchamber.org.sg/membership-directory/corporate/1428956#page-member-ajax)** — DT & Partners was founded in 2012 from the idea of the founding partners Cristina D'Alessandro and Giovanni Tortolano, consultants already…
 
 [Sector: LEGAL AND ACCOUNTING FIRMS] **[Fidinam Singapore Pte Ltd](https://italchamber.org.sg/membership-directory/corporate/222311#page-member-ajax)** — Fidinam is a boutique tax and business consulting firm founded in 1960, with an international presence in Europe, Middle East and Asia…
 
@@ -283,7 +281,7 @@ Public directory of 176 corporate member companies of the Italian Chamber of Com
 
 [Sector: LEGAL AND ACCOUNTING FIRMS] **[RCLT Law Corporation](https://italchamber.org.sg/membership-directory/corporate/3022185#page-member-ajax)** — RCLT Law Corporation is a Singapore-based boutique law firm that provides comprehensive legal services across corporate, commercial and…
 
-## Sector: LUXURY RETAIL (14 partners)
+## Sector: LUXURY RETAIL (15 partners)
 
 [Sector: LUXURY RETAIL] **[Acqua di Parma](https://italchamber.org.sg/membership-directory/corporate/2700568#page-member-ajax)** — Acqua di Parma, the epitome of Italian sophistication, continues a century-long legacy, intertwining traditional craftsmanship with modern…
 
@@ -294,6 +292,8 @@ Public directory of 176 corporate member companies of the Italian Chamber of Com
 [Sector: LUXURY RETAIL] **[EssilorLuxottica Asia Pacific Pte. Ltd.](https://italchamber.org.sg/membership-directory/corporate/2415033#page-member-ajax)** — EssilorLuxottica is a global leader in the design, manufacture and distribution of ophthalmic lenses, frames and sunglasses. With over…
 
 [Sector: LUXURY RETAIL] **[Ferragamo (Singapore) Pte Ltd](https://italchamber.org.sg/membership-directory/corporate/2505023#page-member-ajax)** — Ferragamo is one of the world’s leaders in the luxury industry and whose origins back date to 1927. The brand is active in the creation…
+
+[Sector: LUXURY RETAIL] **[Giorgio Armani Singapore Pte Ltd](https://italchamber.org.sg/membership-directory/corporate/3602110#page-member-ajax)** — The Giorgio Armani collection came into being in 1975, when the designer rewrote the rules for menswear, revolutionising proportions and aiming at an unheard-of fluidity and elegance…
 
 [Sector: LUXURY RETAIL] **[Gucci Singapore Pte Ltd](https://italchamber.org.sg/membership-directory/corporate/247558#page-member-ajax)** — Founded in Florence in 1921, Gucci is one of the world’s leading luxury fashion brands, with arenowned reputation for creativity…
 
@@ -377,9 +377,11 @@ Public directory of 176 corporate member companies of the Italian Chamber of Com
 
 [Sector: PUBLIC RELATIONS AND COMMUNICATIONS] **[COCO PR & Communications Agency Pte Ltd](https://italchamber.org.sg/membership-directory/corporate/232411#page-member-ajax)** — COCO Public Relations is a Singapore-based integrated communications agency with a strong network of press contacts across the Asia…
 
-## Sector: RESTAURANTS (7 partners)
+## Sector: RESTAURANTS (8 partners)
 
 [Sector: RESTAURANTS] **[1-Soleil Pte Ltd](https://italchamber.org.sg/membership-directory/corporate/839557#page-member-ajax)** — Nestled within the heart of Singapore's bustling CBD district and situated at the iconic spherical Fullerton Pavilion, MONTI is a…
+
+[Sector: RESTAURANTS] **[DJ Hospitality Pte Ltd](https://italchamber.org.sg/membership-directory/corporate/3584714#page-member-ajax)** — DJ Hospitality operates Italian restaurants in Singapore including Cenzo, a modern chef-driven Australian-Italian restaurant on Club Street, and Il Toro Woodfire Grill on Gemmill Lane…
 
 [Sector: RESTAURANTS] **[Food Concepts Group Pte Ltd](https://italchamber.org.sg/membership-directory/corporate/232461#page-member-ajax)** — Established in 2012, Food Concepts Group curates contemporary dining experiences, and currently operates with four restaurants. The kitchen…
 
@@ -397,7 +399,7 @@ Public directory of 176 corporate member companies of the Italian Chamber of Com
 
 [Sector: SECURITY SYSTEMS] **[Comelit South East Asia Pte Ltd](https://italchamber.org.sg/membership-directory/corporate/222306#page-member-ajax)** — Comelit: “Communication Electronic Italy”, is an global leader of Security Systems for residential and commercial premises.Born in 1956 in…
 
-## Sector: SHIPPING / FREIGHT FORWARDING (11 partners)
+## Sector: SHIPPING / FREIGHT FORWARDING (9 partners)
 
 [Sector: SHIPPING / FREIGHT FORWARDING] **[D'Amico Shipping Singapore Pte Ltd](https://italchamber.org.sg/membership-directory/corporate/247544#page-member-ajax)** — The D’Amico group today operates on two principal areas:• the product tanker division for the transportation of refined petroleum products…
 
@@ -409,15 +411,11 @@ Public directory of 176 corporate member companies of the Italian Chamber of Com
 
 [Sector: SHIPPING / FREIGHT FORWARDING] **[Kst Maritime Pte.ltd - Med Tug S.p.A](https://italchamber.org.sg/membership-directory/corporate/1432757#page-member-ajax)** — MedTug is a leading global harbour towage operator. With over 100 years of towage operations, MedTug employs more than 1,100 people and…
 
-[Sector: SHIPPING / FREIGHT FORWARDING] **[Medov Logistics Pte Ltd](https://italchamber.org.sg/membership-directory/corporate/1958058#page-member-ajax)** — Medov Logistics is an international freight forwarding logistics chain expert operating with passion, efficiency and cost effective…
-
 [Sector: SHIPPING / FREIGHT FORWARDING] **[Mondiale VGL Singapore Pte Ltd](https://italchamber.org.sg/membership-directory/corporate/232429#page-member-ajax)** — Mondiale VGL is an international freight forwarding and logistics company providing end-to-end solutions across sea, air, and road freight…
-
-[Sector: SHIPPING / FREIGHT FORWARDING] **[Rely Marine Singapore Pte Ltd](https://italchamber.org.sg/membership-directory/corporate/1379255#page-member-ajax)** — Marine Insurance casualty investigators. Serving the Marine sector with consultancy work to both assess the condition of Ships and large…
 
 [Sector: SHIPPING / FREIGHT FORWARDING] **[Savino del Bene (S) Pte Ltd](https://italchamber.org.sg/membership-directory/corporate/247578#page-member-ajax)** — Savino Del Bene is a multinational company operating worldwide in international shipments and logistics support services. Established in…
 
-[Sector: SHIPPING / FREIGHT FORWARDING] **[Simpson Marine (S.E.A.) Pte Ltd](https://italchamber.org.sg/membership-directory/corporate/899500#page-member-ajax)** — Simpson Marine is Asia's leading yacht sales and services company, established in 1984. We excel in various facets of the yachting…
+[Sector: SHIPPING / FREIGHT FORWARDING] **[Sanlorenzo Asia-Pacific (Simpson Marine)](https://italchamber.org.sg/membership-directory/corporate/899500#page-member-ajax)** — Known for outstanding 'made to measure' Italian design, Sanlorenzo is globally recognised as one of the leading shipyards of the world. Each yacht is designed and produced according to the…
 
 [Sector: SHIPPING / FREIGHT FORWARDING] **[V. Ships Asia Group Pte Ltd](https://italchamber.org.sg/membership-directory/corporate/1846826#page-member-ajax)** — With over 35 years’ experience in managing vessels in the shipping, cruise, energy, and defense sectors, V. is committed to delivering safe…
 
