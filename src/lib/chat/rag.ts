@@ -55,21 +55,48 @@ const DIRECTORY_QUERY_PATTERN = /\b(list|show|all|every|which|what are|find|look
 
 // Catches bare sector-style queries like "business services", "luxury retail",
 // "finance partners?" — short messages whose only signal is a directory noun.
-const DIRECTORY_NOUN_PATTERN = /\b(partners?|members?|companies|companie|firms|aziende|partner|membri|soci|imprese|category|categories|sector|sectors|categoria|settore|settori|categorie|services?|servizi|industry|industries|industria|industrie|retail|finance|finanza|healthcare|sanità|legal|shipping|manufacturing|manifattura|automotive|hospitality|tourism|turismo|construction|costruzioni|education|istruzione|energy|energia|chemicals|chemical|chimica|defence|defense|aerospace|aerospaziale|trading|consulting|consulenza|restaurants?|ristoranti|luxury|lusso|furniture|mobili)\b/i
+const DIRECTORY_NOUN_PATTERN = /\b(partners?|members?|companies|companie|firms|aziende|partner|membri|soci|imprese|category|categories|sector|sectors|categoria|settore|settori|categorie|services?|servizi|industry|industries|industria|industrie|retail|finance|finanza|financial|finanziaria|finanziario|healthcare|sanità|sanitario|salute|medical|medicale|legal|legali|law|lawyers?|avvocato|avvocati|tax|tasse|fiscale|fiscali|accounting|accountants?|accountant|commercialist[ai]|shipping|spedizioni|spedizioniere|logistics|logistica|freight|forwarding|manufacturing|manifattura|automotive|automobil(?:e|i|istico)|hospitality|ospitalità|tourism|turismo|turistico|construction|costruzioni|infrastructure|infrastrutture|education|istruzione|formazione|energy|energia|energetic[oi]|chemicals|chemical|chimic[ao]|defence|defense|difesa|aerospace|aerospazi(?:o|ale)|trading|consulting|consulenza|consulenze|consultant|consulente|restaurants?|ristoranti|ristorazione|luxury|lusso|furniture|mobili|arredamento|fashion|moda|food|cibo|alimentar[ei]|beverage|bevande|drinks?|pharma|pharmaceuticals?|farmaceutic[ao]|farmacia|technology|tech|tecnologia|informatic[ao]|IT|software|digital|digitale|communications?|comunicaz(?:i|ioni)|pr|public\s+relations|relazioni\s+pubbliche|publishing|editoria|language|languages?|linguistic[ao]|lingue|translation|traduzioni|traduttor[ei]|mechanical|meccanic[ao]|industrial|industriale|engineering|ingegneria|security|sicurezza|fmcg|consumer\s+goods|beni\s+di\s+consumo|sustainability|sostenibilità|renewables?|rinnovabili|circularity|economia\s+circolare|innovation|innovazione|design|gala|events?|eventi|evento|committee|comitato|comitati|council|consiglio|board|board\s+of\s+directors|direttori|isbc|iccs|ifbs|goasia)\b/i
+
+// Catches single-token lookups that are likely company names (not greetings, not
+// short pleasantries). When a user types just "Belluzzo" or "Ferrari", we want
+// to retrieve a wide net so the right sector chunk is included.
+const POTENTIAL_NAME_LOOKUP = /^\s*[A-Z][\w&'\-.]*(?:\s+[A-Z&][\w&'\-.]*){0,4}\??\s*$/
+
+// Words that should NOT trigger a name lookup even if capitalized.
+const COMMON_NON_NAME = /^(hello|hi|hey|ciao|salve|buongiorno|buonasera|buonanotte|grazie|thanks|thank|please|prego|ok|si|sì|no|yes|aiuto|help|info|cosa|what|who|where|when|why|how|come|dove|quando|perché|chi)\b/i
 
 /**
  * Detect when the user is asking for a directory-style listing
- * (e.g. "list all partners in finance", "business services", "look for finance members").
- * For these, retrieve more chunks so multi-chunk sectors are returned in full.
+ * (e.g. "list all partners in finance", "business services", "look for finance members"),
+ * a single-word sector lookup ("accounting", "shipping"), or a bare member name
+ * ("Belluzzo", "Ferrari", "Belluzzo Partners").
+ * For these, retrieve more chunks so multi-chunk sectors and partial-name matches
+ * are returned in full.
  */
 function isDirectoryQuery(message: string): boolean {
   if (DIRECTORY_QUERY_PATTERN.test(message)) return true
+
+  const trimmed = message.trim()
+  const wordCount = trimmed.split(/\s+/).filter(Boolean).length
+
   // Short queries (<=12 words) that mention a sector/listing noun are
-  // almost always directory lookups — e.g. "business services".
-  const wordCount = message.trim().split(/\s+/).filter(Boolean).length
-  if (wordCount > 0 && wordCount <= 12 && DIRECTORY_NOUN_PATTERN.test(message)) {
+  // almost always directory lookups — e.g. "business services", "accounting".
+  if (wordCount > 0 && wordCount <= 12 && DIRECTORY_NOUN_PATTERN.test(trimmed)) {
     return true
   }
+
+  // Very short queries (1-5 words) that look like a proper noun / company name
+  // (capitalized, not a greeting) — treat as a directory lookup so we cast a
+  // wide net. Embeddings alone often miss single-token proper nouns.
+  if (
+    wordCount > 0 &&
+    wordCount <= 5 &&
+    POTENTIAL_NAME_LOOKUP.test(trimmed) &&
+    !COMMON_NON_NAME.test(trimmed)
+  ) {
+    return true
+  }
+
   return false
 }
 

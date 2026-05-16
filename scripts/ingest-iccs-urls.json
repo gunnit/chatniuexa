@@ -1,5 +1,5 @@
 {
-  "comment": "ICCS missing pages — committees overview, all 9 committee sub-pages, ISBC about + board",
+  "comment": "ICCS supplementary pages — committees overview, all 9 committee sub-pages, ISBC about + board, events landing pages (past + upcoming).",
   "urls": [
     "https://www.italchamber.org.sg/iccs-committees",
     "https://www.italchamber.org.sg/iccs-committees/finance-committee",
@@ -12,6 +12,9 @@
     "https://www.italchamber.org.sg/iccs-committees/sustainability-renewables-and-circularity-src-committee",
     "https://www.italchamber.org.sg/iccs-committees/pharma-committee",
     "https://www.italchamber.org.sg/about-council",
-    "https://www.italchamber.org.sg/board-directors-isbc"
+    "https://www.italchamber.org.sg/board-directors-isbc",
+    "https://www.italchamber.org.sg/events",
+    "https://www.italchamber.org.sg/events?type=upcoming",
+    "https://www.italchamber.org.sg/events?type=past"
   ]
 }
