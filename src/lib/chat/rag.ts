@@ -100,7 +100,7 @@ function isDirectoryQuery(message: string): boolean {
   return false
 }
 
-const DIRECTORY_MAX_SOURCES = 25
+const DIRECTORY_MAX_SOURCES = 40
 
 /**
  * Generate a RAG-based chat response
