@@ -100,8 +100,8 @@ function isDirectoryQuery(message: string): boolean {
   return false
 }
 
-const DIRECTORY_MAX_SOURCES = 40
-const KEYWORD_FALLBACK_LIMIT = 20
+const DIRECTORY_MAX_SOURCES = 60
+const KEYWORD_FALLBACK_LIMIT = 30
 
 const STOPWORDS = new Set([
   'list', 'show', 'all', 'every', 'tell', 'about', 'me', 'us', 'the', 'a', 'an',
