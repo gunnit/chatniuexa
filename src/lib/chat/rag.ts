@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db'
 import { getOpenAI, EMBEDDING_MODEL } from '@/lib/openai'
-import { searchSimilarChunks } from '@/lib/documents/processor'
+import { searchChunksByKeywords, searchSimilarChunks } from '@/lib/documents/processor'
 
 interface Source {
   chunkId: string
@@ -101,6 +101,39 @@ function isDirectoryQuery(message: string): boolean {
 }
 
 const DIRECTORY_MAX_SOURCES = 40
+const KEYWORD_FALLBACK_LIMIT = 20
+
+const STOPWORDS = new Set([
+  'list', 'show', 'all', 'every', 'tell', 'about', 'me', 'us', 'the', 'a', 'an',
+  'of', 'in', 'on', 'for', 'with', 'and', 'or', 'who', 'are', 'is', 'what',
+  'where', 'when', 'why', 'how', 'find', 'search', 'look', 'give', 'i', 'you',
+  'dimmi', 'dammi', 'chi', 'cosa', 'sono', 'soci', 'partner', 'partners',
+  'members', 'membri', 'azienda', 'aziende', 'company', 'companies', 'firms',
+  'firm', 'imprese', 'sector', 'sectors', 'settore', 'settori', 'categoria',
+  'categorie', 'mostra', 'mostrami', 'elenca', 'elencami', 'cerca', 'cercami',
+  'trova', 'trovami', 'tutti', 'tutte', 'quali', 'industry', 'industries',
+  'services', 'servizi',
+])
+
+/**
+ * Extract substantive tokens from the user message for keyword-fallback retrieval.
+ * Lower-cases, drops stopwords, requires length >= 3.
+ */
+function extractKeywords(message: string): string[] {
+  const tokens = message.match(/[\p{L}\p{N}&]+/gu) || []
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const raw of tokens) {
+    const lower = raw.toLowerCase()
+    if (lower.length < 3) continue
+    if (STOPWORDS.has(lower)) continue
+    if (seen.has(lower)) continue
+    seen.add(lower)
+    out.push(raw)
+    if (out.length >= 5) break
+  }
+  return out
+}
 
 /**
  * Generate a RAG-based chat response
@@ -250,6 +283,35 @@ function deduplicateSources(sources: Source[]): Source[] {
 }
 
 /**
+ * Merge keyword-fallback chunks into a vector-search result set, deduplicating
+ * by chunk id. Vector chunks come first (higher relevance signal).
+ */
+async function mergeKeywordChunks(
+  tenantId: string,
+  userMessage: string,
+  vectorChunks: Awaited<ReturnType<typeof searchSimilarChunks>>,
+): Promise<Awaited<ReturnType<typeof searchSimilarChunks>>> {
+  const keywords = extractKeywords(userMessage)
+  if (keywords.length === 0) return vectorChunks
+
+  const keywordChunks = await searchChunksByKeywords(
+    tenantId,
+    keywords,
+    KEYWORD_FALLBACK_LIMIT,
+  )
+  if (keywordChunks.length === 0) return vectorChunks
+
+  const seen = new Set(vectorChunks.map((c) => c.id))
+  const merged = [...vectorChunks]
+  for (const kc of keywordChunks) {
+    if (seen.has(kc.id)) continue
+    merged.push(kc)
+    seen.add(kc.id)
+  }
+  return merged
+}
+
+/**
  * Calculate confidence score based on source relevance
  */
 function calculateConfidence(sources: Source[]): number {
@@ -291,16 +353,25 @@ export async function prepareStreamingContextWithEmbedding(
   } = {}
 ): Promise<{ context: string; streamingContext: StreamingChatContext }> {
   const { minSimilarity = 0.2, userMessage } = options
+  const isDirectory = !!userMessage && isDirectoryQuery(userMessage)
   const maxSources = options.maxSources
-    ?? (userMessage && isDirectoryQuery(userMessage) ? DIRECTORY_MAX_SOURCES : 5)
+    ?? (isDirectory ? DIRECTORY_MAX_SOURCES : 5)
 
   // Search for relevant chunks
-  const relevantChunks = await searchSimilarChunks(
+  const vectorChunks = await searchSimilarChunks(
     tenantId,
     queryEmbedding,
     maxSources,
     minSimilarity
   )
+
+  // Hybrid fallback: for directory-style queries, also run a substring
+  // keyword search so brand-name lookups (Ferrari, Belluzzo, ...) reliably
+  // surface every chunk that mentions the term — even when those chunks
+  // ranked below the vector cap.
+  const relevantChunks = isDirectory
+    ? await mergeKeywordChunks(tenantId, userMessage!, vectorChunks)
+    : vectorChunks
 
   // Get document/datasource info for citations - batch query to avoid N+1
   const sources: Source[] = []

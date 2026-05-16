@@ -359,3 +359,66 @@ export async function searchSimilarChunks(
     dataSourceId: r.dataSourceId,
   }))
 }
+
+/**
+ * Keyword (substring) search across chunks for a tenant. Used as a hybrid
+ * fallback so single-name brand lookups (e.g. "Ferrari", "Belluzzo") reliably
+ * surface every chunk whose content contains the term verbatim, even when the
+ * embedding similarity ranks those chunks below other candidates.
+ */
+export async function searchChunksByKeywords(
+  tenantId: string,
+  keywords: string[],
+  limit: number = 20
+): Promise<
+  Array<{
+    id: string
+    content: string
+    similarity: number
+    documentId: string
+    dataSourceId: string
+  }>
+> {
+  const validKeywords = keywords
+    .map((k) => k.trim())
+    .filter((k) => k.length >= 3)
+  if (validKeywords.length === 0) return []
+
+  const orClauses = validKeywords.map((_, i) => `c.content ILIKE $${i + 3}`).join(' OR ')
+  const likePatterns = validKeywords.map((k) => `%${k}%`)
+
+  const sql = `
+    SELECT
+      c.id,
+      c.content,
+      0.5 as similarity,
+      c."documentId",
+      d."dataSourceId"
+    FROM chunks c
+    JOIN documents d ON c."documentId" = d.id
+    JOIN data_sources ds ON d."dataSourceId" = ds.id
+    WHERE ds."tenantId" = $1
+      AND ds.status = 'COMPLETE'
+      AND c.embedding IS NOT NULL
+      AND (${orClauses})
+    LIMIT $2
+  `
+
+  const results = await prisma.$queryRawUnsafe<
+    Array<{
+      id: string
+      content: string
+      similarity: number
+      documentId: string
+      dataSourceId: string
+    }>
+  >(sql, tenantId, limit, ...likePatterns)
+
+  return results.map((r) => ({
+    id: r.id,
+    content: r.content,
+    similarity: r.similarity,
+    documentId: r.documentId,
+    dataSourceId: r.dataSourceId,
+  }))
+}
