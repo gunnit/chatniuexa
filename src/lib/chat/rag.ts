@@ -369,6 +369,32 @@ async function gatherRelevantChunks(
 }
 
 /**
+ * When a directory query names a member rather than a sector (e.g. "Ferrari",
+ * "Belluzzo"), list EVERY member whose name contains the query tokens — so a
+ * multi-match name like "Ferrari" (Ferrari Far East AND Ferrari Logistics) never
+ * returns just one. Capped at 8 matches so a generic token doesn't roster half
+ * the directory.
+ */
+function buildNameRosterDirective(text: string, msgLower: string): string | null {
+  const tokens = (msgLower.match(/[\p{L}\p{N}&]+/gu) || []).filter((t) => t.length >= 4 && !STOPWORDS.has(t))
+  if (tokens.length === 0) return null
+  const memberRe = /\[Sector:[^\]]*\]\s*(?:\[Also relevant to:[^\]]*\]\s*)?\*\*\[([^\]]+?)\]/g
+  const matches = new Set<string>()
+  let m: RegExpExecArray | null
+  while ((m = memberRe.exec(text)) !== null) {
+    const name = m[1].trim()
+    const nl = name.toLowerCase()
+    if (tokens.every((t) => nl.includes(t))) matches.add(name)
+  }
+  if (matches.size === 0 || matches.size > 8) return null
+  return (
+    '### MANDATORY DIRECTORY COMPLETENESS\n' +
+    'The query names a member. Your answer MUST include EVERY one of these matching member companies, each with its markdown link and one-line description from the directory above (do not omit any):\n' +
+    [...matches].map((n) => `- ${n}`).join('\n')
+  )
+}
+
+/**
  * For a directory/category query, deterministically compute the COMPLETE roster
  * of members for the sector(s) the query maps to — using the directory's own
  * synonym map and the `[Sector: ...]` / `[Also relevant to: ...]` tags — and
@@ -422,7 +448,9 @@ function buildDirectoryRosterDirective(
   for (const sector of sectorNames) {
     if (msg.includes(sector.toLowerCase())) targets.add(sector)
   }
-  if (targets.size === 0) return null
+  // No sector matched → the query likely names a member ("Ferrari", "Belluzzo").
+  // List every member whose name matches so multi-match names never drop one.
+  if (targets.size === 0) return buildNameRosterDirective(text, msg)
 
   // Collect every member tagged with a target sector (primary OR also-relevant).
   const rosters = new Map<string, Set<string>>()
