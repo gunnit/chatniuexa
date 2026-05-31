@@ -54,6 +54,54 @@ const PRESET_ICONS: Record<string, { label: string; svg: string }> = {
     label: 'Message',
     svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>',
   },
+  sparkle: {
+    label: 'Sparkle',
+    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/><path d="M19 14l.7 2.1L22 17l-2.3.9L19 20l-.7-2.1L16 17l2.3-.9z"/></svg>',
+  },
+  lightbulb: {
+    label: 'Lightbulb',
+    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.7.5 1 1.4 1 2.3h6c0-.9.3-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg>',
+  },
+  smile: {
+    label: 'Smile',
+    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>',
+  },
+  'shopping-bag': {
+    label: 'Shopping',
+    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>',
+  },
+  calendar: {
+    label: 'Calendar',
+    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+  },
+  wrench: {
+    label: 'Wrench',
+    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>',
+  },
+  briefcase: {
+    label: 'Briefcase',
+    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>',
+  },
+  info: {
+    label: 'Info',
+    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+  },
+  mail: {
+    label: 'Mail',
+    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>',
+  },
+  phone: {
+    label: 'Phone',
+    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
+  },
+  building: {
+    label: 'Building',
+    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="9" y1="22" x2="9" y2="18"/><line x1="15" y1="22" x2="15" y2="18"/><line x1="9" y1="6" x2="9.01" y2="6"/><line x1="15" y1="6" x2="15.01" y2="6"/><line x1="9" y1="10" x2="9.01" y2="10"/><line x1="15" y1="10" x2="15.01" y2="10"/><line x1="9" y1="14" x2="9.01" y2="14"/><line x1="15" y1="14" x2="15.01" y2="14"/></svg>',
+  },
+  rocket: {
+    label: 'Rocket',
+    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>',
+  },
 }
 
 // Instruction templates for common chatbot use cases
@@ -738,28 +786,50 @@ export default function ChatbotConfigPage({
                 </div>
 
                 {chatIconType === 'preset' && (
-                  <div className="grid grid-cols-4 sm:grid-cols-7 gap-3">
-                    {Object.entries(PRESET_ICONS).map(([key, { label, svg }]) => (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => setChatIconPreset(key)}
-                        className={`flex flex-col items-center gap-2 p-3 rounded-xl transition-all border ${
-                          chatIconPreset === key
-                            ? 'border-teal-300 ring-2 ring-teal-500/20 bg-teal-50'
-                            : 'border-slate-200 bg-slate-50 hover:border-slate-300'
-                        }`}
-                      >
-                        <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center text-white"
-                          style={{ backgroundColor: primaryColor }}
-                          dangerouslySetInnerHTML={{
-                            __html: svg.replace(/<svg /, '<svg width="20" height="20" '),
-                          }}
-                        />
-                        <span className="text-xs text-slate-600">{label}</span>
-                      </button>
-                    ))}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-500">
+                        {chatIconPreset && PRESET_ICONS[chatIconPreset]
+                          ? <>Selected: <span className="font-medium text-slate-700">{PRESET_ICONS[chatIconPreset].label}</span></>
+                          : <span className="text-slate-400">Choose an icon</span>}
+                      </span>
+                      <span className="text-slate-400">{Object.keys(PRESET_ICONS).length} options</span>
+                    </div>
+                    <div className="grid grid-cols-5 sm:grid-cols-7 lg:grid-cols-10 gap-2">
+                      {Object.entries(PRESET_ICONS).map(([key, { label, svg }]) => {
+                        const isSelected = chatIconPreset === key
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => setChatIconPreset(key)}
+                            title={label}
+                            aria-label={label}
+                            aria-pressed={isSelected}
+                            className={`group relative flex items-center justify-center aspect-square rounded-xl transition-all border ${
+                              isSelected
+                                ? 'border-teal-400 ring-2 ring-teal-500/30 bg-white shadow-sm'
+                                : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'
+                            }`}
+                          >
+                            <div
+                              className="w-9 h-9 rounded-full flex items-center justify-center text-white transition-transform group-hover:scale-105"
+                              style={{ backgroundColor: primaryColor }}
+                              dangerouslySetInnerHTML={{
+                                __html: svg.replace(/<svg /, '<svg width="18" height="18" '),
+                              }}
+                            />
+                            {isSelected && (
+                              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-teal-500 text-white flex items-center justify-center shadow-sm">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="w-2.5 h-2.5">
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                              </span>
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
                   </div>
                 )}
 
