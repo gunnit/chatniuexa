@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { generateChatResponse } from '@/lib/chat/rag'
+import { generateChatResponse, prepareStreamingContext } from '@/lib/chat/rag'
+import { buildChatbotTools } from '@/lib/chat/tools'
+import { generateChatResponseWithTools } from '@/lib/chat/responses'
 import { logUsage } from '@/lib/usage'
 import { logger } from '@/lib/logger'
 import {
@@ -193,16 +195,32 @@ async function processWhatsAppMessage(msg: {
     content: m.content,
   }))
 
-  // Generate RAG response
-  const response = await generateChatResponse(
-    chatbot.tenantId,
-    msg.text,
-    history,
-    {
+  // Generate response — tool-enabled bots answer via the Responses API (web
+  // search / MCP); all others use the unchanged RAG path.
+  const tools = await buildChatbotTools(chatbot)
+  let response: {
+    content: string
+    sources: Awaited<ReturnType<typeof generateChatResponse>>['sources']
+    confidence: 'high' | 'medium' | 'low'
+  }
+  if (tools.length > 0) {
+    const { context, streamingContext } = await prepareStreamingContext(chatbot.tenantId, msg.text, {})
+    const result = await generateChatResponseWithTools(context, msg.text, history, {
       systemPrompt: chatbot.systemPrompt || undefined,
       model: chatbot.model,
+      tools,
+    })
+    response = {
+      content: result.content,
+      sources: streamingContext.sources,
+      confidence: streamingContext.confidence,
     }
-  )
+  } else {
+    response = await generateChatResponse(chatbot.tenantId, msg.text, history, {
+      systemPrompt: chatbot.systemPrompt || undefined,
+      model: chatbot.model,
+    })
+  }
 
   // Save user message
   await prisma.message.create({

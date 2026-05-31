@@ -9,6 +9,9 @@ export interface PlanLimits {
   dailyMessageLimit: number
   monthlyCostLimit: number
   whatsappEnabled: boolean
+  toolsEnabled: boolean        // hosted tools (web search) — bot answers via Responses API
+  mcpServersEnabled: boolean   // attach remote MCP servers to a bot
+  maxMcpServers: number        // cap on MCP servers per bot
 }
 
 export interface PlanInfo {
@@ -31,6 +34,9 @@ export const PLANS: Record<PlanId, PlanInfo> = {
       dailyMessageLimit: 20,
       monthlyCostLimit: 1.0,
       whatsappEnabled: false,
+      toolsEnabled: false,
+      mcpServersEnabled: false,
+      maxMcpServers: 0,
     },
     features: [
       '50 messages per month',
@@ -50,6 +56,9 @@ export const PLANS: Record<PlanId, PlanInfo> = {
       dailyMessageLimit: 500,
       monthlyCostLimit: 100.0,
       whatsappEnabled: true,
+      toolsEnabled: true,
+      mcpServersEnabled: false,
+      maxMcpServers: 0,
     },
     features: [
       '2,000 messages per month',
@@ -58,6 +67,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
       'Full analytics',
       'Priority support',
       'WhatsApp integration',
+      'Web search tool',
     ],
   },
   business: {
@@ -71,6 +81,9 @@ export const PLANS: Record<PlanId, PlanInfo> = {
       dailyMessageLimit: 5_000,
       monthlyCostLimit: 1000.0,
       whatsappEnabled: true,
+      toolsEnabled: true,
+      mcpServersEnabled: true,
+      maxMcpServers: 5,
     },
     features: [
       '10,000 messages per month',
@@ -80,6 +93,8 @@ export const PLANS: Record<PlanId, PlanInfo> = {
       'Priority support',
       'Custom branding',
       'WhatsApp integration',
+      'Web search tool',
+      'Remote MCP servers',
     ],
   },
 }

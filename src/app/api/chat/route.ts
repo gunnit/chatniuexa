@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { generateChatResponse } from '@/lib/chat/rag'
+import { generateChatResponse, prepareStreamingContext } from '@/lib/chat/rag'
+import { buildChatbotTools } from '@/lib/chat/tools'
+import { generateChatResponseWithTools } from '@/lib/chat/responses'
 import { logUsage } from '@/lib/usage'
 import { getCorsHeaders } from '@/lib/cors'
 import { isChatbotOriginAllowed } from '@/lib/origin'
@@ -107,16 +109,38 @@ export async function POST(request: NextRequest) {
       content: m.content,
     }))
 
-    // Generate response using RAG
-    const response = await generateChatResponse(
-      chatbot.tenantId,
-      message,
-      history,
-      {
+    // Decide path: bots with tools enabled answer via the Responses API; all
+    // other bots use the unchanged Chat Completions RAG path.
+    const tools = await buildChatbotTools(chatbot)
+
+    let response: {
+      content: string
+      sources: Awaited<ReturnType<typeof generateChatResponse>>['sources']
+      confidence: 'high' | 'medium' | 'low'
+      confidenceScore: number
+    }
+
+    if (tools.length > 0) {
+      // Reuse the RAG retrieval to ground the bot, then let the model also reach
+      // its tools (web search / MCP).
+      const { context, streamingContext } = await prepareStreamingContext(chatbot.tenantId, message, {})
+      const result = await generateChatResponseWithTools(context, message, history, {
         systemPrompt: chatbot.systemPrompt || undefined,
         model: chatbot.model,
+        tools,
+      })
+      response = {
+        content: result.content,
+        sources: streamingContext.sources,
+        confidence: streamingContext.confidence,
+        confidenceScore: streamingContext.confidenceScore,
       }
-    )
+    } else {
+      response = await generateChatResponse(chatbot.tenantId, message, history, {
+        systemPrompt: chatbot.systemPrompt || undefined,
+        model: chatbot.model,
+      })
+    }
 
     // Save user message
     await prisma.message.create({

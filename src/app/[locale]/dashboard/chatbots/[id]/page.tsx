@@ -3,6 +3,7 @@
 import { useEffect, useState, use } from 'react'
 import { Link } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
+import McpServersManager from './McpServersManager'
 
 interface Chatbot {
   id: string
@@ -23,6 +24,7 @@ interface Chatbot {
   chatIconPreset: string | null
   chatIconImage: string | null
   shareToken: string | null
+  webSearchEnabled: boolean
 }
 
 const PRESET_ICONS: Record<string, { label: string; svg: string }> = {
@@ -207,7 +209,7 @@ export default function ChatbotConfigPage({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-  const [activeTab, setActiveTab] = useState<'basic' | 'advanced' | 'widget' | 'embed' | 'channels'>('basic')
+  const [activeTab, setActiveTab] = useState<'basic' | 'advanced' | 'widget' | 'embed' | 'channels' | 'tools'>('basic')
 
   // Form state
   const [name, setName] = useState('')
@@ -222,6 +224,7 @@ export default function ChatbotConfigPage({
   const [welcomeMessage, setWelcomeMessage] = useState('')
   const [showBranding, setShowBranding] = useState(true)
   const [showSources, setShowSources] = useState(true)
+  const [webSearchEnabled, setWebSearchEnabled] = useState(false)
   const [suggestedPrompts, setSuggestedPrompts] = useState<string[]>([])
   const [newPrompt, setNewPrompt] = useState('')
   const [selectedTemplate, setSelectedTemplate] = useState('custom')
@@ -271,6 +274,7 @@ export default function ChatbotConfigPage({
           setWelcomeMessage(c.welcomeMessage || 'Hello! How can I help you?')
           setShowBranding(c.showBranding)
           setShowSources(c.showSources ?? true)
+          setWebSearchEnabled(c.webSearchEnabled ?? false)
           setSuggestedPrompts(c.suggestedPrompts || [])
           setChatIconType(c.chatIconType || 'default')
           setChatIconPreset(c.chatIconPreset || null)
@@ -317,6 +321,7 @@ export default function ChatbotConfigPage({
           welcomeMessage: welcomeMessage || undefined,
           showBranding,
           showSources,
+          webSearchEnabled,
           suggestedPrompts,
           chatIconType,
           chatIconPreset: chatIconType === 'preset' ? chatIconPreset : null,
@@ -416,6 +421,7 @@ export default function ChatbotConfigPage({
     { id: 'widget', label: t('widgetStyle'), icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg> },
     { id: 'embed', label: t('embedCode'), icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg> },
     { id: 'channels', label: t('channels'), icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg> },
+    { id: 'tools', label: 'Tools', icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg> },
   ] as const
 
   return (
@@ -1269,6 +1275,49 @@ export default function ChatbotConfigPage({
 
               {/* Coming soon */}
               <p className="text-center text-sm text-slate-400 pt-4">{t('channelsComingSoon')}</p>
+            </div>
+          )}
+
+          {/* Tools Tab */}
+          {activeTab === 'tools' && (
+            <div className="space-y-6" data-testid="tools-tab">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-800">Tools</h3>
+                <p className="text-sm text-slate-500 mt-1">
+                  Let this bot fetch live information at answer time. When any tool is enabled the bot answers using its knowledge base <em>and</em> its tools.
+                </p>
+              </div>
+
+              {/* Web search */}
+              <div className="rounded-xl border border-slate-200 p-4">
+                {tenantPlan === 'free' ? (
+                  <div className="text-sm text-slate-600">
+                    <div className="font-medium text-slate-800">Web search</div>
+                    <p className="mt-1">Allow the bot to search the web for live information. Available on <strong>Pro</strong> and <strong>Business</strong> plans.</p>
+                    <Link href="/dashboard/billing" className="inline-block mt-2 text-teal-600 font-medium hover:underline">Upgrade →</Link>
+                  </div>
+                ) : (
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      id="webSearchEnabled"
+                      data-testid="web-search-toggle"
+                      checked={webSearchEnabled}
+                      onChange={(e) => setWebSearchEnabled(e.target.checked)}
+                      className="w-5 h-5 mt-0.5 rounded text-teal-600 focus:ring-teal-500"
+                    />
+                    <span className="text-sm text-slate-700">
+                      <div className="font-medium">Web search</div>
+                      <div className="text-xs text-slate-500 mt-0.5">
+                        The bot can search the web for live, up-to-date information not in its knowledge base. Remember to click <strong>Save</strong> to apply.
+                      </div>
+                    </span>
+                  </label>
+                )}
+              </div>
+
+              {/* Remote MCP servers */}
+              <McpServersManager chatbotId={chatbotId} />
             </div>
           )}
         </div>

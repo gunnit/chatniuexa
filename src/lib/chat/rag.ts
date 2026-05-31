@@ -24,7 +24,7 @@ interface StreamingChatContext {
   confidenceScore: number
 }
 
-const DEFAULT_SYSTEM_PROMPT = `You are a helpful assistant that ONLY answers questions using the provided context from the knowledge base.
+export const DEFAULT_SYSTEM_PROMPT = `You are a helpful assistant that ONLY answers questions using the provided context from the knowledge base.
 
 IMPORTANT RULES:
 - You must ONLY use information from the provided context to answer questions.
@@ -40,9 +40,9 @@ Format your responses using markdown:
 - Use bullet points or numbered lists when listing multiple items
 - Keep paragraphs short and scannable`
 
-const FORMATTING_ADDENDUM = `\nFormat your responses using markdown: use **bold** for key terms and important information, use bullet points for lists, and keep paragraphs short.`
+export const FORMATTING_ADDENDUM = `\nFormat your responses using markdown: use **bold** for key terms and important information, use bullet points for lists, and keep paragraphs short.`
 
-const PII_GUARDRAIL = `\n\nPRIVACY & PII RULES (MANDATORY):
+export const PII_GUARDRAIL = `\n\nPRIVACY & PII RULES (MANDATORY):
 - NEVER repeat, echo, or store personal information that users share in their messages. This includes names, email addresses, phone numbers, fiscal codes (codice fiscale), ID numbers, home addresses, or any other personally identifiable information about the user themselves or any private individual.
 - If a user shares PII in their question, answer the underlying question WITHOUT repeating the PII back.
 - If a user asks you to call them, email them, or contact them using personal details they provided, explain that you cannot do so and suggest they contact the organization directly. Do NOT repeat their contact details in your response.

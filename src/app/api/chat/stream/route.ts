@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { generateQueryEmbedding, prepareStreamingContextWithEmbedding, generateStreamingChatResponse } from '@/lib/chat/rag'
+import { buildChatbotTools } from '@/lib/chat/tools'
+import { generateStreamingChatResponseWithTools } from '@/lib/chat/responses'
 import { logUsage } from '@/lib/usage'
 import { getCorsHeaders } from '@/lib/cors'
 import { isChatbotOriginAllowed } from '@/lib/origin'
@@ -64,11 +66,14 @@ export async function POST(request: NextRequest) {
     const ragPromise = embeddingPromise.then((embedding) =>
       prepareStreamingContextWithEmbedding(chatbot.tenantId, embedding, { userMessage: message }),
     )
+    // Build the bot's tool set (web search / MCP) in parallel; [] for non-tool bots.
+    const toolsPromise = buildChatbotTools(chatbot)
 
-    const [conversation, usageCheck, ragResult] = await Promise.all([
+    const [conversation, usageCheck, ragResult, tools] = await Promise.all([
       conversationPromise,
       usagePromise,
       ragPromise,
+      toolsPromise,
     ])
 
     if (!usageCheck?.allowed) {
@@ -95,16 +100,19 @@ export async function POST(request: NextRequest) {
       },
     }).catch((err) => console.error('Failed to save user message:', err))
 
-    // Generate streaming response
-    const stream = await generateStreamingChatResponse(
-      context,
-      message,
-      history,
-      {
-        systemPrompt: chatbot.systemPrompt || undefined,
-        model: chatbot.model,
-      }
-    )
+    // Generate streaming response — tool-enabled bots stream via the Responses
+    // API (same SSE shape); everyone else uses the unchanged Chat Completions
+    // streamer.
+    const stream = tools.length > 0
+      ? await generateStreamingChatResponseWithTools(context, message, history, {
+          systemPrompt: chatbot.systemPrompt || undefined,
+          model: chatbot.model,
+          tools,
+        })
+      : await generateStreamingChatResponse(context, message, history, {
+          systemPrompt: chatbot.systemPrompt || undefined,
+          model: chatbot.model,
+        })
 
     // Create a TransformStream to capture the full response for saving
     let fullContent = ''

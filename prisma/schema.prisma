@@ -267,6 +267,10 @@ model Chatbot {
   temperature  Float    @default(0.7)
   model        String   @default("gpt-5.4-mini")
 
+  // Tools (Phase 1) — when any tool is enabled the bot answers via the
+  // OpenAI Responses API instead of Chat Completions.
+  webSearchEnabled Boolean @default(false)  // OpenAI-hosted web_search tool (Pro+)
+
   // Widget customization (Phase 5)
   primaryColor     String?  @default("#3B82F6")
   secondaryColor   String?  @default("#6366f1")
@@ -293,12 +297,39 @@ model Chatbot {
   updatedAt DateTime @updatedAt
 
   // Relations
-  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant         Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   conversations  Conversation[]
   whatsappConfig WhatsAppConfig?
+  mcpServers     ChatbotMcpServer[]
 
   @@index([tenantId])
   @@map("chatbots")
+}
+
+// Remote MCP server a tenant has attached to a bot (Business plan).
+// The bot can call this server's read-only tools via the OpenAI Responses API.
+// Approval is handled at CONFIG time (the tenant picks `allowedTools`); calls
+// then run with require_approval:"never" — runtime approval is nonsensical for
+// anonymous end-user chat. `authToken` is AES-256-GCM ciphertext, never returned
+// to the client.
+model ChatbotMcpServer {
+  id           String   @id @default(cuid())
+  chatbotId    String
+  label        String   // server_label sent to OpenAI (slug, unique per bot)
+  serverUrl    String   // server_url (https only, SSRF-guarded)
+  description  String?  // server_description (helps the model pick the server)
+  authToken    String?  @db.Text  // AES-256-GCM ciphertext of the Bearer token; nullable for no-auth servers
+  allowedTools String[] @default([])  // explicit allowlist — empty list means the bot cannot call anything
+  enabled      Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  chatbot Chatbot @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+
+  @@unique([chatbotId, label])
+  @@index([chatbotId])
+  @@map("chatbot_mcp_servers")
 }
 
 model Conversation {
