@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db'
 import { getOpenAI, EMBEDDING_MODEL } from '@/lib/openai'
-import { searchChunksByKeywords, searchSimilarChunks } from '@/lib/documents/processor'
+import { getDirectoryChunks, searchChunksByKeywords, searchSimilarChunks } from '@/lib/documents/processor'
 
 interface Source {
   chunkId: string
@@ -154,9 +154,6 @@ export async function generateChatResponse(
     model = 'gpt-5.4-mini',
     minSimilarity = 0.2, // Lowered to 0.2 for multilingual content recall
   } = options
-  const maxSources = options.maxSources
-    ?? (isDirectoryQuery(userMessage) ? DIRECTORY_MAX_SOURCES : 5)
-
   const openai = getOpenAI()
 
   // Generate embedding for the user's query
@@ -166,12 +163,14 @@ export async function generateChatResponse(
   })
   const queryEmbedding = embeddingResponse.data[0].embedding
 
-  // Search for relevant chunks
-  const relevantChunks = await searchSimilarChunks(
+  // Search for relevant chunks — directory/category queries get the complete
+  // member directory injected so no member can be missed.
+  const relevantChunks = await gatherRelevantChunks(
     tenantId,
     queryEmbedding,
-    maxSources,
-    minSimilarity
+    userMessage,
+    minSimilarity,
+    options.maxSources,
   )
 
   // Get document/datasource info for citations - batch query to avoid N+1
@@ -214,9 +213,14 @@ export async function generateChatResponse(
   const deduplicatedSources = deduplicateSources(sources)
 
   // Build context section
-  const context = contextParts.length > 0
+  let context = contextParts.length > 0
     ? `Here is relevant information from the knowledge base:\n\n${contextParts.join('\n\n---\n\n')}`
     : 'No relevant information was found in the knowledge base. You MUST let the user know that their question is not covered by your knowledge base. Do NOT attempt to answer using your own knowledge. Instead, politely suggest they ask about topics that your knowledge base covers.'
+
+  // For directory/category queries, append an explicit must-list roster so no
+  // member (incl. cross-sector ones) can be dropped from the answer.
+  const rosterDirective = buildDirectoryRosterDirective(relevantChunks, userMessage)
+  if (rosterDirective) context += `\n\n${rosterDirective}`
 
   // Append formatting instructions if custom prompt doesn't already mention markdown/bold
   const promptWithFormatting = systemPrompt === DEFAULT_SYSTEM_PROMPT || /\*\*bold\*\*|markdown/i.test(systemPrompt)
@@ -312,6 +316,141 @@ async function mergeKeywordChunks(
 }
 
 /**
+ * Assemble the chunk set that becomes the LLM context, with DETERMINISTIC
+ * directory recall. Shared by every retrieval path (streaming + non-streaming +
+ * WhatsApp) so they behave identically.
+ *
+ * - Non-directory queries → ordinary vector search (top-K by similarity).
+ * - Directory / category / sector / member-name queries → the COMPLETE member
+ *   directory (every chunk, in order) unioned with the vector hits (so pages,
+ *   events and PDFs still contribute) and the keyword fallback, deduped by chunk
+ *   id with the directory first so sectors read top-to-bottom.
+ *
+ * Injecting the whole directory guarantees every member is present in context
+ * for any category query. This closes the recall gap where a member assigned to
+ * one sector (e.g. Hawksford under BUSINESS SERVICES) was invisible to a query
+ * that mapped to a different sector (e.g. "accounting"). Tenants with no
+ * directory-format document fall back to vector + keyword retrieval unchanged.
+ */
+async function gatherRelevantChunks(
+  tenantId: string,
+  queryEmbedding: number[],
+  userMessage: string | undefined,
+  minSimilarity: number,
+  maxSourcesOverride?: number,
+): Promise<Awaited<ReturnType<typeof searchSimilarChunks>>> {
+  const isDirectory = !!userMessage && isDirectoryQuery(userMessage)
+  const maxSources = maxSourcesOverride ?? (isDirectory ? DIRECTORY_MAX_SOURCES : 5)
+
+  const vectorChunks = await searchSimilarChunks(tenantId, queryEmbedding, maxSources, minSimilarity)
+
+  if (!isDirectory) return vectorChunks
+
+  const directoryChunks = await getDirectoryChunks(tenantId)
+
+  // No directory document for this tenant → keep the legacy keyword fallback so
+  // single-name brand lookups still cast a wide net.
+  if (directoryChunks.length === 0) {
+    return mergeKeywordChunks(tenantId, userMessage!, vectorChunks)
+  }
+
+  // Full directory first (ordered, complete), then vector hits from OTHER
+  // documents (events, site pages, PDFs) that aren't already included.
+  const seen = new Set(directoryChunks.map((c) => c.id))
+  const base = [...directoryChunks]
+  for (const c of vectorChunks) {
+    if (seen.has(c.id)) continue
+    base.push(c)
+    seen.add(c.id)
+  }
+
+  // Layer the keyword fallback on top of the union (dedupes against `base`).
+  return mergeKeywordChunks(tenantId, userMessage!, base)
+}
+
+/**
+ * For a directory/category query, deterministically compute the COMPLETE roster
+ * of members for the sector(s) the query maps to — using the directory's own
+ * synonym map and the `[Sector: ...]` / `[Also relevant to: ...]` tags — and
+ * return an explicit "you MUST list all of these" directive to inject into the
+ * context.
+ *
+ * Why this exists: the model reliably lists a sector's PRIMARY members but
+ * inconsistently DROPS members whose primary sector differs (e.g. it omits
+ * Hawksford — a corporate-services firm that also does accounting — from an
+ * "accounting firms" query, anchoring it to its Business Services listing).
+ * Prompt wording and data structure could not fix this; the model re-decides
+ * membership for category nouns. An explicit per-query roster takes that
+ * decision away from the model and is obeyed reliably.
+ *
+ * Returns null when no full directory is present or the query maps to no sector,
+ * so non-directory tenants/queries are unaffected. Driven entirely by the
+ * directory's own content, so it stays generic across tenants.
+ */
+function buildDirectoryRosterDirective(
+  chunks: Awaited<ReturnType<typeof searchSimilarChunks>>,
+  userMessage: string | undefined,
+): string | null {
+  // Only meaningful when the FULL directory was injected (directory queries);
+  // otherwise a roster built from partial chunks would be incomplete.
+  if (!userMessage || !isDirectoryQuery(userMessage)) return null
+  const text = chunks.map((c) => c.content).join('\n')
+  if (!text.includes('[Sector:')) return null
+
+  const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+  // Parse the directory's "keyword(s) → **SECTOR**" synonym lines.
+  const kwToSector = new Map<string, string>()
+  const sectorNames = new Set<string>()
+  for (const line of text.split('\n')) {
+    const m = line.match(/^-\s*(.+?)\s*→\s*\*\*(.+?)\*\*\s*$/)
+    if (!m) continue
+    const sector = m[2].trim()
+    sectorNames.add(sector)
+    for (const kw of m[1].split(',').map((s) => s.trim().toLowerCase()).filter((s) => s.length >= 3)) {
+      if (!kwToSector.has(kw)) kwToSector.set(kw, sector)
+    }
+  }
+  if (sectorNames.size === 0) return null
+
+  // Which sector(s) does the user's message map to?
+  const msg = userMessage.toLowerCase()
+  const targets = new Set<string>()
+  for (const [kw, sector] of kwToSector) {
+    if (new RegExp(`(?<![\\p{L}])${esc(kw)}(?![\\p{L}])`, 'u').test(msg)) targets.add(sector)
+  }
+  for (const sector of sectorNames) {
+    if (msg.includes(sector.toLowerCase())) targets.add(sector)
+  }
+  if (targets.size === 0) return null
+
+  // Collect every member tagged with a target sector (primary OR also-relevant).
+  const rosters = new Map<string, Set<string>>()
+  for (const t of targets) rosters.set(t, new Set())
+  const memberRe = /\[Sector:\s*([^\]]+?)\]\s*(?:\[Also relevant to:\s*([^\]]+?)\]\s*)?\*\*\[([^\]]+?)\]/g
+  let m: RegExpExecArray | null
+  while ((m = memberRe.exec(text)) !== null) {
+    const memberSectors = new Set<string>([m[1].trim()])
+    if (m[2]) for (const s of m[2].split(';').map((x) => x.trim()).filter(Boolean)) memberSectors.add(s)
+    const name = m[3].trim()
+    for (const t of targets) if (memberSectors.has(t)) rosters.get(t)!.add(name)
+  }
+
+  const parts: string[] = []
+  for (const [sector, names] of rosters) {
+    if (names.size === 0) continue
+    parts.push(`Sector "${sector}" (${names.size} members — list every one): ${[...names].join('; ')}`)
+  }
+  if (parts.length === 0) return null
+
+  return (
+    '### MANDATORY DIRECTORY COMPLETENESS\n' +
+    'The question maps to the sector(s) below. Your answer MUST include EVERY member company listed here, each with its markdown link and one-line description taken from the directory above. Do NOT omit, skip, filter, summarise, or recategorise ANY of them — even if a company\'s primary sector is different, if it appears below it is part of this category for the user.\n' +
+    parts.join('\n')
+  )
+}
+
+/**
  * Calculate confidence score based on source relevance
  */
 function calculateConfidence(sources: Source[]): number {
@@ -353,25 +492,17 @@ export async function prepareStreamingContextWithEmbedding(
   } = {}
 ): Promise<{ context: string; streamingContext: StreamingChatContext }> {
   const { minSimilarity = 0.2, userMessage } = options
-  const isDirectory = !!userMessage && isDirectoryQuery(userMessage)
-  const maxSources = options.maxSources
-    ?? (isDirectory ? DIRECTORY_MAX_SOURCES : 5)
 
-  // Search for relevant chunks
-  const vectorChunks = await searchSimilarChunks(
+  // Search for relevant chunks — directory/category queries get the complete
+  // member directory injected (full recall) plus a keyword fallback so
+  // brand-name lookups (Ferrari, Belluzzo, ...) reliably surface every match.
+  const relevantChunks = await gatherRelevantChunks(
     tenantId,
     queryEmbedding,
-    maxSources,
-    minSimilarity
+    userMessage,
+    minSimilarity,
+    options.maxSources,
   )
-
-  // Hybrid fallback: for directory-style queries, also run a substring
-  // keyword search so brand-name lookups (Ferrari, Belluzzo, ...) reliably
-  // surface every chunk that mentions the term — even when those chunks
-  // ranked below the vector cap.
-  const relevantChunks = isDirectory
-    ? await mergeKeywordChunks(tenantId, userMessage!, vectorChunks)
-    : vectorChunks
 
   // Get document/datasource info for citations - batch query to avoid N+1
   const sources: Source[] = []
@@ -413,9 +544,14 @@ export async function prepareStreamingContextWithEmbedding(
   const deduplicatedSources = deduplicateSources(sources)
 
   // Build context section
-  const context = contextParts.length > 0
+  let context = contextParts.length > 0
     ? `Here is relevant information from the knowledge base:\n\n${contextParts.join('\n\n---\n\n')}`
     : 'No relevant information was found in the knowledge base. You MUST let the user know that their question is not covered by your knowledge base. Do NOT attempt to answer using your own knowledge. Instead, politely suggest they ask about topics that your knowledge base covers.'
+
+  // For directory/category queries, append an explicit must-list roster so no
+  // member (incl. cross-sector ones) can be dropped from the answer.
+  const rosterDirective = buildDirectoryRosterDirective(relevantChunks, userMessage)
+  if (rosterDirective) context += `\n\n${rosterDirective}`
 
   // Calculate confidence
   const confidenceScore = calculateConfidence(deduplicatedSources)

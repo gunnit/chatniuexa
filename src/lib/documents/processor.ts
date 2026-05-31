@@ -422,3 +422,70 @@ export async function searchChunksByKeywords(
     dataSourceId: r.dataSourceId,
   }))
 }
+
+/**
+ * Fetch EVERY chunk that belongs to a structured member-directory document for a
+ * tenant. A directory document is identified by the per-member `[Sector: ...]`
+ * marker that the directory ingest format stamps on each company line.
+ *
+ * Returned in document + chunk order so sector groupings stay contiguous and
+ * COMPLETE. This is the deterministic backbone of directory/category recall:
+ * for any "list partners in <sector>" / "<service> firms" style query we inject
+ * the whole directory, so a member can never be silently dropped just because
+ * its chunk ranked below the vector-similarity cap or threshold. With ~40-50
+ * chunks (~18K tokens) for a 175-member directory this is cheap.
+ *
+ * Tenants without a directory-format document get an empty array, so callers
+ * transparently fall back to ordinary vector + keyword retrieval.
+ */
+export async function getDirectoryChunks(
+  tenantId: string
+): Promise<
+  Array<{
+    id: string
+    content: string
+    similarity: number
+    documentId: string
+    dataSourceId: string
+  }>
+> {
+  // `[` is not a LIKE metacharacter in Postgres, so the literal pattern matches
+  // the `[Sector:` tag verbatim. Filtering on the full document content (not the
+  // chunk) ensures we also pull the directory's header / sector-synonym preamble
+  // chunks, which give the model the taxonomy it needs to group results.
+  const results = await prisma.$queryRawUnsafe<
+    Array<{
+      id: string
+      content: string
+      similarity: number
+      documentId: string
+      dataSourceId: string
+    }>
+  >(
+    `
+    SELECT
+      c.id,
+      c.content,
+      0.6 as similarity,
+      c."documentId",
+      d."dataSourceId"
+    FROM chunks c
+    JOIN documents d ON c."documentId" = d.id
+    JOIN data_sources ds ON d."dataSourceId" = ds.id
+    WHERE ds."tenantId" = $1
+      AND ds.status = 'COMPLETE'
+      AND c.embedding IS NOT NULL
+      AND d.content ILIKE '%[Sector:%'
+    ORDER BY c."documentId", c."chunkIndex"
+    `,
+    tenantId
+  )
+
+  return results.map((r) => ({
+    id: r.id,
+    content: r.content,
+    similarity: r.similarity,
+    documentId: r.documentId,
+    dataSourceId: r.dataSourceId,
+  }))
+}
