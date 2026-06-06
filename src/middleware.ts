@@ -77,6 +77,12 @@ export default function middleware(req: NextRequest) {
 
   // Now check auth on the locale-stripped path
   const strippedPath = stripLocale(pathname)
+
+  // Billing is hidden — redirect any billing route to the dashboard
+  if (strippedPath === '/dashboard/billing' || strippedPath.startsWith('/dashboard/billing/')) {
+    return NextResponse.redirect(new URL('/dashboard', req.nextUrl))
+  }
+
   const isLoggedIn = isAuthenticated(req)
 
   const isPublicRoute =

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Link } from '@/i18n/navigation'
 import SiteCrawlerModal from '@/components/SiteCrawlerModal'
 import DocumentPreviewModal from '@/components/DocumentPreviewModal'
 
@@ -310,12 +309,6 @@ export default function DataSourcesPage() {
               </div>
               <p className="text-sm font-semibold text-slate-900 mb-1">{t('crawlProOnly')}</p>
               <p className="text-xs text-slate-500 mb-3">{t('crawlUpgradeHint')}</p>
-              <Link href="/dashboard/billing" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 transition-all shadow-sm">
-                {t('upgradePlan')}
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </Link>
             </div>
           )}
           <div className="flex items-center gap-3 mb-4">

@@ -1074,9 +1074,6 @@ export default function ChatbotConfigPage({
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                   <h3 className="text-lg font-semibold text-teal-900 mb-2">{t('whatsappProRequired')}</h3>
-                  <Link href="/dashboard/billing" className="inline-flex items-center gap-2 px-5 py-2.5 bg-teal-600 text-white rounded-xl font-medium hover:bg-teal-700 transition-colors mt-2">
-                    {t('whatsappUpgrade')}
-                  </Link>
                 </div>
               ) : (
                 <>
@@ -1294,7 +1291,6 @@ export default function ChatbotConfigPage({
                   <div className="text-sm text-slate-600">
                     <div className="font-medium text-slate-800">Web search</div>
                     <p className="mt-1">Allow the bot to search the web for live information. Available on <strong>Pro</strong> and <strong>Business</strong> plans.</p>
-                    <Link href="/dashboard/billing" className="inline-block mt-2 text-teal-600 font-medium hover:underline">Upgrade →</Link>
                   </div>
                 ) : (
                   <label className="flex items-start gap-3 cursor-pointer">

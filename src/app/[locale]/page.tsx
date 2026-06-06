@@ -88,31 +88,6 @@ export default async function Home() {
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web",
     description: "Build a custom AI chatbot in 5 minutes. Train it on your documents, website, or text — it answers questions instantly with source citations.",
-    offers: [
-      {
-        "@type": "Offer",
-        name: "Free",
-        price: "0",
-        priceCurrency: "USD",
-        description: "1 chatbot, 50 messages/month",
-      },
-      {
-        "@type": "Offer",
-        name: "Pro",
-        price: "29",
-        priceCurrency: "USD",
-        priceSpecification: { "@type": "UnitPriceSpecification", billingDuration: "P1M" },
-        description: "5 chatbots, 2,000 messages/month",
-      },
-      {
-        "@type": "Offer",
-        name: "Business",
-        price: "149",
-        priceCurrency: "USD",
-        priceSpecification: { "@type": "UnitPriceSpecification", billingDuration: "P1M" },
-        description: "Unlimited chatbots, 10,000 messages/month",
-      },
-    ],
   };
 
   const faqSchema = {
@@ -397,102 +372,6 @@ export default async function Home() {
                 </div>
               </RevealOnScroll>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── PRICING ── */}
-      <section className="relative z-10 py-24 bg-white border-y border-[#E4E4E7]">
-        <div className="max-w-5xl mx-auto px-6 lg:px-12">
-          <RevealOnScroll>
-            <div className="text-center mb-14">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 border border-teal-200/60 text-teal-700 text-xs font-semibold tracking-wider uppercase mb-4">
-                {t("pricingTag")}
-              </div>
-              <h2 className="font-serif text-3xl sm:text-[2.5rem] tracking-[-0.015em] text-[#18181B] leading-tight">
-                {t("pricingTitle")}
-              </h2>
-            </div>
-          </RevealOnScroll>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            {/* Free */}
-            <RevealOnScroll delay={0}>
-              <div className="p-7 rounded-2xl bg-[#FAFAF7] border border-[#E4E4E7] h-full flex flex-col">
-                <p className="text-sm font-semibold text-[#18181B] mb-1">{t("pricingFree")}</p>
-                <p className="text-xs text-[#71717A] mb-4">{t("pricingForever")}</p>
-                <div className="flex items-baseline gap-1 mb-6">
-                  <span className="text-4xl font-bold text-[#18181B]">{t("pricingFreePrice")}</span>
-                  <span className="text-sm text-[#71717A]">{t("pricingPerMonth")}</span>
-                </div>
-                <div className="space-y-3 mb-8 flex-1">
-                  {(["pricingFreeFeat1", "pricingFreeFeat2", "pricingFreeFeat3", "pricingFreeFeat4"] as const).map((key) => (
-                    <div key={key} className="flex items-center gap-2 text-sm text-[#52525B]">
-                      <svg className="w-4 h-4 text-teal-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      {t(key)}
-                    </div>
-                  ))}
-                </div>
-                <Link href="/signup" className="inline-flex items-center justify-center px-6 py-3 text-sm font-semibold text-[#0F766E] rounded-xl border border-[#0F766E] hover:bg-teal-50 transition-colors duration-200">
-                  {t("pricingCta")}
-                </Link>
-              </div>
-            </RevealOnScroll>
-
-            {/* Pro */}
-            <RevealOnScroll delay={100}>
-              <div className="p-7 rounded-2xl bg-white border-2 border-teal-500 h-full flex flex-col relative shadow-lg shadow-teal-500/10">
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-teal-600 text-white text-xs font-semibold">
-                  {t("pricingMostPopular")}
-                </div>
-                <p className="text-sm font-semibold text-[#18181B] mb-1">{t("pricingPro")}</p>
-                <p className="text-xs text-[#52525B] mb-4">{t("pricingProDesc")}</p>
-                <div className="flex items-baseline gap-1 mb-6">
-                  <span className="text-4xl font-bold text-[#18181B]">{t("pricingProPrice")}</span>
-                  <span className="text-sm text-[#71717A]">{t("pricingPerMonth")}</span>
-                </div>
-                <div className="space-y-3 mb-8 flex-1">
-                  {(["pricingProFeat1", "pricingProFeat2", "pricingProFeat3", "pricingProFeat4", "pricingProFeat5", "pricingProFeat6"] as const).map((key) => (
-                    <div key={key} className="flex items-center gap-2 text-sm text-[#52525B]">
-                      <svg className="w-4 h-4 text-teal-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      {t(key)}
-                    </div>
-                  ))}
-                </div>
-                <Link href="/signup" className="inline-flex items-center justify-center px-6 py-3 text-sm font-semibold text-white bg-[#0F766E] rounded-xl hover:bg-[#0D6960] transition-colors duration-200">
-                  {t("pricingCtaPro")}
-                </Link>
-              </div>
-            </RevealOnScroll>
-
-            {/* Business */}
-            <RevealOnScroll delay={200}>
-              <div className="p-7 rounded-2xl bg-[#FAFAF7] border border-[#E4E4E7] h-full flex flex-col">
-                <p className="text-sm font-semibold text-[#18181B] mb-1">{t("pricingBusiness")}</p>
-                <p className="text-xs text-[#71717A] mb-4">{t("pricingEnterprise")}</p>
-                <div className="flex items-baseline gap-1 mb-6">
-                  <span className="text-4xl font-bold text-[#18181B]">{t("pricingBusinessPrice")}</span>
-                  <span className="text-sm text-[#71717A]">{t("pricingPerMonth")}</span>
-                </div>
-                <div className="space-y-3 mb-8 flex-1">
-                  {(["pricingBizFeat1", "pricingBizFeat2", "pricingBizFeat3", "pricingBizFeat4", "pricingBizFeat5", "pricingBizFeat6"] as const).map((key) => (
-                    <div key={key} className="flex items-center gap-2 text-sm text-[#52525B]">
-                      <svg className="w-4 h-4 text-teal-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      {t(key)}
-                    </div>
-                  ))}
-                </div>
-                <Link href="/signup" className="inline-flex items-center justify-center px-6 py-3 text-sm font-semibold text-[#0F766E] rounded-xl border border-[#0F766E] hover:bg-teal-50 transition-colors duration-200">
-                  {t("pricingCtaBiz")}
-                </Link>
-              </div>
-            </RevealOnScroll>
           </div>
         </div>
       </section>

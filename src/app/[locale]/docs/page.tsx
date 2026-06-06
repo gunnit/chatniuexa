@@ -35,7 +35,6 @@ export default async function DocsPage() {
               { href: '#chatbots', label: t('tocChatbots') },
               { href: '#embedding', label: t('tocEmbedding') },
               { href: '#analytics', label: t('tocAnalytics') },
-              { href: '#billing', label: t('tocBilling') },
               { href: '#troubleshooting', label: t('tocTroubleshooting') },
             ].map((item) => (
               <a
@@ -129,28 +128,6 @@ export default async function DocsPage() {
 
             <h3 className="text-base font-semibold text-slate-200 mb-2">{t('anConversationsTitle')}</h3>
             <p>{t('anConversationsText')}</p>
-          </section>
-
-          {/* Billing */}
-          <section id="billing">
-            <h2 className="text-xl font-semibold text-white mb-3">{t('billingTitle')}</h2>
-            <p className="mb-4">{t('billingIntro')}</p>
-
-            <div className="space-y-3 mb-4">
-              <div className="p-4 rounded-lg border border-slate-800 bg-slate-900/50">
-                <h3 className="text-base font-semibold text-white mb-1">{t('planFreeTitle')}</h3>
-                <p className="text-sm">{t('planFreeDesc')}</p>
-              </div>
-              <div className="p-4 rounded-lg border border-teal-800/50 bg-teal-950/20">
-                <h3 className="text-base font-semibold text-teal-400 mb-1">{t('planProTitle')}</h3>
-                <p className="text-sm">{t('planProDesc')}</p>
-              </div>
-              <div className="p-4 rounded-lg border border-slate-800 bg-slate-900/50">
-                <h3 className="text-base font-semibold text-white mb-1">{t('planBusinessTitle')}</h3>
-                <p className="text-sm">{t('planBusinessDesc')}</p>
-              </div>
-            </div>
-            <p>{t('billingPaypal')}</p>
           </section>
 
           {/* Troubleshooting */}
