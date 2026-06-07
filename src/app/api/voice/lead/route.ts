@@ -25,7 +25,9 @@ export async function POST(request: NextRequest) {
   const referer = request.headers.get('referer')
 
   try {
-    const { sessionId, name, email, phone, note } = leadSchema.parse(await request.json())
+    let raw: unknown
+    try { raw = await request.json() } catch { return NextResponse.json({ error: 'Invalid request' }, { status: 400, headers: getCorsHeaders(origin) }) }
+    const { sessionId, name, email, phone, note } = leadSchema.parse(raw)
 
     // A handful of lead saves per session is plenty.
     if (!rateLimitCustom('voice-lead', sessionId, 6, 300).allowed) {

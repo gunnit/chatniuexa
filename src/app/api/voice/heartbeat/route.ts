@@ -23,7 +23,9 @@ export async function POST(request: NextRequest) {
   const corsHeaders = getCorsHeaders(origin, 'POST, OPTIONS')
 
   try {
-    const { sessionId, elapsedSeconds, final } = heartbeatSchema.parse(await request.json())
+    let raw: unknown
+    try { raw = await request.json() } catch { return NextResponse.json({ error: 'Invalid request' }, { status: 400, headers: corsHeaders }) }
+    const { sessionId, elapsedSeconds, final } = heartbeatSchema.parse(raw)
 
     // Per-session limit — legit cadence is ~4/min (15s) plus a final beat.
     if (!rateLimitCustom('voice-hb', sessionId, 10, 60).allowed) {

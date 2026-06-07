@@ -27,7 +27,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { chatbotId } = sessionSchema.parse(await request.json())
+    let raw: unknown
+    try { raw = await request.json() } catch { return NextResponse.json({ error: 'Invalid request' }, { status: 400, headers: getCorsHeaders(origin) }) }
+    const { chatbotId } = sessionSchema.parse(raw)
 
     const chatbot = await prisma.chatbot.findUnique({
       where: { id: chatbotId },

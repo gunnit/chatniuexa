@@ -26,7 +26,9 @@ export async function POST(request: NextRequest) {
   const referer = request.headers.get('referer')
 
   try {
-    const { sessionId, query } = retrieveSchema.parse(await request.json())
+    let raw: unknown
+    try { raw = await request.json() } catch { return NextResponse.json({ error: 'Invalid request' }, { status: 400, headers: getCorsHeaders(origin) }) }
+    const { sessionId, query } = retrieveSchema.parse(raw)
 
     // Each retrieve runs a pgvector search — bound the rate per session.
     if (!rateLimitCustom('voice-rt', sessionId, 40, 60).allowed) {
