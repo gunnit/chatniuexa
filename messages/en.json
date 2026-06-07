@@ -69,7 +69,6 @@
     "ctaSubtitle": "Start free. No credit card. Your first chatbot is live in minutes.",
     "ctaGetStarted": "Start free",
     "trustedBy": "Trusted by innovative companies across Italy",
-
     "testimonialsTag": "What our clients say",
     "testimonialsTitle": "Trusted by teams across Italy",
     "testimonial1Quote": "We cut our support response time by 70%. The chatbot handles routine questions instantly, and the source citations mean customers trust the answers.",
@@ -84,7 +83,6 @@
     "testimonial3Name": "Alessandro Rossi",
     "testimonial3Role": "CTO",
     "testimonial3Company": "PugliAI",
-
     "pricingTag": "Simple pricing",
     "pricingTitle": "Start free. Scale when ready.",
     "pricingFree": "Free",
@@ -117,7 +115,6 @@
     "pricingCta": "Start free",
     "pricingCtaPro": "Start free",
     "pricingCtaBiz": "Start free",
-
     "faqTag": "FAQ",
     "faqTitle": "Common questions",
     "faq1Q": "What file types can I upload?",
@@ -142,7 +139,8 @@
     "analytics": "Analytics",
     "billing": "Billing",
     "settings": "Settings",
-    "logout": "Logout"
+    "logout": "Logout",
+    "leads": "Leads"
   },
   "auth": {
     "welcomeBack": "Welcome back",
