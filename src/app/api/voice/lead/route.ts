@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { getCorsHeaders } from '@/lib/cors'
 import { isChatbotOriginAllowed } from '@/lib/origin'
 import { logger } from '@/lib/logger'
+import { rateLimitCustom } from '@/lib/rate-limit'
 import { validateVoiceSession } from '@/lib/voice/session'
 import { z } from 'zod'
 
@@ -25,6 +26,11 @@ export async function POST(request: NextRequest) {
 
   try {
     const { sessionId, name, email, phone, note } = leadSchema.parse(await request.json())
+
+    // A handful of lead saves per session is plenty.
+    if (!rateLimitCustom('voice-lead', sessionId, 6, 300).allowed) {
+      return NextResponse.json({ ok: false }, { status: 429, headers: getCorsHeaders(origin) })
+    }
 
     const session = await validateVoiceSession(sessionId)
     if (!session) {

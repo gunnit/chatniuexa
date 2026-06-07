@@ -92,11 +92,17 @@ export async function mintVoiceSession({ chatbot, maxSessionSeconds }: MintParam
   }
 }
 
+// Most concurrent live voice calls a single tenant may run at once. Bounds the
+// worst-case cost exposure between minting and the first heartbeat (each session is
+// independently capped at maxVoiceSessionSeconds).
+export const MAX_ACTIVE_VOICE_SESSIONS = 3
+
 export interface ActiveVoiceSession {
   id: string
   chatbotId: string
   tenantId: string
   secondsUsed: number
+  createdAt: Date
 }
 
 /** Load a voice session and confirm it is active and unexpired. */
@@ -104,10 +110,10 @@ export async function validateVoiceSession(sessionId: string): Promise<ActiveVoi
   if (!sessionId) return null
   const s = await prisma.voiceSession.findUnique({
     where: { id: sessionId },
-    select: { id: true, chatbotId: true, tenantId: true, secondsUsed: true, status: true, expiresAt: true },
+    select: { id: true, chatbotId: true, tenantId: true, secondsUsed: true, createdAt: true, status: true, expiresAt: true },
   })
   if (!s || s.status !== 'active' || s.expiresAt.getTime() < Date.now()) return null
-  return { id: s.id, chatbotId: s.chatbotId, tenantId: s.tenantId, secondsUsed: s.secondsUsed }
+  return { id: s.id, chatbotId: s.chatbotId, tenantId: s.tenantId, secondsUsed: s.secondsUsed, createdAt: s.createdAt }
 }
 
 export interface VoiceBudget {
@@ -137,6 +143,15 @@ export async function checkVoiceBudget(tenantId: string): Promise<VoiceBudget> {
   if (remainingSeconds <= 0) return { allowed: false, remainingSeconds: 0, reason: 'Monthly voice limit reached' }
   if (usedCost >= limits.monthlyCostLimit) return { allowed: false, remainingSeconds, reason: 'Monthly cost limit reached' }
 
+  // Cap concurrent live sessions so a burst of mint requests can't open many paid
+  // streams before any of them is metered.
+  const activeCount = await prisma.voiceSession.count({
+    where: { tenantId, status: 'active', expiresAt: { gt: new Date() } },
+  })
+  if (activeCount >= MAX_ACTIVE_VOICE_SESSIONS) {
+    return { allowed: false, remainingSeconds, reason: 'Too many active voice calls' }
+  }
+
   return { allowed: true, remainingSeconds }
 }
 
@@ -146,50 +161,54 @@ export interface MeterResult {
 }
 
 /**
- * Meter a session against the cumulative elapsed seconds the client reports. Computes the
- * delta since the last heartbeat, persists it on the session, and atomically increments the
- * tenant's monthly voice seconds + cost (with monthly reset). Returns stop=true once the
- * minute budget or cost cap is exhausted (or on final), so the client disconnects.
+ * Meter a session. Elapsed time is computed SERVER-SIDE from the session's createdAt
+ * (the client's reported value is not trusted — a malicious client could otherwise report
+ * 0 forever to get free minutes). Computes the delta since the last heartbeat, then
+ * persists the ledger and increments the tenant's monthly voice seconds + cost atomically
+ * (single transaction, with monthly reset). Returns stop=true once the minute budget or
+ * cost cap is exhausted (or on final), so the client disconnects.
  */
 export async function meterVoiceSession(
   session: ActiveVoiceSession,
-  elapsedSeconds: number,
+  _clientElapsedSeconds: number,
   final: boolean,
 ): Promise<MeterResult> {
-  const elapsed = Math.max(0, Math.floor(elapsedSeconds))
+  // Server-authoritative wall-clock duration since the session was minted.
+  const elapsed = Math.max(0, Math.floor((Date.now() - session.createdAt.getTime()) / 1000))
   const delta = Math.max(0, elapsed - session.secondsUsed)
   const costDelta = (delta / 60) * VOICE_COST_PER_MINUTE
   const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
 
-  // Persist the new cumulative seconds on the session ledger.
-  await prisma.voiceSession.update({
-    where: { id: session.id },
-    data: { secondsUsed: elapsed, status: final ? 'ended' : 'active' },
+  // Persist the ledger and the monthly counters together so a crash can never advance
+  // one without the other (which would lose or double-count the delta).
+  const row = await prisma.$transaction(async (tx) => {
+    await tx.voiceSession.update({
+      where: { id: session.id },
+      data: { secondsUsed: elapsed, status: final ? 'ended' : 'active' },
+    })
+    const rows = await tx.$queryRaw<
+      Array<{ currentMonthVoiceSeconds: number; currentMonthCost: number; monthlyVoiceMinutes: number; monthlyCostLimit: number }>
+    >`
+      UPDATE usage_limits SET
+        "currentMonthVoiceSeconds" = CASE
+          WHEN "lastMonthReset" < ${monthStart} THEN ${delta}
+          ELSE "currentMonthVoiceSeconds" + ${delta}
+        END,
+        "currentMonthCost" = CASE
+          WHEN "lastMonthReset" < ${monthStart} THEN ${costDelta}
+          ELSE "currentMonthCost" + ${costDelta}
+        END,
+        "lastMonthReset" = CASE
+          WHEN "lastMonthReset" < ${monthStart} THEN ${monthStart}
+          ELSE "lastMonthReset"
+        END,
+        "updatedAt" = NOW()
+      WHERE "tenantId" = ${session.tenantId}
+      RETURNING "currentMonthVoiceSeconds", "currentMonthCost", "monthlyVoiceMinutes", "monthlyCostLimit"
+    `
+    return rows[0]
   })
 
-  // Atomic monthly increment + reset (mirrors logUsage's conditional UPDATE).
-  const rows = await prisma.$queryRaw<
-    Array<{ currentMonthVoiceSeconds: number; currentMonthCost: number; monthlyVoiceMinutes: number; monthlyCostLimit: number }>
-  >`
-    UPDATE usage_limits SET
-      "currentMonthVoiceSeconds" = CASE
-        WHEN "lastMonthReset" < ${monthStart} THEN ${delta}
-        ELSE "currentMonthVoiceSeconds" + ${delta}
-      END,
-      "currentMonthCost" = CASE
-        WHEN "lastMonthReset" < ${monthStart} THEN ${costDelta}
-        ELSE "currentMonthCost" + ${costDelta}
-      END,
-      "lastMonthReset" = CASE
-        WHEN "lastMonthReset" < ${monthStart} THEN ${monthStart}
-        ELSE "lastMonthReset"
-      END,
-      "updatedAt" = NOW()
-    WHERE "tenantId" = ${session.tenantId}
-    RETURNING "currentMonthVoiceSeconds", "currentMonthCost", "monthlyVoiceMinutes", "monthlyCostLimit"
-  `
-
-  const row = rows[0]
   if (!row) return { stop: true, remainingSeconds: 0 }
 
   const budgetSeconds = row.monthlyVoiceMinutes * 60

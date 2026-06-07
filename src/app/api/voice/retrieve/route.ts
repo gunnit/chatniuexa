@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { getCorsHeaders } from '@/lib/cors'
 import { isChatbotOriginAllowed } from '@/lib/origin'
 import { logger } from '@/lib/logger'
+import { rateLimitCustom } from '@/lib/rate-limit'
 import { prepareStreamingContext } from '@/lib/chat/rag'
 import { validateVoiceSession } from '@/lib/voice/session'
 import { z } from 'zod'
@@ -26,6 +27,11 @@ export async function POST(request: NextRequest) {
 
   try {
     const { sessionId, query } = retrieveSchema.parse(await request.json())
+
+    // Each retrieve runs a pgvector search — bound the rate per session.
+    if (!rateLimitCustom('voice-rt', sessionId, 40, 60).allowed) {
+      return NextResponse.json({ context: '' }, { status: 429, headers: getCorsHeaders(origin) })
+    }
 
     const session = await validateVoiceSession(sessionId)
     if (!session) {

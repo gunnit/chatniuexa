@@ -123,6 +123,11 @@ export async function applyPlanLimits(tenantId: string, plan: PlanId) {
   // usage limits row (e.g. crash between the two writes would leave them out
   // of sync, granting old limits with a new plan name or vice versa).
   await prisma.$transaction([
+    // If the new plan has no voice entitlement (e.g. a downgrade), switch voice
+    // off on every bot so a stale voiceEnabled flag can't keep paid calls open.
+    ...(limits.voiceEnabled
+      ? []
+      : [prisma.chatbot.updateMany({ where: { tenantId, voiceEnabled: true }, data: { voiceEnabled: false } })]),
     prisma.usageLimit.upsert({
       where: { tenantId },
       update: {

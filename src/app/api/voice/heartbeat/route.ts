@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCorsHeaders } from '@/lib/cors'
 import { logger } from '@/lib/logger'
+import { rateLimitCustom } from '@/lib/rate-limit'
 import { validateVoiceSession, meterVoiceSession } from '@/lib/voice/session'
 import { z } from 'zod'
 
@@ -23,6 +24,11 @@ export async function POST(request: NextRequest) {
 
   try {
     const { sessionId, elapsedSeconds, final } = heartbeatSchema.parse(await request.json())
+
+    // Per-session limit — legit cadence is ~4/min (15s) plus a final beat.
+    if (!rateLimitCustom('voice-hb', sessionId, 10, 60).allowed) {
+      return NextResponse.json({ stop: false, remainingSeconds: 0 }, { status: 429, headers: corsHeaders })
+    }
 
     const session = await validateVoiceSession(sessionId)
     if (!session) {
