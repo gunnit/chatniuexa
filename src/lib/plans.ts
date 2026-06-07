@@ -12,6 +12,9 @@ export interface PlanLimits {
   toolsEnabled: boolean        // hosted tools (web search) — bot answers via Responses API
   mcpServersEnabled: boolean   // attach remote MCP servers to a bot
   maxMcpServers: number        // cap on MCP servers per bot
+  voiceEnabled: boolean        // realtime voice widget (WebRTC speech-to-speech)
+  monthlyVoiceMinutes: number  // voice minutes per month
+  maxVoiceSessionSeconds: number // hard per-session cap (auto-disconnect)
 }
 
 export interface PlanInfo {
@@ -37,6 +40,9 @@ export const PLANS: Record<PlanId, PlanInfo> = {
       toolsEnabled: false,
       mcpServersEnabled: false,
       maxMcpServers: 0,
+      voiceEnabled: false,
+      monthlyVoiceMinutes: 0,
+      maxVoiceSessionSeconds: 0,
     },
     features: [
       '50 messages per month',
@@ -59,6 +65,9 @@ export const PLANS: Record<PlanId, PlanInfo> = {
       toolsEnabled: true,
       mcpServersEnabled: false,
       maxMcpServers: 0,
+      voiceEnabled: false,
+      monthlyVoiceMinutes: 0,
+      maxVoiceSessionSeconds: 0,
     },
     features: [
       '2,000 messages per month',
@@ -84,6 +93,9 @@ export const PLANS: Record<PlanId, PlanInfo> = {
       toolsEnabled: true,
       mcpServersEnabled: true,
       maxMcpServers: 5,
+      voiceEnabled: true,
+      monthlyVoiceMinutes: 300,
+      maxVoiceSessionSeconds: 300,
     },
     features: [
       '10,000 messages per month',
@@ -95,6 +107,7 @@ export const PLANS: Record<PlanId, PlanInfo> = {
       'WhatsApp integration',
       'Web search tool',
       'Remote MCP servers',
+      'Realtime voice widget',
     ],
   },
 }
@@ -116,12 +129,14 @@ export async function applyPlanLimits(tenantId: string, plan: PlanId) {
         monthlyTokenLimit: limits.monthlyTokenLimit,
         dailyMessageLimit: limits.dailyMessageLimit,
         monthlyCostLimit: limits.monthlyCostLimit,
+        monthlyVoiceMinutes: limits.monthlyVoiceMinutes,
       },
       create: {
         tenantId,
         monthlyTokenLimit: limits.monthlyTokenLimit,
         dailyMessageLimit: limits.dailyMessageLimit,
         monthlyCostLimit: limits.monthlyCostLimit,
+        monthlyVoiceMinutes: limits.monthlyVoiceMinutes,
       },
     }),
     prisma.tenant.update({

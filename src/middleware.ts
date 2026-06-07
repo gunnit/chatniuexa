@@ -25,7 +25,7 @@ const publicRoutes = ['/', '/login', '/signup', '/signup/check-email', '/auth/er
 const publicPagePrefixes = ['/blog/', '/about/']
 
 // Routes that start with these prefixes are public
-const publicPrefixes = ['/api/auth', '/api/widget', '/api/chat', '/api/public', '/api/webhooks']
+const publicPrefixes = ['/api/auth', '/api/widget', '/api/chat', '/api/public', '/api/webhooks', '/api/voice']
 
 // Strip locale prefix to get the actual path
 function stripLocale(pathname: string): string {

@@ -271,6 +271,11 @@ model Chatbot {
   // OpenAI Responses API instead of Chat Completions.
   webSearchEnabled Boolean @default(false)  // OpenAI-hosted web_search tool (Pro+)
 
+  // Realtime voice (Business) — when enabled the widget shows a "Talk" button that
+  // opens a WebRTC speech-to-speech session grounded in this bot's knowledge base.
+  voiceEnabled Boolean @default(false)
+  voiceName    String  @default("marin")  // OpenAI Realtime voice (marin, cedar, ...)
+
   // Widget customization (Phase 5)
   primaryColor     String?  @default("#3B82F6")
   secondaryColor   String?  @default("#6366f1")
@@ -301,6 +306,8 @@ model Chatbot {
   conversations  Conversation[]
   whatsappConfig WhatsAppConfig?
   mcpServers     ChatbotMcpServer[]
+  voiceSessions  VoiceSession[]
+  leads          Lead[]
 
   @@index([tenantId])
   @@map("chatbots")
@@ -336,7 +343,7 @@ model Conversation {
   id        String   @id @default(cuid())
   chatbotId String
   sessionId String   // Anonymous session identifier
-  channel   String   @default("web")  // "web" | "whatsapp"
+  channel   String   @default("web")  // "web" | "whatsapp" | "voice"
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -425,10 +432,12 @@ model UsageLimit {
   monthlyTokenLimit  Int      @default(100000)    // Tokens per month
   dailyMessageLimit  Int      @default(1000)      // Messages per day
   monthlyCostLimit   Float    @default(10.0)      // USD per month
+  monthlyVoiceMinutes Int     @default(0)         // Realtime voice minutes per month (Business)
 
   // Current usage (reset monthly/daily)
   currentMonthTokens  Int      @default(0)
   currentMonthCost    Float    @default(0)
+  currentMonthVoiceSeconds Int @default(0)        // Realtime voice seconds used this month
   currentDayMessages  Int      @default(0)
   lastDayReset        DateTime @default(now())
   lastMonthReset      DateTime @default(now())
@@ -437,4 +446,52 @@ model UsageLimit {
   updatedAt DateTime @updatedAt
 
   @@map("usage_limits")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Realtime Voice (Business)
+// ─────────────────────────────────────────────────────────────
+
+// Server-issued ledger for one WebRTC voice session. Its `id` is the opaque
+// sessionId handed to the browser; every voice endpoint (retrieve/lead/heartbeat)
+// authorizes against it. `secondsUsed` is updated on each heartbeat so cost is
+// captured even if the tab is abandoned without a clean end.
+model VoiceSession {
+  id          String   @id @default(cuid())
+  chatbotId   String
+  tenantId    String   // denormalized for fast metering without a join
+  secondsUsed Int      @default(0)
+  status      String   @default("active")  // "active" | "ended" | "expired"
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  chatbot Chatbot @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+  leads   Lead[]
+
+  @@index([chatbotId])
+  @@index([createdAt])
+  @@map("voice_sessions")
+}
+
+// A lead captured by the voice bot (the "AI receptionist" story). Also reusable
+// by future channels. PII here is intentional/consented — the visitor gave it.
+model Lead {
+  id             String   @id @default(cuid())
+  chatbotId      String
+  tenantId       String   // denormalized
+  voiceSessionId String?
+  name           String?
+  email          String?
+  phone          String?
+  note           String?  @db.Text
+  source         String   @default("voice")  // "voice" | future channels
+  createdAt      DateTime @default(now())
+
+  chatbot      Chatbot       @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+  voiceSession VoiceSession? @relation(fields: [voiceSessionId], references: [id], onDelete: SetNull)
+
+  @@index([chatbotId])
+  @@index([createdAt])
+  @@map("leads")
 }
