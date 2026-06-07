@@ -27,9 +27,26 @@ interface Chatbot {
   webSearchEnabled: boolean
   voiceEnabled: boolean
   voiceName: string | null
+  voiceGreeting: string | null
+  voiceSpeakGreeting: boolean
+  voiceTone: string | null
+  voiceLanguage: string | null
+  voiceSpeed: number | null
 }
 
 const VOICE_OPTIONS = ['marin', 'cedar', 'alloy', 'ash', 'ballad', 'coral', 'sage', 'verse']
+const VOICE_TONE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'default', label: 'Default (use system prompt)' },
+  { value: 'friendly', label: 'Friendly' },
+  { value: 'professional', label: 'Professional' },
+  { value: 'energetic', label: 'Energetic' },
+  { value: 'calm', label: 'Calm' },
+]
+const VOICE_LANGUAGE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'auto', label: 'Auto (detect EN/IT)' },
+  { value: 'en', label: 'English' },
+  { value: 'it', label: 'Italian' },
+]
 
 const PRESET_ICONS: Record<string, { label: string; svg: string }> = {
   headset: {
@@ -231,6 +248,11 @@ export default function ChatbotConfigPage({
   const [webSearchEnabled, setWebSearchEnabled] = useState(false)
   const [voiceEnabled, setVoiceEnabled] = useState(false)
   const [voiceName, setVoiceName] = useState('marin')
+  const [voiceGreeting, setVoiceGreeting] = useState('')
+  const [voiceSpeakGreeting, setVoiceSpeakGreeting] = useState(false)
+  const [voiceTone, setVoiceTone] = useState('default')
+  const [voiceLanguage, setVoiceLanguage] = useState('auto')
+  const [voiceSpeed, setVoiceSpeed] = useState(1.0)
   const [suggestedPrompts, setSuggestedPrompts] = useState<string[]>([])
   const [newPrompt, setNewPrompt] = useState('')
   const [selectedTemplate, setSelectedTemplate] = useState('custom')
@@ -283,6 +305,11 @@ export default function ChatbotConfigPage({
           setWebSearchEnabled(c.webSearchEnabled ?? false)
           setVoiceEnabled(c.voiceEnabled ?? false)
           setVoiceName(c.voiceName ?? 'marin')
+          setVoiceGreeting(c.voiceGreeting ?? '')
+          setVoiceSpeakGreeting(c.voiceSpeakGreeting ?? false)
+          setVoiceTone(c.voiceTone ?? 'default')
+          setVoiceLanguage(c.voiceLanguage ?? 'auto')
+          setVoiceSpeed(typeof c.voiceSpeed === 'number' ? c.voiceSpeed : 1.0)
           setSuggestedPrompts(c.suggestedPrompts || [])
           setChatIconType(c.chatIconType || 'default')
           setChatIconPreset(c.chatIconPreset || null)
@@ -332,6 +359,11 @@ export default function ChatbotConfigPage({
           webSearchEnabled,
           voiceEnabled,
           voiceName,
+          voiceGreeting: voiceGreeting.trim() || null,
+          voiceSpeakGreeting,
+          voiceTone,
+          voiceLanguage,
+          voiceSpeed,
           suggestedPrompts,
           chatIconType,
           chatIconPreset: chatIconType === 'preset' ? chatIconPreset : null,
@@ -1355,17 +1387,83 @@ export default function ChatbotConfigPage({
                     </label>
 
                     {voiceEnabled && (
-                      <div className="pl-8">
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Voice</label>
-                        <select
-                          value={voiceName}
-                          onChange={(e) => setVoiceName(e.target.value)}
-                          className="w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                        >
-                          {VOICE_OPTIONS.map((v) => (
-                            <option key={v} value={v}>{v.charAt(0).toUpperCase() + v.slice(1)}</option>
-                          ))}
-                        </select>
+                      <div className="pl-8 space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Voice</label>
+                            <select
+                              value={voiceName}
+                              onChange={(e) => setVoiceName(e.target.value)}
+                              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            >
+                              {VOICE_OPTIONS.map((v) => (
+                                <option key={v} value={v}>{v.charAt(0).toUpperCase() + v.slice(1)}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Tone</label>
+                            <select
+                              value={voiceTone}
+                              onChange={(e) => setVoiceTone(e.target.value)}
+                              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            >
+                              {VOICE_TONE_OPTIONS.map((o) => (
+                                <option key={o.value} value={o.value}>{o.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Language</label>
+                            <select
+                              value={voiceLanguage}
+                              onChange={(e) => setVoiceLanguage(e.target.value)}
+                              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            >
+                              {VOICE_LANGUAGE_OPTIONS.map((o) => (
+                                <option key={o.value} value={o.value}>{o.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Speaking speed <span className="text-slate-400 font-normal">({voiceSpeed.toFixed(2)}×)</span>
+                            </label>
+                            <input
+                              type="range"
+                              min={0.75}
+                              max={1.25}
+                              step={0.05}
+                              value={voiceSpeed}
+                              onChange={(e) => setVoiceSpeed(parseFloat(e.target.value))}
+                              className="w-full accent-indigo-600 mt-2"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="max-w-xl">
+                          <label className="block text-sm font-medium text-slate-700 mb-1">Greeting</label>
+                          <input
+                            type="text"
+                            value={voiceGreeting}
+                            onChange={(e) => setVoiceGreeting(e.target.value)}
+                            maxLength={300}
+                            placeholder="Hi, thanks for calling Acme — how can I help?"
+                            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          />
+                          <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={voiceSpeakGreeting}
+                              onChange={(e) => setVoiceSpeakGreeting(e.target.checked)}
+                              disabled={!voiceGreeting.trim()}
+                              className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 disabled:opacity-40"
+                            />
+                            <span className="text-xs text-slate-600">
+                              Speak this greeting out loud the moment the call connects
+                            </span>
+                          </label>
+                        </div>
                       </div>
                     )}
                   </div>

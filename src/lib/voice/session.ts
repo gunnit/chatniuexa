@@ -4,6 +4,7 @@ import {
   VOICE_MODEL,
   VOICE_COST_PER_MINUTE,
   normalizeVoice,
+  clampSpeed,
 } from './config'
 import { buildVoiceInstructions } from './instructions'
 import { VOICE_TOOLS } from './tools'
@@ -13,12 +14,24 @@ export interface VoiceSessionPayload {
   sessionId: string
   model: string
   voice: string
+  speakGreeting: boolean
   maxSessionSeconds: number
   expiresAt: string
 }
 
 interface MintParams {
-  chatbot: { id: string; tenantId: string; name: string; systemPrompt: string | null; voiceName: string | null }
+  chatbot: {
+    id: string
+    tenantId: string
+    name: string
+    systemPrompt: string | null
+    voiceName: string | null
+    voiceGreeting: string | null
+    voiceSpeakGreeting: boolean
+    voiceTone: string | null
+    voiceLanguage: string | null
+    voiceSpeed: number | null
+  }
   maxSessionSeconds: number
 }
 
@@ -33,7 +46,10 @@ export async function mintVoiceSession({ chatbot, maxSessionSeconds }: MintParam
   if (!apiKey) throw new Error('Missing OPENAI_API_KEY environment variable')
 
   const voice = normalizeVoice(chatbot.voiceName)
+  const speed = clampSpeed(chatbot.voiceSpeed)
   const instructions = buildVoiceInstructions(chatbot)
+  // Only speak first when the tenant opted in AND actually provided a greeting line.
+  const speakGreeting = Boolean(chatbot.voiceSpeakGreeting && chatbot.voiceGreeting?.trim())
 
   // Ledger row first — gives us the sessionId and an expiry the endpoints enforce.
   // A small grace buffer beyond the hard cap absorbs clock skew / final heartbeat.
@@ -57,7 +73,7 @@ export async function mintVoiceSession({ chatbot, maxSessionSeconds }: MintParam
           type: 'realtime',
           model: VOICE_MODEL,
           instructions,
-          audio: { output: { voice } },
+          audio: { output: { voice, speed } },
           tools: VOICE_TOOLS,
           tool_choice: 'auto',
         },
@@ -87,6 +103,7 @@ export async function mintVoiceSession({ chatbot, maxSessionSeconds }: MintParam
     sessionId: session.id,
     model: VOICE_MODEL,
     voice,
+    speakGreeting,
     maxSessionSeconds,
     expiresAt: expiresAt.toISOString(),
   }

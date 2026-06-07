@@ -275,6 +275,12 @@ model Chatbot {
   // opens a WebRTC speech-to-speech session grounded in this bot's knowledge base.
   voiceEnabled Boolean @default(false)
   voiceName    String  @default("marin")  // OpenAI Realtime voice (marin, cedar, ...)
+  // Brand & personality knobs (preset-driven; compiled into session instructions at mint).
+  voiceGreeting      String? @db.Text                  // Opening line spoken/used to open the call
+  voiceSpeakGreeting Boolean @default(false)           // Speak the greeting proactively on connect
+  voiceTone          String  @default("default")       // default | friendly | professional | energetic | calm
+  voiceLanguage      String  @default("auto")          // auto | en | it
+  voiceSpeed         Float   @default(1.0)             // audio.output.speed (0.25–1.5; UI clamps 0.75–1.25)
 
   // Widget customization (Phase 5)
   primaryColor     String?  @default("#3B82F6")

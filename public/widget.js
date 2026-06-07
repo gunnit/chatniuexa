@@ -1358,8 +1358,10 @@
           tick();
           tickTimer = setInterval(tick, 1000);
           heartbeatTimer = setInterval(function () { heartbeat(false); }, VOICE_HEARTBEAT_MS);
-          // Brief spoken greeting so the demo "comes alive" immediately.
-          send({ type: 'response.create', response: { instructions: 'Greet the visitor warmly in one short sentence and ask how you can help.' } });
+          // Speak first only when the tenant opted in; the greeting text itself lives in the
+          // server-side session instructions (never sent to the browser). Otherwise we wait
+          // for the visitor to speak.
+          if (cfg.speakGreeting) { send({ type: 'response.create' }); }
         });
         dc.addEventListener('message', function (e) { try { onEvent(JSON.parse(e.data)); } catch {} });
         dc.addEventListener('close', function () { endCall('Call ended', '', 800); });

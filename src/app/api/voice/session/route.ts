@@ -64,6 +64,11 @@ export async function POST(request: NextRequest) {
         name: chatbot.name,
         systemPrompt: chatbot.systemPrompt,
         voiceName: chatbot.voiceName,
+        voiceGreeting: chatbot.voiceGreeting,
+        voiceSpeakGreeting: chatbot.voiceSpeakGreeting,
+        voiceTone: chatbot.voiceTone,
+        voiceLanguage: chatbot.voiceLanguage,
+        voiceSpeed: chatbot.voiceSpeed,
       },
       maxSessionSeconds: limits.maxVoiceSessionSeconds,
     })

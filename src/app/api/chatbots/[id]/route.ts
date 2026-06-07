@@ -52,6 +52,11 @@ const updateChatbotSchema = z.object({
   webSearchEnabled: z.boolean().optional(),
   voiceEnabled: z.boolean().optional(),
   voiceName: z.string().max(30).optional(),
+  voiceGreeting: z.string().max(300).nullish(),
+  voiceSpeakGreeting: z.boolean().optional(),
+  voiceTone: z.enum(['default', 'friendly', 'professional', 'energetic', 'calm']).optional(),
+  voiceLanguage: z.enum(['auto', 'en', 'it']).optional(),
+  voiceSpeed: z.number().min(0.75).max(1.25).optional(),
 })
 
 export async function PATCH(
