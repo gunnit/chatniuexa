@@ -37,6 +37,9 @@
     thumbDown: '<svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(180deg)"><path d="M4 6.5v5H2.5a.5.5 0 01-.5-.5v-4a.5.5 0 01.5-.5H4zM4 6.5L6.5 2a1.5 1.5 0 011.5 1v3h3a1 1 0 011 1l-1 4a1 1 0 01-1 .5H4"/></svg>',
     copy: '<svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="8" height="8" rx="1.5"/><path d="M2 10V3a1 1 0 011-1h7"/></svg>',
     spinner: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="11" height="11"><path d="M6 1v2M6 9v2M1 6h2M9 6h2M2.5 2.5l1.4 1.4M8.1 8.1l1.4 1.4M2.5 9.5l1.4-1.4M8.1 3.9l1.4-1.4"/></svg>',
+    mic: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v4"/></svg>',
+    micLg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v4"/></svg>',
+    hangup: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85a.99.99 0 0 1-1.41-.01L.29 13.08a.99.99 0 0 1 0-1.41C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67a.99.99 0 0 1 0 1.41l-2.48 2.43a.99.99 0 0 1-1.41.01 11.6 11.6 0 0 0-2.66-1.85.998.998 0 0 1-.56-.9v-3.1A16.2 16.2 0 0 0 12 9z"/></svg>',
   };
 
   const PRESET_LAUNCHER_ICONS = {
@@ -476,6 +479,80 @@
     .md-link:hover { text-decoration: underline; }
     .bot-bubble strong { color: var(--accent); font-weight: 600; }
 
+    /* ── Voice ──────────────────────────────────────────────── */
+    .mic-btn {
+      width: 32px; height: 32px; border-radius: 10px; border: none; cursor: pointer;
+      background: var(--chip); color: var(--accent);
+      display: none; align-items: center; justify-content: center;
+      transition: background-color 0.15s, transform 0.15s; flex-shrink: 0; margin-right: 6px;
+    }
+    .mic-btn.show { display: flex; }
+    .mic-btn:hover { background: var(--accent-soft); }
+    .mic-btn:active { transform: scale(0.94); }
+
+    .voice-overlay {
+      position: absolute; inset: 0; z-index: 5; display: none;
+      flex-direction: column; align-items: center; justify-content: center;
+      gap: 22px; padding: 28px;
+      background:
+        radial-gradient(ellipse 520px 380px at 50% 38%, var(--accent-faint), transparent 70%),
+        var(--bg);
+      animation: cw-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .voice-overlay.open { display: flex; }
+    .voice-orb {
+      width: 132px; height: 132px; border-radius: 50%; position: relative; flex-shrink: 0;
+      background: radial-gradient(circle at 38% 32%, var(--accent-shade-pos2), var(--accent-shade-neg));
+      box-shadow: 0 18px 50px -10px var(--shadow-glow), inset 0 2px 6px rgba(255,255,255,0.3);
+      display: flex; align-items: center; justify-content: center; color: #fff;
+      transition: transform 0.12s ease;
+    }
+    .voice-orb::before, .voice-orb::after {
+      content: ''; position: absolute; inset: -10px; border-radius: 50%;
+      border: 2px solid var(--accent); opacity: 0; pointer-events: none;
+    }
+    .voice-overlay.listening .voice-orb::before { animation: cw-ring 1.8s infinite ease-out; }
+    .voice-overlay.speaking .voice-orb { animation: cw-orb-pulse 0.9s infinite ease-in-out; }
+    .voice-overlay.speaking .voice-orb::after { animation: cw-ring 1.2s infinite ease-out; }
+    .voice-overlay.connecting .voice-orb { animation: cw-orb-pulse 1.4s infinite ease-in-out; opacity: 0.85; }
+    @keyframes cw-ring { 0% { transform: scale(0.95); opacity: 0.5; } 100% { transform: scale(1.4); opacity: 0; } }
+    @keyframes cw-orb-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+    .voice-orb svg { width: 46px; height: 46px; }
+
+    .voice-status {
+      font-size: 13px; font-weight: 600; letter-spacing: 0.3px; color: var(--fg);
+      text-align: center; min-height: 18px;
+    }
+    .voice-sub {
+      font-size: 11px; color: var(--fg-mute); text-align: center;
+      font-family: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    }
+    .voice-transcript {
+      width: 100%; max-width: 460px; max-height: 168px; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 8px; padding: 4px;
+      scrollbar-width: thin; scrollbar-color: var(--line-hi) transparent;
+    }
+    .voice-transcript::-webkit-scrollbar { width: 5px; }
+    .voice-transcript::-webkit-scrollbar-thumb { background: var(--line-hi); border-radius: 3px; }
+    .vt-line { font-size: 13px; line-height: 1.5; padding: 8px 12px; border-radius: 12px; word-wrap: break-word; }
+    .vt-line.user { align-self: flex-end; background: var(--user-bubble); color: var(--user-bubble-text); border-radius: 14px 14px 4px 14px; max-width: 82%; }
+    .vt-line.bot { align-self: flex-start; background: var(--paper); border: 1px solid var(--line); color: var(--fg); border-radius: 14px 14px 14px 4px; max-width: 88%; }
+    .voice-controls { display: flex; align-items: center; gap: 14px; }
+    .voice-end {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 11px 22px; border-radius: 14px; border: none; cursor: pointer;
+      background: #e5484d; color: #fff; font-family: inherit; font-size: 13px; font-weight: 600;
+      box-shadow: 0 6px 16px -4px rgba(229,72,77,0.5); transition: transform 0.12s, box-shadow 0.15s;
+    }
+    .voice-end:hover { transform: translateY(-1px); }
+    .voice-end:active { transform: scale(0.97); }
+    .voice-timer {
+      font-size: 11px; color: var(--fg-mute); font-weight: 600;
+      font-family: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+      padding: 6px 10px; background: var(--chip); border-radius: 8px;
+    }
+    .voice-timer.warn { color: #b91c1c; background: rgba(239,68,68,0.10); }
+
     /* ── Mobile ─────────────────────────────────────────────── */
     @media (max-width: 480px) {
       .widget {
@@ -524,6 +601,19 @@
 
       <div class="body" id="body"></div>
 
+      <div class="voice-overlay" id="voice-overlay">
+        <div class="voice-orb" id="voice-orb">${ICONS.micLg}</div>
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
+          <div class="voice-status" id="voice-status">Connecting…</div>
+          <div class="voice-sub" id="voice-sub">Setting up a secure connection</div>
+        </div>
+        <div class="voice-transcript" id="voice-transcript"></div>
+        <div class="voice-controls">
+          <span class="voice-timer" id="voice-timer">5:00</span>
+          <button class="voice-end" id="voice-end" type="button">${ICONS.hangup} End call</button>
+        </div>
+      </div>
+
       <div class="composer-wrap">
         <div class="composer-fade"></div>
         <div class="composer" id="composer">
@@ -532,6 +622,7 @@
             <div class="composer-tools">
               <span class="composer-hint">⏎ to send · ⇧⏎ for newline</span>
             </div>
+            <button class="mic-btn" id="mic" type="button" title="Talk to the assistant" aria-label="Start voice call">${ICONS.mic}</button>
             <button class="send-btn" id="send" type="button" disabled aria-label="Send">${ICONS.send}</button>
           </div>
         </div>
@@ -558,6 +649,14 @@
   const btnExpand = $('btn-expand');
   const btnNew = $('btn-new');
   const btnClose = $('btn-close');
+  const micBtn = $('mic');
+  const voiceOverlay = $('voice-overlay');
+  const voiceOrb = $('voice-orb');
+  const voiceStatus = $('voice-status');
+  const voiceSub = $('voice-sub');
+  const voiceTranscript = $('voice-transcript');
+  const voiceTimer = $('voice-timer');
+  const voiceEnd = $('voice-end');
 
   // ── Storage ─────────────────────────────────────────────────────
   const storageKey = 'chataziendale-chat-' + chatbotId;
@@ -1090,6 +1189,223 @@
     }
   });
   sendBtn.addEventListener('click', submit);
+  micBtn.addEventListener('click', () => Voice.start());
+  voiceEnd.addEventListener('click', () => Voice.stop('Call ended'));
+
+  // ── Voice (Realtime WebRTC) ─────────────────────────────────────
+  const REALTIME_CALLS_URL = 'https://api.openai.com/v1/realtime/calls';
+  const VOICE_HEARTBEAT_MS = 15000;
+
+  const Voice = (function () {
+    let active = false;
+    let pc = null, dc = null, micStream = null, audioEl = null;
+    let sessionId = null, maxSeconds = 300;
+    let startTs = 0, tickTimer = null, heartbeatTimer = null;
+    let botLine = null;            // active streaming bot transcript element
+    const handledCalls = new Set(); // dedup function_call ids
+
+    function elapsed() { return Math.floor((Date.now() - startTs) / 1000); }
+
+    function setState(s, status, sub) {
+      voiceOverlay.classList.remove('connecting', 'listening', 'speaking');
+      if (s) voiceOverlay.classList.add(s);
+      if (status != null) voiceStatus.textContent = status;
+      if (sub != null) voiceSub.textContent = sub;
+    }
+
+    function addTranscript(role, text) {
+      if (!text) return null;
+      const line = document.createElement('div');
+      line.className = 'vt-line ' + role;
+      line.textContent = text;
+      voiceTranscript.appendChild(line);
+      voiceTranscript.scrollTop = voiceTranscript.scrollHeight;
+      return line;
+    }
+
+    function fmt(sec) {
+      const m = Math.floor(sec / 60), s = sec % 60;
+      return m + ':' + (s < 10 ? '0' : '') + s;
+    }
+
+    function tick() {
+      const left = Math.max(0, maxSeconds - elapsed());
+      voiceTimer.textContent = fmt(left);
+      voiceTimer.classList.toggle('warn', left <= 30);
+      if (left <= 0) stop('Time limit reached');
+    }
+
+    async function heartbeat(final) {
+      if (!sessionId) return;
+      try {
+        const res = await fetch(baseUrl + '/api/voice/heartbeat', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId, elapsedSeconds: elapsed(), final: !!final }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (data && data.stop && !final) stop('Voice limit reached');
+      } catch {}
+    }
+
+    // Resolve a tool call from the model and feed the result back into the session.
+    async function handleToolCall(item) {
+      if (!item || item.type !== 'function_call' || handledCalls.has(item.call_id)) return;
+      handledCalls.add(item.call_id);
+      let args = {};
+      try { args = JSON.parse(item.arguments || '{}'); } catch {}
+      let output = '';
+      try {
+        if (item.name === 'search_knowledge') {
+          const res = await fetch(baseUrl + '/api/voice/retrieve', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionId, query: args.query || '' }),
+          });
+          const data = await res.json().catch(() => ({}));
+          output = (data && data.context) || 'No relevant information was found in the knowledge base.';
+        } else if (item.name === 'capture_lead') {
+          const res = await fetch(baseUrl + '/api/voice/lead', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionId, name: args.name, email: args.email, phone: args.phone, note: args.note }),
+          });
+          const data = await res.json().catch(() => ({}));
+          output = JSON.stringify({ saved: !!(data && data.ok) });
+        } else {
+          output = 'Unknown tool.';
+        }
+      } catch {
+        output = item.name === 'capture_lead' ? JSON.stringify({ saved: false }) : '';
+      }
+      send({ type: 'conversation.item.create', item: { type: 'function_call_output', call_id: item.call_id, output: String(output) } });
+      send({ type: 'response.create' });
+    }
+
+    function send(obj) { try { if (dc && dc.readyState === 'open') dc.send(JSON.stringify(obj)); } catch {} }
+
+    // Handle a server event off the data channel. Event names have drifted across
+    // Realtime versions, so we match on type suffixes where practical.
+    function onEvent(ev) {
+      const t = ev.type || '';
+      if (t === 'input_audio_buffer.speech_started') {
+        setState('listening', 'Listening…', 'Speak naturally — I can hear you');
+      } else if (t.indexOf('response.created') === 0) {
+        setState('speaking', 'Speaking…', '');
+      } else if (t === 'conversation.item.input_audio_transcription.completed') {
+        addTranscript('user', (ev.transcript || '').trim());
+      } else if (/audio_transcript\.delta$/.test(t) || t === 'response.output_text.delta') {
+        const delta = ev.delta || '';
+        if (!botLine) botLine = addTranscript('bot', delta);
+        else { botLine.textContent += delta; voiceTranscript.scrollTop = voiceTranscript.scrollHeight; }
+      } else if (/audio_transcript\.done$/.test(t) || t === 'response.output_text.done') {
+        if (botLine && ev.transcript) botLine.textContent = ev.transcript;
+        botLine = null;
+      } else if (t === 'response.done') {
+        const out = (ev.response && ev.response.output) || [];
+        let hadCall = false;
+        out.forEach(function (item) { if (item && item.type === 'function_call') { hadCall = true; handleToolCall(item); } });
+        if (!hadCall) setState('listening', 'Listening…', 'Ask me anything');
+      } else if (t === 'error') {
+        // Non-fatal model error — keep the call alive.
+        setState('listening', 'Listening…', '');
+      }
+    }
+
+    async function start() {
+      if (active || !chatbot) return;
+      active = true;
+      handledCalls.clear();
+      botLine = null;
+      voiceTranscript.innerHTML = '';
+      voiceOverlay.classList.add('open');
+      setState('connecting', 'Connecting…', 'Setting up a secure connection');
+
+      // 1. Microphone
+      try {
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch {
+        setState('', 'Microphone blocked', 'Allow mic access to use voice, or keep typing.');
+        setTimeout(close, 2600); active = false; return;
+      }
+
+      // 2. Ephemeral token + session
+      let cfg;
+      try {
+        const res = await fetch(baseUrl + '/api/voice/session', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chatbotId }),
+        });
+        cfg = await res.json().catch(() => ({}));
+        if (!res.ok || !cfg.token) {
+          setState('', 'Voice unavailable', cfg.error || 'Please try again later.');
+          cleanup(); setTimeout(close, 2600); return;
+        }
+      } catch {
+        setState('', 'Voice unavailable', 'Please try again later.');
+        cleanup(); setTimeout(close, 2600); return;
+      }
+      sessionId = cfg.sessionId;
+      maxSeconds = cfg.maxSessionSeconds || 300;
+
+      // 3. WebRTC
+      try {
+        pc = new RTCPeerConnection();
+        audioEl = document.createElement('audio');
+        audioEl.autoplay = true;
+        shadow.appendChild(audioEl);
+        pc.ontrack = function (e) { audioEl.srcObject = e.streams[0]; };
+        micStream.getTracks().forEach(function (tr) { pc.addTrack(tr, micStream); });
+
+        dc = pc.createDataChannel('oai-events');
+        dc.addEventListener('open', function () {
+          setState('listening', 'Listening…', 'Speak naturally — I can hear you');
+          startTs = Date.now();
+          tick();
+          tickTimer = setInterval(tick, 1000);
+          heartbeatTimer = setInterval(function () { heartbeat(false); }, VOICE_HEARTBEAT_MS);
+          // Brief spoken greeting so the demo "comes alive" immediately.
+          send({ type: 'response.create', response: { instructions: 'Greet the visitor warmly in one short sentence and ask how you can help.' } });
+        });
+        dc.addEventListener('message', function (e) { try { onEvent(JSON.parse(e.data)); } catch {} });
+        dc.addEventListener('close', function () { if (active) stop('Call ended'); });
+
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        const sdpRes = await fetch(REALTIME_CALLS_URL, {
+          method: 'POST', body: offer.sdp,
+          headers: { Authorization: 'Bearer ' + cfg.token, 'Content-Type': 'application/sdp' },
+        });
+        if (!sdpRes.ok) throw new Error('SDP exchange failed');
+        const answer = { type: 'answer', sdp: await sdpRes.text() };
+        await pc.setRemoteDescription(answer);
+      } catch {
+        setState('', 'Connection failed', 'Please try again.');
+        cleanup(); setTimeout(close, 2600);
+      }
+    }
+
+    function cleanup() {
+      if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
+      if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
+      try { if (dc) dc.close(); } catch {}
+      try { if (pc) pc.close(); } catch {}
+      try { if (micStream) micStream.getTracks().forEach(function (t) { t.stop(); }); } catch {}
+      try { if (audioEl) { audioEl.srcObject = null; audioEl.remove(); } } catch {}
+      dc = null; pc = null; micStream = null; audioEl = null;
+    }
+
+    function close() { voiceOverlay.classList.remove('open'); }
+
+    async function stop(reason) {
+      if (!active) return;
+      active = false;
+      setState('', reason || 'Call ended', '');
+      await heartbeat(true);
+      cleanup();
+      sessionId = null;
+      setTimeout(close, 700);
+    }
+
+    return { start: start, stop: stop, isActive: function () { return active; } };
+  })();
 
   // ── Theme ───────────────────────────────────────────────────────
   function applyTheme(primary, secondary) {
@@ -1136,6 +1452,9 @@
       if (desc) $('header-status-text').textContent = desc;
 
       if (chatbot.showBranding === false) branding.style.display = 'none';
+
+      // Voice is only offered when the bot has it enabled (Business plan).
+      if (chatbot.voiceEnabled) micBtn.classList.add('show');
 
       const stored = loadStored();
       if (stored && Array.isArray(stored.messages) && stored.messages.length) {
