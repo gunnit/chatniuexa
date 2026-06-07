@@ -1240,7 +1240,7 @@
       try {
         const res = await fetch(baseUrl + '/api/voice/heartbeat', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionId, elapsedSeconds: elapsed(), final: !!final }),
+          body: JSON.stringify({ sessionId, elapsedSeconds: startTs ? elapsed() : 0, final: !!final }),
         });
         const data = await res.json().catch(() => ({}));
         if (data && data.stop && !final) stop('Voice limit reached');
@@ -1322,8 +1322,7 @@
       try {
         micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       } catch {
-        setState('', 'Microphone blocked', 'Allow mic access to use voice, or keep typing.');
-        setTimeout(close, 2600); active = false; return;
+        endCall('Microphone blocked', 'Allow mic access to use voice, or keep typing.', 2600); return;
       }
 
       // 2. Ephemeral token + session
@@ -1335,12 +1334,10 @@
         });
         cfg = await res.json().catch(() => ({}));
         if (!res.ok || !cfg.token) {
-          setState('', 'Voice unavailable', cfg.error || 'Please try again later.');
-          cleanup(); setTimeout(close, 2600); return;
+          endCall('Voice unavailable', cfg.error || 'Please try again later.', 2600); return;
         }
       } catch {
-        setState('', 'Voice unavailable', 'Please try again later.');
-        cleanup(); setTimeout(close, 2600); return;
+        endCall('Voice unavailable', 'Please try again later.', 2600); return;
       }
       sessionId = cfg.sessionId;
       maxSeconds = cfg.maxSessionSeconds || 300;
@@ -1365,7 +1362,7 @@
           send({ type: 'response.create', response: { instructions: 'Greet the visitor warmly in one short sentence and ask how you can help.' } });
         });
         dc.addEventListener('message', function (e) { try { onEvent(JSON.parse(e.data)); } catch {} });
-        dc.addEventListener('close', function () { if (active) stop('Call ended'); });
+        dc.addEventListener('close', function () { endCall('Call ended', '', 800); });
 
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
@@ -1377,8 +1374,7 @@
         const answer = { type: 'answer', sdp: await sdpRes.text() };
         await pc.setRemoteDescription(answer);
       } catch {
-        setState('', 'Connection failed', 'Please try again.');
-        cleanup(); setTimeout(close, 2600);
+        endCall('Connection failed', 'Please try again.', 2600);
       }
     }
 
@@ -1394,15 +1390,22 @@
 
     function close() { voiceOverlay.classList.remove('open'); }
 
-    async function stop(reason) {
+    // Single termination path for every end/failure case. Resets `active` FIRST so
+    // (a) the user can start a new call afterwards and (b) the dc.close listener — which
+    // cleanup() triggers — sees active=false and doesn't re-enter and clobber the message.
+    // A final heartbeat (when a session was minted) marks it ended server-side, freeing
+    // the tenant's concurrent-session slot even on a failed connection.
+    async function endCall(status, sub, delay) {
       if (!active) return;
       active = false;
-      setState('', reason || 'Call ended', '');
-      await heartbeat(true);
+      setState('', status || 'Call ended', sub || '');
+      if (sessionId) { try { await heartbeat(true); } catch {} }
       cleanup();
       sessionId = null;
-      setTimeout(close, 700);
+      setTimeout(close, delay || 800);
     }
+
+    function stop(reason) { endCall(reason || 'Call ended', '', 800); }
 
     return { start: start, stop: stop, isActive: function () { return active; } };
   })();
