@@ -30,6 +30,8 @@ export async function GET(
         chatIconType: true,
         chatIconPreset: true,
         chatIconImage: true,
+        voiceEnabled: true,
+        voiceName: true,
         allowedDomains: true,
       },
     })

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { getPlanLimits, type PlanId } from '@/lib/plans'
 import { z } from 'zod'
 
 // GET /api/chatbots/[id] - Get a specific chatbot
@@ -49,6 +50,8 @@ const updateChatbotSchema = z.object({
   chatIconImage: z.string().max(50000).nullish(),
   shareToken: z.string().max(20).nullish(),
   webSearchEnabled: z.boolean().optional(),
+  voiceEnabled: z.boolean().optional(),
+  voiceName: z.string().max(30).optional(),
 })
 
 export async function PATCH(
@@ -77,6 +80,17 @@ export async function PATCH(
   try {
     const body = await request.json()
     const data = updateChatbotSchema.parse(body)
+
+    // Voice is a Business-plan feature — never let a lower tier switch it on.
+    if (data.voiceEnabled) {
+      const tenant = await prisma.tenant.findUnique({
+        where: { id: session.user.tenantId },
+        select: { plan: true },
+      })
+      if (!getPlanLimits((tenant?.plan ?? 'free') as PlanId).voiceEnabled) {
+        return NextResponse.json({ error: 'Voice requires the Business plan' }, { status: 403 })
+      }
+    }
 
     console.log('[PATCH chatbot] saving suggestedPrompts:', JSON.stringify(data.suggestedPrompts))
 

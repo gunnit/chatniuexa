@@ -25,7 +25,11 @@ interface Chatbot {
   chatIconImage: string | null
   shareToken: string | null
   webSearchEnabled: boolean
+  voiceEnabled: boolean
+  voiceName: string | null
 }
+
+const VOICE_OPTIONS = ['marin', 'cedar', 'alloy', 'ash', 'ballad', 'coral', 'sage', 'verse']
 
 const PRESET_ICONS: Record<string, { label: string; svg: string }> = {
   headset: {
@@ -225,6 +229,8 @@ export default function ChatbotConfigPage({
   const [showBranding, setShowBranding] = useState(true)
   const [showSources, setShowSources] = useState(true)
   const [webSearchEnabled, setWebSearchEnabled] = useState(false)
+  const [voiceEnabled, setVoiceEnabled] = useState(false)
+  const [voiceName, setVoiceName] = useState('marin')
   const [suggestedPrompts, setSuggestedPrompts] = useState<string[]>([])
   const [newPrompt, setNewPrompt] = useState('')
   const [selectedTemplate, setSelectedTemplate] = useState('custom')
@@ -275,6 +281,8 @@ export default function ChatbotConfigPage({
           setShowBranding(c.showBranding)
           setShowSources(c.showSources ?? true)
           setWebSearchEnabled(c.webSearchEnabled ?? false)
+          setVoiceEnabled(c.voiceEnabled ?? false)
+          setVoiceName(c.voiceName ?? 'marin')
           setSuggestedPrompts(c.suggestedPrompts || [])
           setChatIconType(c.chatIconType || 'default')
           setChatIconPreset(c.chatIconPreset || null)
@@ -322,6 +330,8 @@ export default function ChatbotConfigPage({
           showBranding,
           showSources,
           webSearchEnabled,
+          voiceEnabled,
+          voiceName,
           suggestedPrompts,
           chatIconType,
           chatIconPreset: chatIconType === 'preset' ? chatIconPreset : null,
@@ -1309,6 +1319,56 @@ export default function ChatbotConfigPage({
                       </div>
                     </span>
                   </label>
+                )}
+              </div>
+
+              {/* Realtime voice */}
+              <div className="rounded-xl border border-slate-200 p-4">
+                {tenantPlan !== 'business' ? (
+                  <div className="text-sm text-slate-600">
+                    <div className="font-medium text-slate-800 flex items-center gap-2">
+                      Realtime voice
+                      <span className="text-[10px] font-bold uppercase tracking-wide bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded">Business</span>
+                    </div>
+                    <p className="mt-1">Add a “Talk” button to your widget so visitors can have a live spoken conversation with your bot — answers grounded in your knowledge base, plus hands-free lead capture. Available on the <strong>Business</strong> plan.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        id="voiceEnabled"
+                        data-testid="voice-toggle"
+                        checked={voiceEnabled}
+                        onChange={(e) => setVoiceEnabled(e.target.checked)}
+                        className="w-5 h-5 mt-0.5 rounded text-indigo-600 focus:ring-indigo-500"
+                      />
+                      <span className="text-sm text-slate-700">
+                        <div className="font-medium flex items-center gap-2">
+                          Realtime voice
+                          <span className="text-[10px] font-bold uppercase tracking-wide bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded">Business</span>
+                        </div>
+                        <div className="text-xs text-slate-500 mt-0.5">
+                          Visitors can talk to your bot by voice (WebRTC). It answers from your knowledge base and can capture leads hands-free. Calls are capped at 5 minutes and metered against your monthly voice minutes. Remember to click <strong>Save</strong> to apply.
+                        </div>
+                      </span>
+                    </label>
+
+                    {voiceEnabled && (
+                      <div className="pl-8">
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Voice</label>
+                        <select
+                          value={voiceName}
+                          onChange={(e) => setVoiceName(e.target.value)}
+                          className="w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                          {VOICE_OPTIONS.map((v) => (
+                            <option key={v} value={v}>{v.charAt(0).toUpperCase() + v.slice(1)}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
 
