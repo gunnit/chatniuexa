@@ -2,8 +2,10 @@ import { prisma } from '@/lib/db'
 import {
   REALTIME_CLIENT_SECRETS_URL,
   VOICE_MODEL,
+  VOICE_TRANSCRIPTION_MODEL,
   VOICE_COST_PER_MINUTE,
   normalizeVoice,
+  normalizeLanguage,
   clampSpeed,
 } from './config'
 import { buildVoiceInstructions } from './instructions'
@@ -48,6 +50,15 @@ export async function mintVoiceSession({ chatbot, maxSessionSeconds }: MintParam
   const voice = normalizeVoice(chatbot.voiceName)
   const speed = clampSpeed(chatbot.voiceSpeed)
   const instructions = buildVoiceInstructions(chatbot)
+
+  // Transcription accuracy and latency both improve when the language is known, but only
+  // pin it when the tenant pinned one — on `auto` the bot is bilingual EN/IT, so forcing
+  // a language here would mistranscribe every visitor who speaks the other one.
+  const language = normalizeLanguage(chatbot.voiceLanguage)
+  const transcription = {
+    model: VOICE_TRANSCRIPTION_MODEL,
+    ...(language === 'auto' ? {} : { language }),
+  }
   // Only speak first when the tenant opted in AND actually provided a greeting line.
   const speakGreeting = Boolean(chatbot.voiceSpeakGreeting && chatbot.voiceGreeting?.trim())
 
@@ -73,7 +84,7 @@ export async function mintVoiceSession({ chatbot, maxSessionSeconds }: MintParam
           type: 'realtime',
           model: VOICE_MODEL,
           instructions,
-          audio: { output: { voice, speed } },
+          audio: { input: { transcription }, output: { voice, speed } },
           tools: VOICE_TOOLS,
           tool_choice: 'auto',
         },

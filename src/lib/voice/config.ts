@@ -2,8 +2,20 @@
 // surfaced to the client (model + voice). Keep this the single source of truth.
 
 // GA reasoning speech-to-speech model with strong tool use + instruction following.
-// (`gpt-realtime-1.5` is the faster non-reasoning alternative.)
-export const VOICE_MODEL = 'gpt-realtime-2'
+// Bumped 2026-07-27 from `gpt-realtime-2` to the 2.1 refresh (released 2026-07-06):
+// same price, ~25% lower p95 latency, and better alphanumeric recognition — which
+// matters directly here because capture_lead collects emails and phone numbers by ear.
+// (`gpt-realtime-2.1-mini` is the ~3x cheaper distilled alternative.)
+export const VOICE_MODEL = 'gpt-realtime-2.1'
+
+// Input audio transcription is NOT native to the speech-to-speech model — it runs
+// asynchronously and must be enabled explicitly, or the
+// `conversation.item.input_audio_transcription.*` events never fire and the visitor's
+// half of the widget transcript stays blank. This is display-only guidance text: the
+// model itself hears the raw audio, and tool arguments (e.g. capture_lead) come from
+// that native understanding, not from this transcript. So we pick the cheap accurate
+// option rather than the premium streaming one (`gpt-realtime-whisper`, ~3x the cost).
+export const VOICE_TRANSCRIPTION_MODEL = 'gpt-4o-mini-transcribe'
 
 // OpenAI Realtime SDP exchange endpoint (browser posts its SDP offer here with the
 // ephemeral key). The ephemeral secret is minted server-side via /v1/realtime/client_secrets.
@@ -65,9 +77,10 @@ export function clampSpeed(speed: number | null | undefined): number {
 }
 
 // Conservative blended cost estimate for the monthly cost-cap safety net.
-// gpt-realtime-2 audio pricing (verified 2026-06-07): $32 / $64 per 1M input/output
-// audio tokens. At ~600 input + ~1200 output audio tokens per conversational minute
-// that is ~$0.10/min; we round up to leave headroom. The monthly minute budget
+// gpt-realtime-2.1 audio pricing (verified 2026-07-27): $32 / $64 per 1M input/output
+// audio tokens — unchanged from gpt-realtime-2. At ~600 input + ~1200 output audio
+// tokens per conversational minute that is ~$0.10/min, plus ~$0.005/min for input
+// transcription; we round up to leave headroom. The monthly minute budget
 // (PlanLimits.monthlyVoiceMinutes) is the primary control — this is the backstop.
 export const VOICE_COST_PER_MINUTE = 0.15
 
