@@ -572,7 +572,7 @@ export function renderText(r) {
   line(`  Last 30 days ................ ${fmt(v.last30Days.conversations)} conversations / ${fmt(v.last30Days.questions)} questions`)
   line(`  Previous 30 days ............ ${fmt(v.previous30Days.conversations)} conversations / ${fmt(v.previous30Days.questions)} questions  (change: ${change(v.last30Days.conversations, v.previous30Days.conversations)} / ${change(v.last30Days.questions, v.previous30Days.questions)})`)
   line(`  Asked outside office hours .. ${pct(v.timing.outsideOfficeHoursShare)}  (weekends ${pct(v.timing.weekendShare)}; office = Mon–Fri 09:00–18:00 SGT)`)
-  line(`  Answers citing Chamber knowledge base ... ${pct(q.groundedShare)}`)
+  line(`  Answers drawn from the Chamber knowledge base ... ${pct(q.groundedShare)}  (retrieved sources; not necessarily shown to visitors)`)
   line(`  Members recommended ......... ${fmt(q.membersInKnowledgeBaseSurfaced)} of ${fmt(q.membersInKnowledgeBase)} member companies in the directory appeared in at least one answer`)
   line(`  Feedback .................... 👍 ${fmt(v.feedback.up)} · 👎 ${fmt(v.feedback.down)}  (${fmt(v.feedback.up + v.feedback.down)} ratings on ${fmt(v.answers)} answers)`)
 
