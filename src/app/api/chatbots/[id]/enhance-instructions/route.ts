@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { getOpenAI } from '@/lib/openai'
+import { DEFAULT_CHAT_MODEL, chatCompletionsReasoning } from '@/lib/models'
 import { logUsage } from '@/lib/usage'
 import { rateLimit } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
@@ -11,6 +12,8 @@ const requestSchema = z.object({
   currentInstructions: z.string().optional(),
   template: z.string().optional(),
 })
+
+const ENHANCE_MODEL = DEFAULT_CHAT_MODEL
 
 export async function POST(
   request: NextRequest,
@@ -60,7 +63,7 @@ export async function POST(
       chatbotId: id,
       type: 'chat',
       tokens: 2000,
-      model: 'gpt-5.4-mini',
+      model: ENHANCE_MODEL,
     })
 
     if (!usage.allowed) {
@@ -174,9 +177,10 @@ Output ONLY the system prompt text. Do not include any preamble, explanation, or
     let completion
     try {
       completion = await openai.chat.completions.create({
-        model: 'gpt-5.4-mini',
+        model: ENHANCE_MODEL,
         messages: [{ role: 'user', content: metaPrompt }],
         max_completion_tokens: 2048,
+        ...chatCompletionsReasoning(ENHANCE_MODEL),
       })
     } catch (openaiError: unknown) {
       const msg = openaiError instanceof Error ? openaiError.message : String(openaiError)

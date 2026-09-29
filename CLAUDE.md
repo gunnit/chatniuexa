@@ -66,3 +66,6 @@ This project runs on WSL with code on `/mnt/c/`. The Windows ↔ Linux filesyste
 ## OpenAI API Rules
 - **ALWAYS** use `max_completion_tokens` instead of `max_tokens` — the latter is deprecated and fails on newer models (gpt-5-mini, o-series, etc.)
 - Use Context7 (`/websites/platform_openai`) to verify API parameters before writing OpenAI calls
+- Chat models live in `src/lib/models.ts` (dashboard picker, request params, cost table, API validation) — add or retire models there only, never hardcode a model id
+- GPT-6 Sol/Luna default to `medium` reasoning, and reasoning tokens count against `max_completion_tokens` — always spread `chatCompletionsReasoning(model)` / `responsesReasoning(model)` into requests so the registry's effort (`none`) applies
+- Model ids, prices and shutdown dates: check the raw docs (`https://developers.openai.com/api/docs/models/<id>.md`, `/api/docs/deprecations.md`) — Context7 has served stale model ids before

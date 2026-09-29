@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { getPlanLimits, type PlanId } from '@/lib/plans'
+import { isSelectableChatModel } from '@/lib/models'
 import { z } from 'zod'
 
 // GET /api/chatbots/[id] - Get a specific chatbot
@@ -85,6 +86,12 @@ export async function PATCH(
   try {
     const body = await request.json()
     const data = updateChatbotSchema.parse(body)
+
+    // Only models we offer can be newly assigned. Re-saving a bot's current model
+    // is always allowed, so a bot on a no-longer-offered model can still save other settings.
+    if (data.model !== undefined && data.model !== existing.model && !isSelectableChatModel(data.model)) {
+      return NextResponse.json({ error: 'Unsupported model' }, { status: 400 })
+    }
 
     // Voice is a Business-plan feature — never let a lower tier switch it on.
     if (data.voiceEnabled) {

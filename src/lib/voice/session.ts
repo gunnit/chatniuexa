@@ -57,7 +57,7 @@ export async function mintVoiceSession({ chatbot, maxSessionSeconds }: MintParam
   const language = normalizeLanguage(chatbot.voiceLanguage)
   const transcription = {
     model: VOICE_TRANSCRIPTION_MODEL,
-    ...(language === 'auto' ? {} : { language }),
+    ...(language === 'auto' ? {} : { languages: [language] }),
   }
   // Only speak first when the tenant opted in AND actually provided a greeting line.
   const speakGreeting = Boolean(chatbot.voiceSpeakGreeting && chatbot.voiceGreeting?.trim())
