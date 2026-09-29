@@ -49,14 +49,17 @@ const CASES = [
 const norm = (s) => s.replace(/[‘’]/g, "'").toLowerCase()
 const has = (text, s) => norm(text).includes(norm(s))
 
-// "8 October 2026", "October 8, 2026", "October 26–30" … dated today or later (UTC; no year = this year).
+// "8 October 2026", "October 8, 2026", "Oct. 26–30" … dated today or later (UTC; no year = this year; a range
+// counts until its last day). Only whole month names or abbreviations match, so "30 decision-makers" is not a date.
 const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
-const DATE_RE = /\b(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?(?:,?\s+(20\d\d))?\b|\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+(\d{1,2})(?:\s*[–-]\s*\d{1,2})?(?:,?\s+(20\d\d))?\b/gi
+const MON = String.raw`(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|June?|July?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\b\.?`
+const DATE_RE = new RegExp(String.raw`\b(\d{1,2})\s+${MON}(?:,?\s+(20\d\d))?\b|\b${MON}\s+(\d{1,2})(?:\s*[–-]\s*(\d{1,2}))?(?:,?\s+(20\d\d))?\b`, 'gi')
 function hasFutureDate(text, now = new Date()) {
   const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
   for (const m of text.matchAll(DATE_RE)) {
-    const [day, mon, year] = m[1] ? [m[1], m[2], m[3]] : [m[5], m[4], m[6]]
-    if (Date.UTC(+(year || now.getUTCFullYear()), MONTHS.indexOf(mon.slice(0, 3).toLowerCase()), +day) >= today) return true
+    const [day, mon, year] = m[1] ? [m[1], m[2], m[3]] : [m[6] || m[5], m[4], m[7]]
+    const date = new Date(Date.UTC(+(year || now.getUTCFullYear()), MONTHS.indexOf(mon.slice(0, 3).toLowerCase()), +day))
+    if (date.getUTCDate() === +day && date.getTime() >= today) return true // the day check rejects "50 December"
   }
   return false
 }
