@@ -126,6 +126,7 @@ async function createWebhook(token: string, webhookUrl: string): Promise<string>
         { name: 'BILLING.SUBSCRIPTION.ACTIVATED' },
         { name: 'BILLING.SUBSCRIPTION.CANCELLED' },
         { name: 'BILLING.SUBSCRIPTION.SUSPENDED' },
+        { name: 'BILLING.SUBSCRIPTION.EXPIRED' },
         { name: 'PAYMENT.SALE.COMPLETED' },
       ],
     }),
