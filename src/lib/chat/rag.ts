@@ -52,6 +52,12 @@ export const PII_GUARDRAIL = `\n\nPRIVACY & PII RULES (MANDATORY):
 
 const SCOPE_GUARDRAIL = `\n\nIMPORTANT: You must ONLY answer questions based on the provided context above. If no relevant context was provided, or if the user's question is not related to the context, politely let them know you can only help with topics covered by your knowledge base. Never use your general training knowledge to answer questions.`
 
+// Restated after the knowledge-base context, where the model reads it last.
+const GROUNDING_REMINDER = `\n\nANSWERING RULES (they apply to every reply):
+- The knowledge-base excerpts above are your only source of facts.
+- If they do not state the answer, including any specific number, date, name or statistic the user asks for, say that this information is not in your knowledge base and suggest what you can help with instead. Do not fill the gap from general knowledge, even if you are confident you know the answer.
+- Greetings and small talk are fine.`
+
 const DIRECTORY_QUERY_PATTERN = /\b(list|show|all|every|which|what are|find|look(ing)?(\s+(for|at|up))?|search(ing)?|tell\s+me|give\s+me|any|who(\s+are)?|about|in\s+the|chi\s+sono|quali\s+sono|elenca|elencami|tutti|tutte|mostra|mostrami|cerca|cercami|trova|trovami|dimmi|dammi|qualche|c'è|ci\s+sono)\b.{0,80}\b(partners?|members?|companies|companie|firms|aziende|partner|membri|soci|imprese|category|categories|sector|sectors|categoria|settore|settori|categorie|services?|servizi|industry|industries|industria|industrie)\b/i
 
 // Catches bare sector-style queries like "business services", "luxury retail",
@@ -233,7 +239,7 @@ export async function generateChatResponse(
   const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
     {
       role: 'system',
-      content: `${finalPrompt}\n\n${context}`,
+      content: `${finalPrompt}\n\n${context}${GROUNDING_REMINDER}`,
     },
   ]
 
@@ -641,7 +647,7 @@ export async function generateStreamingChatResponse(
   const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
     {
       role: 'system',
-      content: `${finalPrompt}\n\n${context}`,
+      content: `${finalPrompt}\n\n${context}${GROUNDING_REMINDER}`,
     },
   ]
 
