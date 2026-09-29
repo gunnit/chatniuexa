@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/db'
+import { logger } from '@/lib/logger'
 import { getOpenAI, EMBEDDING_MODEL } from '@/lib/openai'
 import { DEFAULT_CHAT_MODEL, chatCompletionsReasoning, temperatureParam } from '@/lib/models'
+import type { TokenUsage } from '@/lib/usage'
 import { getDirectoryChunks, searchChunksByKeywords, searchSimilarChunks } from '@/lib/documents/processor'
 
 interface Source {
@@ -17,6 +19,8 @@ interface ChatResponse {
   sources: Source[]
   confidence: 'high' | 'medium' | 'low'
   confidenceScore: number
+  /** Tokens OpenAI reported for the completion. */
+  usage?: TokenUsage
 }
 
 interface StreamingChatContext {
@@ -275,6 +279,9 @@ export async function generateChatResponse(
     sources: deduplicatedSources,
     confidence,
     confidenceScore,
+    usage: completion.usage
+      ? { inputTokens: completion.usage.prompt_tokens, outputTokens: completion.usage.completion_tokens }
+      : undefined,
   }
 }
 
@@ -628,12 +635,15 @@ export async function generateStreamingChatResponse(
     model?: string
     /** The bot's temperature; not sent to models that don't accept it. */
     temperature?: number
+    /** Called with the request's token usage when OpenAI reports it at the end of the stream. */
+    onUsage?: (usage: TokenUsage) => void
   } = {}
 ): Promise<ReadableStream<Uint8Array>> {
   const {
     systemPrompt = DEFAULT_SYSTEM_PROMPT,
     model = DEFAULT_CHAT_MODEL,
     temperature,
+    onUsage,
   } = options
 
   const openai = getOpenAI()
@@ -672,6 +682,7 @@ export async function generateStreamingChatResponse(
     model,
     messages,
     stream: true,
+    stream_options: { include_usage: true },
     max_completion_tokens: 2048,
     ...chatCompletionsReasoning(model),
     ...temperatureParam(model, temperature),
@@ -688,6 +699,15 @@ export async function generateStreamingChatResponse(
           if (content) {
             // Send as Server-Sent Event format
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`))
+          }
+          // include_usage adds a last chunk, with no choices, carrying the request's usage
+          if (chunk.usage && onUsage) {
+            try {
+              onUsage({ inputTokens: chunk.usage.prompt_tokens, outputTokens: chunk.usage.completion_tokens })
+            } catch (error) {
+              // Metering must never break the answer stream
+              logger.error('Failed to report streamed token usage', { error: String(error) })
+            }
           }
         }
         // Signal end of stream

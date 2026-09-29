@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db'
 import { generateQueryEmbedding, prepareStreamingContextWithEmbedding, generateStreamingChatResponse } from '@/lib/chat/rag'
 import { buildChatbotTools } from '@/lib/chat/tools'
 import { generateStreamingChatResponseWithTools } from '@/lib/chat/responses'
-import { logUsage } from '@/lib/usage'
+import { logUsage, settleChatUsage, type TokenUsage } from '@/lib/usage'
 import { getCorsHeaders } from '@/lib/cors'
 import { isChatbotOriginAllowed } from '@/lib/origin'
 import { rateLimit } from '@/lib/rate-limit'
@@ -100,6 +100,13 @@ export async function POST(request: NextRequest) {
       },
     }).catch((err) => console.error('Failed to save user message:', err))
 
+    // Replace the up-front estimate with the tokens OpenAI reports at the end of
+    // the stream (best effort). Reported by the generator itself, so it still
+    // happens if the client disconnects before the answer is complete.
+    const onUsage = (usage: TokenUsage) => {
+      void settleChatUsage(usageCheck.reservation, usage)
+    }
+
     // Generate streaming response — tool-enabled bots stream via the Responses
     // API (same SSE shape); everyone else uses the unchanged Chat Completions
     // streamer.
@@ -109,11 +116,13 @@ export async function POST(request: NextRequest) {
           model: chatbot.model,
           temperature: chatbot.temperature,
           tools,
+          onUsage,
         })
       : await generateStreamingChatResponse(context, message, history, {
           systemPrompt: chatbot.systemPrompt || undefined,
           model: chatbot.model,
           temperature: chatbot.temperature,
+          onUsage,
         })
 
     // Create a TransformStream to capture the full response for saving
