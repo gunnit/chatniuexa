@@ -45,6 +45,7 @@ import { prisma } from '../src/lib/db'
 import { crawlUrl } from '../src/lib/documents/crawler'
 import { processUrl, reprocessDocumentContent } from '../src/lib/documents/processor'
 import { getOpenAI } from '../src/lib/openai'
+import { DEFAULT_CHAT_MODEL, chatCompletionsReasoning } from '../src/lib/models'
 
 // ---------------------------------------------------------------------------
 // Config
@@ -164,15 +165,17 @@ async function classifyNewMembers(members: CrawledMember[]): Promise<Map<string,
 Sectors (use these EXACT names): ${SECTORS.join(' | ')}.
 For each company return every sector it GENUINELY provides services in — its main sector FIRST, then any others it clearly also serves. Be accurate, not generous. Most match 1-3 sectors.
 Return ONLY compact JSON: {"Company Name": ["PRIMARY","OTHER",...], ...} using the exact company names given.`
+  const model = process.env.TAG_MODEL || DEFAULT_CHAT_MODEL
   const B = 12
   for (let i = 0; i < members.length; i += B) {
     const batch = members.slice(i, i + B)
     const list = batch.map((m) => `- ${m.name}: ${m.about.slice(0, 700)}`).join('\n')
     try {
       const r = await openai.chat.completions.create({
-        model: process.env.TAG_MODEL || 'gpt-5.4-mini',
+        model,
         messages: [{ role: 'system', content: SYSTEM }, { role: 'user', content: list }],
         max_completion_tokens: 4000,
+        ...chatCompletionsReasoning(model),
       })
       const txt = r.choices[0]?.message?.content || ''
       const json = JSON.parse(txt.slice(txt.indexOf('{'), txt.lastIndexOf('}') + 1)) as Record<string, string[]>

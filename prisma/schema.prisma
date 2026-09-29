@@ -265,7 +265,7 @@ model Chatbot {
   // Configuration
   systemPrompt String?  @db.Text  // Custom instructions
   temperature  Float    @default(0.7)
-  model        String   @default("gpt-5.4-mini")
+  model        String   @default("gpt-6-luna")
 
   // Tools (Phase 1) — when any tool is enabled the bot answers via the
   // OpenAI Responses API instead of Chat Completions.

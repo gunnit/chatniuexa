@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { z } from 'zod'
 import { getPlanLimits, type PlanId } from '@/lib/plans'
+import { isSelectableChatModel } from '@/lib/models'
 
 // GET /api/chatbots - List all chatbots for the tenant
 export async function GET() {
@@ -30,7 +31,7 @@ const createChatbotSchema = z.object({
   description: z.string().optional(),
   systemPrompt: z.string().optional(),
   temperature: z.number().min(0).max(2).optional(),
-  model: z.string().optional(),
+  model: z.string().refine(isSelectableChatModel, { message: 'Unsupported model' }).optional(),
   primaryColor: z.string().optional(),
   welcomeMessage: z.string().optional(),
 })

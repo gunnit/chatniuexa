@@ -1,16 +1,16 @@
 import { prisma } from '@/lib/db'
+import { CHAT_MODELS } from '@/lib/models'
 
-// Cost per 1K tokens (USD) - averaged (input+output)/2 from official OpenAI pricing
-const COST_PER_1K_TOKENS = {
-  'gpt-5.4': 0.00875,       // Flagship: $2.50 in / $15.00 out per 1M
-  'gpt-5.4-mini': 0.002625, // Recommended: $0.75 in / $4.50 out per 1M
-  'gpt-5.4-nano': 0.000725, // Cheapest: $0.20 in / $1.25 out per 1M
-  'gpt-5.2': 0.007875,      // Prev frontier: $1.75 in / $14.00 out per 1M
-  'gpt-5-mini': 0.001125,   // Legacy: $0.25 in / $2.00 out per 1M
-  'gpt-5-nano': 0.0002,     // Legacy budget
-  // Deprecated
-  'gpt-4o': 0.005,
-  'gpt-4o-mini': 0.00015,
+// Cost per 1K tokens (USD) - averaged (input+output)/2 from official OpenAI pricing.
+// Chat model rates come from the model registry, so every selectable model is
+// priced and none can fall through to the generic fallback rate.
+const COST_PER_1K_TOKENS: Record<string, number> = {
+  ...Object.fromEntries(CHAT_MODELS.map((m) => [m.id, (m.inputPer1M + m.outputPer1M) / 2 / 1000])),
+  // No longer offered; kept so leftover usage is still priced correctly
+  'gpt-5-mini': 0.001125,   // $0.25 in / $2.00 out per 1M (shut down 2026-12-11)
+  'gpt-5-nano': 0.000225,   // $0.05 in / $0.40 out per 1M (shut down 2026-12-11)
+  'gpt-4o': 0.00625,        // $2.50 in / $10.00 out per 1M
+  'gpt-4o-mini': 0.000375,  // $0.15 in / $0.60 out per 1M
   'text-embedding-3-small': 0.00002,
 }
 
@@ -27,9 +27,7 @@ export async function logUsage(params: {
   const { tenantId, chatbotId, type, tokens, model } = params
 
   // Calculate estimated cost
-  const costRate = model
-    ? COST_PER_1K_TOKENS[model as keyof typeof COST_PER_1K_TOKENS] || 0.001
-    : 0.001
+  const costRate = (model && COST_PER_1K_TOKENS[model]) || 0.001
   const cost = (tokens / 1000) * costRate
 
   const now = new Date()
