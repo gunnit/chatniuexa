@@ -13,14 +13,17 @@
  *      description is replaced with the fresh About text. Sector tags are NEVER
  *      re-derived from the (gated) site — they are preserved from the existing
  *      directory. Genuinely new members are LLM-classified once and inserted into
- *      their sector block; departed members are dropped.
- *   4. Re-chunk + re-embed the directory document, and resync the events page.
+ *      their sector block; departed members are dropped. The member counts in the
+ *      intro, the sectors index and each sector header are recomputed.
+ *   4. Re-chunk + re-embed the directory document, and re-crawl every events data
+ *      source from its own URL.
  *
  * In live mode the base directory text is read from the live DB document (source of
  * truth) and the result is written back to both the DB and the local v3 file. In
- * --dry-run mode nothing touches the DB or external state: it crawls, builds the new
- * directory text from the local v3 file, writes it to <out> and prints a diff
- * summary — this is the safe way to verify the job end to end.
+ * --dry-run mode nothing is written to the DB or external state: it crawls, builds the
+ * new directory text from the local v3 file, writes it to <out> and prints a diff
+ * summary — this is the safe way to verify the job end to end. (With DATABASE_URL set,
+ * the events step reads the DB to show which sources it would refresh.)
  *
  * Env required: FIRECRAWL_API_KEY, OPENAI_API_KEY (only if new members appear),
  *               DATABASE_URL (live mode only).
@@ -56,6 +59,7 @@ const MEMBER_BASE = 'https://italchamber.org.sg/membership-directory/corporate'
 const DIR_FILE = 'italchamber_directory_v3.txt'
 const CRAWL_CONCURRENCY = 3 // stay polite vs Firecrawl's ~100 req/min cap; retry-after handles the rest
 const DESC_MAX = 1500 // cap per-member description so contacts survive without bloat
+const MIN_EVENTS_CHARS = 1500 // shorter than this, an events crawl is a blocked/empty page
 
 // `[Sector: X] [Also relevant to: A; B] **[Name](url)** — description`
 const MEMBER_RE = /^\[Sector:\s*(.+?)\]\s*(\[Also relevant to:.*?\]\s*)?\*\*\[(.+?)\]\((.+?)\)\*\*\s*(?:—\s*)?(.*)$/
@@ -196,6 +200,34 @@ function buildMemberLine(primary: string, alsoTag: string, name: string, url: st
   return `[Sector: ${primary}] ${also}**[${name}](${url})** — ${desc}`.replace(/\s+$/, '')
 }
 
+// `- SECTOR (N partners)` in the sectors index and `## Sector: SECTOR (N partners)` headers.
+const COUNT_LINE_RE = /^(-\s+|##\s*Sector:\s*)(.+?)\s*\(\d+\s*partners?\)\s*$/i
+
+// Recompute every count the bot reads (intro total, sectors index, sector headers) from the
+// member lines themselves; joins and departures otherwise leave them stale.
+function refreshCounts(lines: string[]): { lines: string[]; total: number } {
+  const perSector = new Map<string, number>()
+  const ids = new Set<string>()
+  for (const l of lines) {
+    const m = l.match(MEMBER_RE)
+    if (!m) continue
+    const sector = m[1].trim().toUpperCase()
+    perSector.set(sector, (perSector.get(sector) || 0) + 1)
+    const id = m[4].match(ID_RE)?.[1]
+    if (id) ids.add(id)
+  }
+  const out = lines.map((l) => {
+    const c = l.match(COUNT_LINE_RE)
+    const sector = c?.[2].trim().toUpperCase()
+    if (c && sector && SECTORSET.has(sector)) {
+      const n = perSector.get(sector) || 0
+      return `${c[1]}${c[2].trim()} (${n} partner${n === 1 ? '' : 's'})`
+    }
+    return l.replace(/Public directory of \d+ corporate member companies/, `Public directory of ${ids.size} corporate member companies`)
+  })
+  return { lines: out, total: ids.size }
+}
+
 async function refreshMembers(flags: Flags): Promise<string> {
   // 1. Crawl the listing — this 1 request tells us the full current member set
   //    (names + stable /corporate/<ID> URLs) without touching any detail page.
@@ -280,7 +312,7 @@ async function refreshMembers(flags: Flags): Promise<string> {
     if (fresh?.about) { kept.push(buildMemberLine(primary.trim(), alsoTag, name, url, fresh.about)); updated++ }
     else kept.push(line)
   }
-  let work = kept
+  const work = kept
 
   // 5. Insert genuinely new members (LLM-classify their sector once).
   const newMembers = targets.filter((m) => !existingIds.has(m.id) && aboutById.get(m.id)?.about)
@@ -303,8 +335,10 @@ async function refreshMembers(flags: Flags): Promise<string> {
     }
   }
 
-  const newText = work.join('\n')
+  const counted = refreshCounts(work)
+  const newText = counted.lines.join('\n')
   console.log(`\n  Directory summary:`)
+  console.log(`    member companies        : ${counted.total}`)
   console.log(`    descriptions refreshed : ${updated}`)
   console.log(`    new members inserted   : ${inserted}`)
   console.log(`    departed members removed: ${removed}`)
@@ -325,23 +359,53 @@ async function refreshMembers(flags: Flags): Promise<string> {
 }
 
 async function refreshEvents(flags: Flags): Promise<void> {
-  console.log('→ Refreshing events page…')
-  const crawled = await crawlWithRetry(EVENTS_URL)
-  console.log(`  crawled events (${crawled.content.length} chars, title="${crawled.title}")`)
-  if (flags.dryRun) { console.log('  [dry-run] events not written to DB.'); return }
+  console.log('→ Refreshing events pages…')
+  // Without a database (plain dry-run) we can only check that the main page still crawls.
+  if (flags.dryRun && !process.env.DATABASE_URL) {
+    const crawled = await crawlWithRetry(EVENTS_URL)
+    console.log(`  crawled ${EVENTS_URL} (${crawled.content.length} chars) — [dry-run] no database, not written`)
+    return
+  }
 
   const chatbot = await prisma.chatbot.findUnique({ where: { shareToken: flags.share }, select: { tenantId: true } })
   if (!chatbot) throw new Error(`No chatbot with shareToken="${flags.share}"`)
-  // Reuse an existing events data source if present (www or non-www), else create one.
-  const existing = await prisma.dataSource.findFirst({
+  // Re-crawl EVERY events source from its own URL (/events, ?type=upcoming, ?type=past, www or not).
+  // Writing a single /events crawl into whichever source matched first left the others stale.
+  let sources: { id: string; sourceUrl: string | null }[] = await prisma.dataSource.findMany({
     where: { tenantId: chatbot.tenantId, type: 'URL', sourceUrl: { contains: '/events' } },
     select: { id: true, sourceUrl: true },
+    orderBy: { createdAt: 'asc' },
   })
-  const ds = existing ?? await prisma.dataSource.create({
-    data: { tenantId: chatbot.tenantId, type: 'URL', name: 'Upcoming Events', sourceUrl: EVENTS_URL, status: 'PENDING' },
-  })
-  await processUrl({ dataSourceId: ds.id, url: ds.sourceUrl || EVENTS_URL, content: crawled.content, title: crawled.title })
-  console.log(`  OK — events ingested into data source ${ds.id}.`)
+  if (sources.length === 0) {
+    sources = flags.dryRun
+      ? [{ id: '(new)', sourceUrl: EVENTS_URL }]
+      : [await prisma.dataSource.create({
+          data: { tenantId: chatbot.tenantId, type: 'URL', name: 'Upcoming Events', sourceUrl: EVENTS_URL, status: 'PENDING' },
+          select: { id: true, sourceUrl: true },
+        })]
+  }
+
+  const failed: string[] = []
+  for (const ds of sources) {
+    const url = ds.sourceUrl || EVENTS_URL
+    try {
+      const crawled = await crawlWithRetry(url)
+      // A real listing is ~15K chars; keep the previous content rather than store a blocked or empty page.
+      if (crawled.content.length < MIN_EVENTS_CHARS || !/event/i.test(crawled.content)) {
+        console.log(`  ! ${url}: crawl looks wrong (${crawled.content.length} chars) — previous content kept`)
+        failed.push(url)
+        continue
+      }
+      if (flags.dryRun) { console.log(`  [dry-run] ${url} → ${ds.id}: ${crawled.content.length} chars, not written`); continue }
+      await processUrl({ dataSourceId: ds.id, url, content: crawled.content, title: crawled.title })
+      console.log(`  OK — ${url} → data source ${ds.id} (${crawled.content.length} chars)`)
+    } catch (e) {
+      console.error(`  ! ${url}: ${e instanceof Error ? e.message : e}`)
+      failed.push(url)
+    }
+  }
+  // Fail the run (so the cron shows red) only after every source had its chance.
+  if (failed.length) throw new Error(`events refresh failed for: ${failed.join(', ')}`)
 }
 
 async function main() {
