@@ -5,12 +5,33 @@ import { applyPlanLimits, PLANS, type PlanId } from '@/lib/plans'
 import { sendBillingConfirmation } from '@/lib/email'
 import { logger } from '@/lib/logger'
 
+// PayPal sends these with every delivery, and verification needs all of them.
+const PAYPAL_SIGNATURE_HEADERS = [
+  'paypal-auth-algo',
+  'paypal-cert-url',
+  'paypal-transmission-id',
+  'paypal-transmission-sig',
+  'paypal-transmission-time',
+]
+
 export async function POST(request: NextRequest) {
   const body = await request.text()
   const headers: Record<string, string> = {}
   request.headers.forEach((value, key) => {
     headers[key] = value
   })
+
+  // This route is public, and verifying costs two PayPal API calls: turn away
+  // requests that can't be a PayPal delivery before making them.
+  if (PAYPAL_SIGNATURE_HEADERS.some((name) => !headers[name])) {
+    return NextResponse.json({ error: 'Missing PayPal signature headers' }, { status: 400 })
+  }
+  let event
+  try {
+    event = JSON.parse(body)
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+  }
 
   // Verify webhook signature
   const isValid = await verifyWebhookSignature(headers, body)
@@ -19,7 +40,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
   }
 
-  const event = JSON.parse(body)
   const eventType = event.event_type as string
   const resource = event.resource
 
