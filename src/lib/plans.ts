@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 
 export type PlanId = 'free' | 'pro' | 'business'
@@ -116,19 +117,15 @@ export function getPlanLimits(plan: PlanId): PlanLimits {
   return PLANS[plan]?.limits ?? PLANS.free.limits
 }
 
-export async function applyPlanLimits(tenantId: string, plan: PlanId) {
+function planLimitWrites(db: Prisma.TransactionClient, tenantId: string, plan: PlanId) {
   const limits = getPlanLimits(plan)
-
-  // Single transaction so the tenant.plan field can never diverge from the
-  // usage limits row (e.g. crash between the two writes would leave them out
-  // of sync, granting old limits with a new plan name or vice versa).
-  await prisma.$transaction([
+  return [
     // If the new plan has no voice entitlement (e.g. a downgrade), switch voice
     // off on every bot so a stale voiceEnabled flag can't keep paid calls open.
     ...(limits.voiceEnabled
       ? []
-      : [prisma.chatbot.updateMany({ where: { tenantId, voiceEnabled: true }, data: { voiceEnabled: false } })]),
-    prisma.usageLimit.upsert({
+      : [db.chatbot.updateMany({ where: { tenantId, voiceEnabled: true }, data: { voiceEnabled: false } })]),
+    db.usageLimit.upsert({
       where: { tenantId },
       update: {
         monthlyTokenLimit: limits.monthlyTokenLimit,
@@ -144,9 +141,25 @@ export async function applyPlanLimits(tenantId: string, plan: PlanId) {
         monthlyVoiceMinutes: limits.monthlyVoiceMinutes,
       },
     }),
-    prisma.tenant.update({
+    db.tenant.update({
       where: { id: tenantId },
       data: { plan },
     }),
-  ])
+  ]
+}
+
+/**
+ * Pass `tx` to write inside a caller's interactive transaction; otherwise the
+ * writes get a transaction of their own.
+ */
+export async function applyPlanLimits(tenantId: string, plan: PlanId, tx?: Prisma.TransactionClient) {
+  if (tx) {
+    for (const write of planLimitWrites(tx, tenantId, plan)) await write
+    return
+  }
+
+  // Single transaction so the tenant.plan field can never diverge from the
+  // usage limits row (e.g. crash between the two writes would leave them out
+  // of sync, granting old limits with a new plan name or vice versa).
+  await prisma.$transaction(planLimitWrites(prisma, tenantId, plan))
 }
