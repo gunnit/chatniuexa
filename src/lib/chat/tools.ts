@@ -1,6 +1,7 @@
 import OpenAI from 'openai'
 import { prisma } from '@/lib/db'
 import { getOpenAI } from '@/lib/openai'
+import { DEFAULT_CHAT_MODEL, responsesReasoning } from '@/lib/models'
 import { decryptSecret } from '@/lib/encryption'
 import { getPlanLimits, type PlanId } from '@/lib/plans'
 import { logger } from '@/lib/logger'
@@ -16,7 +17,7 @@ export interface ToolChatbot {
 }
 
 // Cheap model used only for on-demand MCP tool discovery.
-const DISCOVERY_MODEL = 'gpt-5.4-mini'
+const DISCOVERY_MODEL = DEFAULT_CHAT_MODEL
 
 /**
  * SSRF guard for tenant-supplied MCP server URLs. Fails closed: only https to a
@@ -160,6 +161,7 @@ export async function discoverMcpTools(serverUrl: string, token?: string): Promi
     input: 'Respond with "ok".',
     tool_choice: 'none',
     max_output_tokens: 16,
+    ...responsesReasoning(DISCOVERY_MODEL),
     tools: [
       {
         type: 'mcp',

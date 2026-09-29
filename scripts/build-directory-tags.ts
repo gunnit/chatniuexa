@@ -24,6 +24,7 @@
  */
 import fs from 'node:fs'
 import { getOpenAI } from '../src/lib/openai'
+import { DEFAULT_CHAT_MODEL, chatCompletionsReasoning } from '../src/lib/models'
 
 const SECTORS = [
   'AUTOMOTIVE', 'BUSINESS SERVICES', 'CHEMICALS', 'CONSTRUCTION AND INFRASTRUCTURE',
@@ -34,7 +35,7 @@ const SECTORS = [
   'SECURITY SYSTEMS', 'SHIPPING / FREIGHT FORWARDING', 'TRADING', 'TRANSLATION AND LANGUAGE SERVICES',
 ]
 const SECTORSET = new Set(SECTORS)
-const MODEL = process.env.TAG_MODEL || 'gpt-5.4-mini'
+const MODEL = process.env.TAG_MODEL || DEFAULT_CHAT_MODEL
 const MEMBER_RE = /^\[Sector:\s*(.+?)\]\s*\*\*\[(.+?)\]\((.+?)\)\*\*\s*(.*)$/
 
 function parseCSV(text: string): string[][] {
@@ -94,6 +95,7 @@ async function main() {
         model: MODEL,
         messages: [{ role: 'system', content: SYSTEM }, { role: 'user', content: list }],
         max_completion_tokens: 4000,
+        ...chatCompletionsReasoning(MODEL),
       })
       const txt = r.choices[0]?.message?.content || ''
       const json = JSON.parse(txt.slice(txt.indexOf('{'), txt.lastIndexOf('}') + 1)) as Record<string, string[]>

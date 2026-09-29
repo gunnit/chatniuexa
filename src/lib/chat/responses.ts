@@ -1,5 +1,6 @@
 import OpenAI from 'openai'
 import { getOpenAI } from '@/lib/openai'
+import { DEFAULT_CHAT_MODEL, responsesReasoning } from '@/lib/models'
 import { DEFAULT_SYSTEM_PROMPT, FORMATTING_ADDENDUM, PII_GUARDRAIL } from '@/lib/chat/rag'
 import type { ResponsesTool } from '@/lib/chat/tools'
 
@@ -23,7 +24,6 @@ import type { ResponsesTool } from '@/lib/chat/tools'
 const TOOL_SCOPE_GUARDRAIL = `\n\nYou have access to the knowledge base context above AND the external tools provided to you (such as web search or connected MCP servers). Use the knowledge base for organization-specific information; use your tools to look up live, external, or up-to-date information that the knowledge base does not contain. When you use a tool result, incorporate it accurately and concisely, and prefer citing the source. If neither the knowledge base nor your tools can answer the question, say so plainly — never invent facts.`
 
 const MAX_OUTPUT_TOKENS = 2048
-const DEFAULT_MODEL = 'gpt-5.4-mini'
 
 export interface ToolGenerationOptions {
   systemPrompt?: string
@@ -70,7 +70,7 @@ export async function generateChatResponseWithTools(
   history: Array<{ role: 'user' | 'assistant'; content: string }>,
   options: ToolGenerationOptions,
 ): Promise<ToolChatResult> {
-  const { systemPrompt = DEFAULT_SYSTEM_PROMPT, model = DEFAULT_MODEL, tools } = options
+  const { systemPrompt = DEFAULT_SYSTEM_PROMPT, model = DEFAULT_CHAT_MODEL, tools } = options
   const openai = getOpenAI()
 
   const response = await openai.responses.create({
@@ -79,6 +79,7 @@ export async function generateChatResponseWithTools(
     input: buildInput(history, userMessage),
     tools,
     max_output_tokens: MAX_OUTPUT_TOKENS,
+    ...responsesReasoning(model),
   })
 
   const content =
@@ -106,7 +107,7 @@ export async function generateStreamingChatResponseWithTools(
   history: Array<{ role: 'user' | 'assistant'; content: string }>,
   options: ToolGenerationOptions,
 ): Promise<ReadableStream<Uint8Array>> {
-  const { systemPrompt = DEFAULT_SYSTEM_PROMPT, model = DEFAULT_MODEL, tools } = options
+  const { systemPrompt = DEFAULT_SYSTEM_PROMPT, model = DEFAULT_CHAT_MODEL, tools } = options
   const openai = getOpenAI()
 
   const stream = await openai.responses.create({
@@ -115,6 +116,7 @@ export async function generateStreamingChatResponseWithTools(
     input: buildInput(history, userMessage),
     tools,
     max_output_tokens: MAX_OUTPUT_TOKENS,
+    ...responsesReasoning(model),
     stream: true,
   })
 

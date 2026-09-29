@@ -3,6 +3,7 @@
 import { useEffect, useState, use } from 'react'
 import { Link } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
+import { CHAT_MODELS, DEFAULT_CHAT_MODEL, getChatModel } from '@/lib/models'
 import McpServersManager from './McpServersManager'
 
 interface Chatbot {
@@ -237,7 +238,7 @@ export default function ChatbotConfigPage({
   const [description, setDescription] = useState('')
   const [systemPrompt, setSystemPrompt] = useState('')
   const [temperature, setTemperature] = useState(0.7)
-  const [model, setModel] = useState('gpt-5.4-mini')
+  const [model, setModel] = useState(DEFAULT_CHAT_MODEL)
   const [primaryColor, setPrimaryColor] = useState('#6366f1')
   const [secondaryColor, setSecondaryColor] = useState('#6366f1')
   const [welcomeEyebrow, setWelcomeEyebrow] = useState('')
@@ -636,11 +637,18 @@ export default function ChatbotConfigPage({
                   onChange={(e) => setModel(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
                 >
-                  <option value="gpt-5.4">GPT-5.4 (Flagship)</option>
-                  <option value="gpt-5.4-mini">GPT-5.4 Mini (Recommended — Fast & Affordable)</option>
-                  <option value="gpt-5.4-nano">GPT-5.4 Nano (Cheapest)</option>
-                  <option value="gpt-5.2">GPT-5.2 (Previous Frontier)</option>
-                  <option value="gpt-5-mini">GPT-5 Mini (Legacy)</option>
+                  <optgroup label="GPT-6">
+                    {CHAT_MODELS.filter((m) => !m.previous).map((m) => (
+                      <option key={m.id} value={m.id}>{m.label}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Previous generation">
+                    {CHAT_MODELS.filter((m) => m.previous).map((m) => (
+                      <option key={m.id} value={m.id}>{m.label}</option>
+                    ))}
+                  </optgroup>
+                  {/* A model we no longer offer: show it as-is rather than letting the select display the wrong option */}
+                  {!getChatModel(model) && <option value={model}>{model} (no longer offered)</option>}
                 </select>
               </div>
 

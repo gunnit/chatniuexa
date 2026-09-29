@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db'
 import { getOpenAI, EMBEDDING_MODEL } from '@/lib/openai'
+import { DEFAULT_CHAT_MODEL, chatCompletionsReasoning } from '@/lib/models'
 import { getDirectoryChunks, searchChunksByKeywords, searchSimilarChunks } from '@/lib/documents/processor'
 
 interface Source {
@@ -151,7 +152,7 @@ export async function generateChatResponse(
 ): Promise<ChatResponse> {
   const {
     systemPrompt = DEFAULT_SYSTEM_PROMPT,
-    model = 'gpt-5.4-mini',
+    model = DEFAULT_CHAT_MODEL,
     minSimilarity = 0.2, // Lowered to 0.2 for multilingual content recall
   } = options
   const openai = getOpenAI()
@@ -256,6 +257,7 @@ export async function generateChatResponse(
     model,
     messages,
     max_completion_tokens: 2048,
+    ...chatCompletionsReasoning(model),
   })
 
   const responseContent = completion.choices[0]?.message?.content || 'I apologize, but I was unable to generate a response.'
@@ -624,7 +626,7 @@ export async function generateStreamingChatResponse(
 ): Promise<ReadableStream<Uint8Array>> {
   const {
     systemPrompt = DEFAULT_SYSTEM_PROMPT,
-    model = 'gpt-5.4-mini',
+    model = DEFAULT_CHAT_MODEL,
   } = options
 
   const openai = getOpenAI()
@@ -664,6 +666,7 @@ export async function generateStreamingChatResponse(
     messages,
     stream: true,
     max_completion_tokens: 2048,
+    ...chatCompletionsReasoning(model),
   })
 
   // Convert OpenAI stream to web ReadableStream
