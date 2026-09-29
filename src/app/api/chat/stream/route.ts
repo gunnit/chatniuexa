@@ -114,12 +114,14 @@ export async function POST(request: NextRequest) {
       ? await generateStreamingChatResponseWithTools(context, message, history, {
           systemPrompt: chatbot.systemPrompt || undefined,
           model: chatbot.model,
+          temperature: chatbot.temperature,
           tools,
           onUsage,
         })
       : await generateStreamingChatResponse(context, message, history, {
           systemPrompt: chatbot.systemPrompt || undefined,
           model: chatbot.model,
+          temperature: chatbot.temperature,
           onUsage,
         })
 

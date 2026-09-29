@@ -1,7 +1,7 @@
 import OpenAI from 'openai'
 import { logger } from '@/lib/logger'
 import { getOpenAI } from '@/lib/openai'
-import { DEFAULT_CHAT_MODEL, responsesReasoning } from '@/lib/models'
+import { DEFAULT_CHAT_MODEL, responsesReasoning, temperatureParam } from '@/lib/models'
 import type { TokenUsage } from '@/lib/usage'
 import { DEFAULT_SYSTEM_PROMPT, FORMATTING_ADDENDUM, PII_GUARDRAIL } from '@/lib/chat/rag'
 import type { ResponsesTool } from '@/lib/chat/tools'
@@ -30,6 +30,8 @@ const MAX_OUTPUT_TOKENS = 2048
 export interface ToolGenerationOptions {
   systemPrompt?: string
   model?: string
+  /** The bot's temperature; not sent to models that don't accept it. */
+  temperature?: number
   tools: ResponsesTool[]
 }
 
@@ -66,7 +68,7 @@ export async function generateChatResponseWithTools(
   history: Array<{ role: 'user' | 'assistant'; content: string }>,
   options: ToolGenerationOptions,
 ): Promise<ToolChatResult> {
-  const { systemPrompt = DEFAULT_SYSTEM_PROMPT, model = DEFAULT_CHAT_MODEL, tools } = options
+  const { systemPrompt = DEFAULT_SYSTEM_PROMPT, model = DEFAULT_CHAT_MODEL, temperature, tools } = options
   const openai = getOpenAI()
 
   const response = await openai.responses.create({
@@ -76,6 +78,7 @@ export async function generateChatResponseWithTools(
     tools,
     max_output_tokens: MAX_OUTPUT_TOKENS,
     ...responsesReasoning(model),
+    ...temperatureParam(model, temperature),
   })
 
   const content =
@@ -105,7 +108,7 @@ export async function generateStreamingChatResponseWithTools(
     onUsage?: (usage: TokenUsage) => void
   },
 ): Promise<ReadableStream<Uint8Array>> {
-  const { systemPrompt = DEFAULT_SYSTEM_PROMPT, model = DEFAULT_CHAT_MODEL, tools, onUsage } = options
+  const { systemPrompt = DEFAULT_SYSTEM_PROMPT, model = DEFAULT_CHAT_MODEL, temperature, tools, onUsage } = options
   const openai = getOpenAI()
 
   const stream = await openai.responses.create({
@@ -115,6 +118,7 @@ export async function generateStreamingChatResponseWithTools(
     tools,
     max_output_tokens: MAX_OUTPUT_TOKENS,
     ...responsesReasoning(model),
+    ...temperatureParam(model, temperature),
     stream: true,
   })
 

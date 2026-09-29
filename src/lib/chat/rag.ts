@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import { getOpenAI, EMBEDDING_MODEL } from '@/lib/openai'
-import { DEFAULT_CHAT_MODEL, chatCompletionsReasoning } from '@/lib/models'
+import { DEFAULT_CHAT_MODEL, chatCompletionsReasoning, temperatureParam } from '@/lib/models'
 import type { TokenUsage } from '@/lib/usage'
 import { getDirectoryChunks, searchChunksByKeywords, searchSimilarChunks } from '@/lib/documents/processor'
 
@@ -150,6 +150,8 @@ export async function generateChatResponse(
   options: {
     systemPrompt?: string
     model?: string
+    /** The bot's temperature; not sent to models that don't accept it. */
+    temperature?: number
     maxSources?: number
     minSimilarity?: number
   } = {}
@@ -157,6 +159,7 @@ export async function generateChatResponse(
   const {
     systemPrompt = DEFAULT_SYSTEM_PROMPT,
     model = DEFAULT_CHAT_MODEL,
+    temperature,
     minSimilarity = 0.2, // Lowered to 0.2 for multilingual content recall
   } = options
   const openai = getOpenAI()
@@ -262,6 +265,7 @@ export async function generateChatResponse(
     messages,
     max_completion_tokens: 2048,
     ...chatCompletionsReasoning(model),
+    ...temperatureParam(model, temperature),
   })
 
   const responseContent = completion.choices[0]?.message?.content || 'I apologize, but I was unable to generate a response.'
@@ -629,6 +633,8 @@ export async function generateStreamingChatResponse(
   options: {
     systemPrompt?: string
     model?: string
+    /** The bot's temperature; not sent to models that don't accept it. */
+    temperature?: number
     /** Called with the request's token usage when OpenAI reports it at the end of the stream. */
     onUsage?: (usage: TokenUsage) => void
   } = {}
@@ -636,6 +642,7 @@ export async function generateStreamingChatResponse(
   const {
     systemPrompt = DEFAULT_SYSTEM_PROMPT,
     model = DEFAULT_CHAT_MODEL,
+    temperature,
     onUsage,
   } = options
 
@@ -678,6 +685,7 @@ export async function generateStreamingChatResponse(
     stream_options: { include_usage: true },
     max_completion_tokens: 2048,
     ...chatCompletionsReasoning(model),
+    ...temperatureParam(model, temperature),
   })
 
   // Convert OpenAI stream to web ReadableStream
