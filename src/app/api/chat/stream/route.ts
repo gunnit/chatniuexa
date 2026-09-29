@@ -107,11 +107,13 @@ export async function POST(request: NextRequest) {
       ? await generateStreamingChatResponseWithTools(context, message, history, {
           systemPrompt: chatbot.systemPrompt || undefined,
           model: chatbot.model,
+          temperature: chatbot.temperature,
           tools,
         })
       : await generateStreamingChatResponse(context, message, history, {
           systemPrompt: chatbot.systemPrompt || undefined,
           model: chatbot.model,
+          temperature: chatbot.temperature,
         })
 
     // Create a TransformStream to capture the full response for saving

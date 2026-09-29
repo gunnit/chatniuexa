@@ -208,6 +208,7 @@ async function processWhatsAppMessage(msg: {
     const result = await generateChatResponseWithTools(context, msg.text, history, {
       systemPrompt: chatbot.systemPrompt || undefined,
       model: chatbot.model,
+      temperature: chatbot.temperature,
       tools,
     })
     response = {
@@ -219,6 +220,7 @@ async function processWhatsAppMessage(msg: {
     response = await generateChatResponse(chatbot.tenantId, msg.text, history, {
       systemPrompt: chatbot.systemPrompt || undefined,
       model: chatbot.model,
+      temperature: chatbot.temperature,
     })
   }
 

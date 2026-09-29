@@ -127,6 +127,7 @@ export async function POST(request: NextRequest) {
       const result = await generateChatResponseWithTools(context, message, history, {
         systemPrompt: chatbot.systemPrompt || undefined,
         model: chatbot.model,
+        temperature: chatbot.temperature,
         tools,
       })
       response = {
@@ -139,6 +140,7 @@ export async function POST(request: NextRequest) {
       response = await generateChatResponse(chatbot.tenantId, message, history, {
         systemPrompt: chatbot.systemPrompt || undefined,
         model: chatbot.model,
+        temperature: chatbot.temperature,
       })
     }
 

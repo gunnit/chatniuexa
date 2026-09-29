@@ -66,14 +66,14 @@ async function main() {
 
   const chatbot = await prisma.chatbot.findUnique({
     where: { shareToken },
-    select: { id: true, name: true, tenantId: true, systemPrompt: true, model: true },
+    select: { id: true, name: true, tenantId: true, systemPrompt: true, model: true, temperature: true },
   })
   if (!chatbot) {
     console.error(`No chatbot found with shareToken="${shareToken}"`)
     process.exit(1)
   }
 
-  console.log(`Bot: ${chatbot.name} (tenant=${chatbot.tenantId}, model=${chatbot.model})`)
+  console.log(`Bot: ${chatbot.name} (tenant=${chatbot.tenantId}, model=${chatbot.model}, temperature=${chatbot.temperature})`)
   console.log(`Prompt length: ${chatbot.systemPrompt?.length ?? 0} chars\n`)
 
   let failures = 0
@@ -82,6 +82,7 @@ async function main() {
     const res = await generateChatResponse(chatbot.tenantId, c.query, [], {
       systemPrompt: chatbot.systemPrompt || undefined,
       model: chatbot.model,
+      temperature: chatbot.temperature,
     })
     const content = res.content.toLowerCase()
     const missing = c.mustInclude.filter((m) => !content.includes(m.toLowerCase()))

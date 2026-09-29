@@ -68,4 +68,5 @@ This project runs on WSL with code on `/mnt/c/`. The Windows ↔ Linux filesyste
 - Use Context7 (`/websites/platform_openai`) to verify API parameters before writing OpenAI calls
 - Chat models live in `src/lib/models.ts` (dashboard picker, request params, cost table, API validation) — add or retire models there only, never hardcode a model id
 - GPT-6 Sol/Luna default to `medium` reasoning, and reasoning tokens count against `max_completion_tokens` — always spread `chatCompletionsReasoning(model)` / `responsesReasoning(model)` into requests so the registry's effort (`none`) applies
+- Never put `temperature` in a request directly — spread `temperatureParam(model, t)`. GPT-5.2+ and GPT-6 return a 400 for it unless reasoning effort is `none` (GPT-6 Astra: always), so every registry model declares `supportsTemperature`. After adding or changing a model, run `npx tsx scripts/check-chat-model-params.ts` (live API check)
 - Model ids, prices and shutdown dates: check the raw docs (`https://developers.openai.com/api/docs/models/<id>.md`, `/api/docs/deprecations.md`) — Context7 has served stale model ids before

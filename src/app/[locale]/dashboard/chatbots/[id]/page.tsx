@@ -3,7 +3,7 @@
 import { useEffect, useState, use } from 'react'
 import { Link } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
-import { CHAT_MODELS, DEFAULT_CHAT_MODEL, getChatModel } from '@/lib/models'
+import { CHAT_MODELS, DEFAULT_CHAT_MODEL, getChatModel, supportsTemperature } from '@/lib/models'
 import McpServersManager from './McpServersManager'
 
 interface Chatbot {
@@ -664,9 +664,18 @@ export default function ChatbotConfigPage({
                   step="0.1"
                   value={temperature}
                   onChange={(e) => setTemperature(parseFloat(e.target.value))}
-                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
+                  disabled={!supportsTemperature(model)}
+                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-teal-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <p className="text-sm text-slate-500 mt-2">{t('precise')} ← → {t('creative')}</p>
+                {!supportsTemperature(model) && (
+                  <p className="text-xs text-amber-600 mt-2.5 flex items-center gap-1.5">
+                    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    {t('temperatureUnsupported')}
+                  </p>
+                )}
               </div>
 
               <div>

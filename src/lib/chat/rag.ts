@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db'
 import { getOpenAI, EMBEDDING_MODEL } from '@/lib/openai'
-import { DEFAULT_CHAT_MODEL, chatCompletionsReasoning } from '@/lib/models'
+import { DEFAULT_CHAT_MODEL, chatCompletionsReasoning, temperatureParam } from '@/lib/models'
 import { getDirectoryChunks, searchChunksByKeywords, searchSimilarChunks } from '@/lib/documents/processor'
 
 interface Source {
@@ -146,6 +146,8 @@ export async function generateChatResponse(
   options: {
     systemPrompt?: string
     model?: string
+    /** The bot's temperature; not sent to models that don't accept it. */
+    temperature?: number
     maxSources?: number
     minSimilarity?: number
   } = {}
@@ -153,6 +155,7 @@ export async function generateChatResponse(
   const {
     systemPrompt = DEFAULT_SYSTEM_PROMPT,
     model = DEFAULT_CHAT_MODEL,
+    temperature,
     minSimilarity = 0.2, // Lowered to 0.2 for multilingual content recall
   } = options
   const openai = getOpenAI()
@@ -258,6 +261,7 @@ export async function generateChatResponse(
     messages,
     max_completion_tokens: 2048,
     ...chatCompletionsReasoning(model),
+    ...temperatureParam(model, temperature),
   })
 
   const responseContent = completion.choices[0]?.message?.content || 'I apologize, but I was unable to generate a response.'
@@ -622,11 +626,14 @@ export async function generateStreamingChatResponse(
   options: {
     systemPrompt?: string
     model?: string
+    /** The bot's temperature; not sent to models that don't accept it. */
+    temperature?: number
   } = {}
 ): Promise<ReadableStream<Uint8Array>> {
   const {
     systemPrompt = DEFAULT_SYSTEM_PROMPT,
     model = DEFAULT_CHAT_MODEL,
+    temperature,
   } = options
 
   const openai = getOpenAI()
@@ -667,6 +674,7 @@ export async function generateStreamingChatResponse(
     stream: true,
     max_completion_tokens: 2048,
     ...chatCompletionsReasoning(model),
+    ...temperatureParam(model, temperature),
   })
 
   // Convert OpenAI stream to web ReadableStream
