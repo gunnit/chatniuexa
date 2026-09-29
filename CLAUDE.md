@@ -28,7 +28,8 @@ This project runs on WSL with code on `/mnt/c/`. The Windows ↔ Linux filesyste
 - **Service ID**: srv-d5t62ishg0os73a32fm0
 - **Dashboard**: https://dashboard.render.com/web/srv-d5t62ishg0os73a32fm0
 - **Environment Variables**: https://dashboard.render.com/web/srv-d5t62ishg0os73a32fm0/env
-- **Live URL**: https://chataziendale.onrender.com
+- **Live URL**: https://chataziendale.it (custom domain behind Cloudflare; `www.` redirects here)
+- **Render URL**: https://chatniuexa.onrender.com (`chataziendale.onrender.com` is not this service — Render answers 404 `no-server`)
 - **Region**: Frankfurt
 - **Runtime**: Node.js (Next.js 16.1.4)
 - **Auto-deploy**: Enabled on master branch
