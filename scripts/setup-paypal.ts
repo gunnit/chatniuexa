@@ -145,7 +145,7 @@ async function main() {
   const command = process.argv[2] || 'all'
   const webhookUrl = process.env.NEXT_PUBLIC_APP_URL
     ? `${process.env.NEXT_PUBLIC_APP_URL}/api/billing/webhook`
-    : 'https://chataziendale.onrender.com/api/billing/webhook'
+    : 'https://chataziendale.it/api/billing/webhook'
 
   console.log('Setting up PayPal billing...')
   console.log(`API Base: ${PAYPAL_API_BASE}`)
