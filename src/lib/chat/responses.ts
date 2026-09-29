@@ -1,6 +1,8 @@
 import OpenAI from 'openai'
+import { logger } from '@/lib/logger'
 import { getOpenAI } from '@/lib/openai'
 import { DEFAULT_CHAT_MODEL, responsesReasoning } from '@/lib/models'
+import type { TokenUsage } from '@/lib/usage'
 import { DEFAULT_SYSTEM_PROMPT, FORMATTING_ADDENDUM, PII_GUARDRAIL } from '@/lib/chat/rag'
 import type { ResponsesTool } from '@/lib/chat/tools'
 
@@ -31,15 +33,9 @@ export interface ToolGenerationOptions {
   tools: ResponsesTool[]
 }
 
-export interface ToolUsage {
-  inputTokens: number
-  outputTokens: number
-  totalTokens: number
-}
-
 export interface ToolChatResult {
   content: string
-  usage?: ToolUsage
+  usage?: TokenUsage
 }
 
 function buildInstructions(systemPrompt: string, context: string): string {
@@ -89,7 +85,6 @@ export async function generateChatResponseWithTools(
     ? {
         inputTokens: response.usage.input_tokens,
         outputTokens: response.usage.output_tokens,
-        totalTokens: response.usage.total_tokens,
       }
     : undefined
 
@@ -105,9 +100,12 @@ export async function generateStreamingChatResponseWithTools(
   context: string,
   userMessage: string,
   history: Array<{ role: 'user' | 'assistant'; content: string }>,
-  options: ToolGenerationOptions,
+  options: ToolGenerationOptions & {
+    /** Called with the response's token usage when OpenAI reports it at the end of the stream. */
+    onUsage?: (usage: TokenUsage) => void
+  },
 ): Promise<ReadableStream<Uint8Array>> {
-  const { systemPrompt = DEFAULT_SYSTEM_PROMPT, model = DEFAULT_CHAT_MODEL, tools } = options
+  const { systemPrompt = DEFAULT_SYSTEM_PROMPT, model = DEFAULT_CHAT_MODEL, tools, onUsage } = options
   const openai = getOpenAI()
 
   const stream = await openai.responses.create({
@@ -130,6 +128,21 @@ export async function generateStreamingChatResponseWithTools(
             controller.enqueue(
               encoder.encode(`data: ${JSON.stringify({ content: event.delta })}\n\n`),
             )
+          } else if (
+            event.type === 'response.completed' ||
+            event.type === 'response.incomplete' ||
+            event.type === 'response.failed'
+          ) {
+            // The terminal event carries the token usage for the whole response
+            const usage = event.response.usage
+            if (usage && onUsage) {
+              try {
+                onUsage({ inputTokens: usage.input_tokens, outputTokens: usage.output_tokens })
+              } catch (error) {
+                // Metering must never break the answer stream
+                logger.error('Failed to report streamed token usage', { error: String(error) })
+              }
+            }
           }
         }
         controller.enqueue(encoder.encode('data: [DONE]\n\n'))

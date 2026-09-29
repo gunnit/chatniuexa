@@ -1,18 +1,58 @@
 import { prisma } from '@/lib/db'
-import { CHAT_MODELS } from '@/lib/models'
+import { logger } from '@/lib/logger'
+import { CHAT_MODELS, getChatModel, type ChatModelInfo } from '@/lib/models'
 
-// Cost per 1K tokens (USD) - averaged (input+output)/2 from official OpenAI pricing.
-// Chat model rates come from the model registry, so every selectable model is
-// priced and none can fall through to the generic fallback rate.
+/** USD per 1M tokens, billed separately for input and output. */
+type TokenPrices = Pick<ChatModelInfo, 'inputPer1M' | 'outputPer1M'>
+
+// Chat models no longer offered; kept so leftover usage is still priced correctly
+const RETIRED_CHAT_MODEL_PRICES = new Map<string, TokenPrices>([
+  ['gpt-5-mini', { inputPer1M: 0.25, outputPer1M: 2.0 }], // shut down 2026-12-11
+  ['gpt-5-nano', { inputPer1M: 0.05, outputPer1M: 0.4 }], // shut down 2026-12-11
+  ['gpt-4o', { inputPer1M: 2.5, outputPer1M: 10.0 }],
+  ['gpt-4o-mini', { inputPer1M: 0.15, outputPer1M: 0.6 }],
+])
+
+// Any model priced nowhere else: $1 per 1M tokens either way.
+const FALLBACK_PRICES: TokenPrices = { inputPer1M: 1, outputPer1M: 1 }
+
+const blendedPer1K = (prices: TokenPrices) => (prices.inputPer1M + prices.outputPer1M) / 2 / 1000
+
+// Cost per 1K tokens (USD) for up-front reservations, whose input/output split is
+// unknown - averaged (input+output)/2 from official OpenAI pricing. Chat model
+// rates come from the model registry, so every selectable model is priced and
+// none can fall through to the generic fallback rate.
 const COST_PER_1K_TOKENS: Record<string, number> = {
-  ...Object.fromEntries(CHAT_MODELS.map((m) => [m.id, (m.inputPer1M + m.outputPer1M) / 2 / 1000])),
-  // No longer offered; kept so leftover usage is still priced correctly
-  'gpt-5-mini': 0.001125,   // $0.25 in / $2.00 out per 1M (shut down 2026-12-11)
-  'gpt-5-nano': 0.000225,   // $0.05 in / $0.40 out per 1M (shut down 2026-12-11)
-  'gpt-4o': 0.00625,        // $2.50 in / $10.00 out per 1M
-  'gpt-4o-mini': 0.000375,  // $0.15 in / $0.60 out per 1M
+  ...Object.fromEntries(CHAT_MODELS.map((m) => [m.id, blendedPer1K(m)])),
+  ...Object.fromEntries([...RETIRED_CHAT_MODEL_PRICES].map(([id, prices]) => [id, blendedPer1K(prices)])),
   'text-embedding-3-small': 0.00002,
 }
+
+function chatModelPrices(model: string | undefined): TokenPrices {
+  return (model && (getChatModel(model) ?? RETIRED_CHAT_MODEL_PRICES.get(model))) || FALLBACK_PRICES
+}
+
+/** Tokens OpenAI reported for one request. */
+export interface TokenUsage {
+  inputTokens: number
+  outputTokens: number
+}
+
+/** What an allowed `logUsage` call booked, so the caller can settle it once the real usage is known. */
+export interface UsageReservation {
+  tenantId: string
+  /** The usage_logs row that records this request. */
+  logId: string
+  model?: string
+  tokens: number
+  cost: number
+  /** Start of the next billing month; counters reset at or after it belong to a newer month. */
+  monthEnd: Date
+}
+
+export type UsageCheck =
+  | { allowed: true; reservation: UsageReservation }
+  | { allowed: false; reason: string }
 
 /**
  * Log usage and check limits
@@ -23,16 +63,17 @@ export async function logUsage(params: {
   type: 'chat' | 'embedding' | 'crawl'
   tokens: number
   model?: string
-}): Promise<{ allowed: boolean; reason?: string }> {
+}): Promise<UsageCheck> {
   const { tenantId, chatbotId, type, tokens, model } = params
 
   // Calculate estimated cost
-  const costRate = (model && COST_PER_1K_TOKENS[model]) || 0.001
+  const costRate = (model && COST_PER_1K_TOKENS[model]) || blendedPer1K(FALLBACK_PRICES)
   const cost = (tokens / 1000) * costRate
 
   const now = new Date()
   const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1)
   const isChat = type === 'chat'
 
   // Ensure the row exists (idempotent — concurrent first-call from same tenant
@@ -106,11 +147,60 @@ export async function logUsage(params: {
   }
 
   // Log the usage event (best effort — counters are already committed)
-  await prisma.usageLog.create({
+  const log = await prisma.usageLog.create({
     data: { tenantId, chatbotId, type, tokens, cost },
+    select: { id: true },
   })
 
-  return { allowed: true }
+  return { allowed: true, reservation: { tenantId, logId: log.id, model, tokens, cost, monthEnd } }
+}
+
+const isTokenCount = (n: number) => Number.isSafeInteger(n) && n >= 0
+
+/**
+ * Replace a chat reservation's estimate with the tokens OpenAI actually
+ * reported: moves the month's token and cost counters by (actual − reserved)
+ * and rewrites the reservation's usage_logs row, so each request is still one
+ * row. Input and output are priced separately at the model's rates; cached
+ * input is charged at the full input rate.
+ *
+ * Not capped: the tokens are already spent, so this can take the tenant past a
+ * limit, and its next reservation is then refused. Leaves the counters alone
+ * once they have been reset for a newer month (the log row is still corrected).
+ *
+ * Best effort: never throws, so metering can't fail the user's response.
+ */
+export async function settleChatUsage(reservation: UsageReservation, usage: TokenUsage): Promise<void> {
+  const { tenantId, logId, monthEnd } = reservation
+  try {
+    if (!isTokenCount(usage.inputTokens) || !isTokenCount(usage.outputTokens)) {
+      logger.warn('Ignoring malformed token usage', { tenantId, logId, usage })
+      return
+    }
+
+    const prices = chatModelPrices(reservation.model)
+    const tokens = usage.inputTokens + usage.outputTokens
+    const cost = (usage.inputTokens * prices.inputPer1M + usage.outputTokens * prices.outputPer1M) / 1_000_000
+    const tokenDelta = tokens - reservation.tokens
+    const costDelta = cost - reservation.cost
+
+    await prisma.$transaction([
+      prisma.$executeRaw`
+        UPDATE usage_limits SET
+          "currentMonthTokens" = GREATEST("currentMonthTokens" + ${tokenDelta}, 0),
+          "currentMonthCost" = GREATEST("currentMonthCost" + ${costDelta}, 0),
+          "updatedAt" = NOW()
+        WHERE "tenantId" = ${tenantId}
+          AND "lastMonthReset" < ${monthEnd}
+      `,
+      prisma.usageLog.updateMany({
+        where: { id: logId, tenantId },
+        data: { tokens, cost },
+      }),
+    ])
+  } catch (error) {
+    logger.error('Failed to record actual chat usage', { tenantId, logId, error: String(error) })
+  }
 }
 
 /**

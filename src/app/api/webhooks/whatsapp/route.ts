@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db'
 import { generateChatResponse, prepareStreamingContext } from '@/lib/chat/rag'
 import { buildChatbotTools } from '@/lib/chat/tools'
 import { generateChatResponseWithTools } from '@/lib/chat/responses'
-import { logUsage } from '@/lib/usage'
+import { logUsage, settleChatUsage, type TokenUsage } from '@/lib/usage'
 import { logger } from '@/lib/logger'
 import {
   verifyWebhookSignature,
@@ -202,6 +202,7 @@ async function processWhatsAppMessage(msg: {
     content: string
     sources: Awaited<ReturnType<typeof generateChatResponse>>['sources']
     confidence: 'high' | 'medium' | 'low'
+    usage?: TokenUsage
   }
   if (tools.length > 0) {
     const { context, streamingContext } = await prepareStreamingContext(chatbot.tenantId, msg.text, {})
@@ -214,6 +215,7 @@ async function processWhatsAppMessage(msg: {
       content: result.content,
       sources: streamingContext.sources,
       confidence: streamingContext.confidence,
+      usage: result.usage,
     }
   } else {
     response = await generateChatResponse(chatbot.tenantId, msg.text, history, {
@@ -221,6 +223,9 @@ async function processWhatsAppMessage(msg: {
       model: chatbot.model,
     })
   }
+
+  // Replace the up-front estimate with the tokens OpenAI reported (best effort)
+  if (response.usage) void settleChatUsage(usageCheck.reservation, response.usage)
 
   // Save user message
   await prisma.message.create({
