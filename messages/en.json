@@ -245,6 +245,7 @@
     "temperature": "Temperature",
     "precise": "Precise",
     "creative": "Creative",
+    "temperatureUnsupported": "The selected model doesn't support temperature, so this setting has no effect.",
     "welcomeEyebrow": "Welcome Eyebrow",
     "welcomeEyebrowPlaceholder": "Knowledge assistant",
     "welcomeEyebrowHelp": "Small label above the headline. Leave blank to hide.",

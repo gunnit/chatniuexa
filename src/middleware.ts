@@ -24,8 +24,9 @@ const publicRoutes = ['/', '/login', '/signup', '/signup/check-email', '/auth/er
 // Page paths starting with these prefixes are public (article slugs, author pages)
 const publicPagePrefixes = ['/blog/', '/about/']
 
-// Routes that start with these prefixes are public
-const publicPrefixes = ['/api/auth', '/api/widget', '/api/chat', '/api/public', '/api/webhooks', '/api/voice']
+// Routes that start with these prefixes are public. PayPal calls
+// /api/billing/webhook without a session; the route verifies PayPal's signature.
+const publicPrefixes = ['/api/auth', '/api/widget', '/api/chat', '/api/public', '/api/webhooks', '/api/voice', '/api/billing/webhook']
 
 // Strip locale prefix to get the actual path
 function stripLocale(pathname: string): string {

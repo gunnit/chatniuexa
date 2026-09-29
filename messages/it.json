@@ -245,6 +245,7 @@
     "temperature": "Temperatura",
     "precise": "Preciso",
     "creative": "Creativo",
+    "temperatureUnsupported": "Il modello selezionato non supporta la temperatura, quindi questa impostazione non ha effetto.",
     "welcomeEyebrow": "Etichetta di Benvenuto",
     "welcomeEyebrowPlaceholder": "Assistente virtuale",
     "welcomeEyebrowHelp": "Piccola etichetta sopra il titolo. Lascia vuoto per nasconderla.",

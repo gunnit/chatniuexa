@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db'
 import { generateChatResponse, prepareStreamingContext } from '@/lib/chat/rag'
 import { buildChatbotTools } from '@/lib/chat/tools'
 import { generateChatResponseWithTools } from '@/lib/chat/responses'
-import { logUsage } from '@/lib/usage'
+import { logUsage, settleChatUsage, type TokenUsage } from '@/lib/usage'
 import { getCorsHeaders } from '@/lib/cors'
 import { isChatbotOriginAllowed } from '@/lib/origin'
 import { rateLimit } from '@/lib/rate-limit'
@@ -118,6 +118,7 @@ export async function POST(request: NextRequest) {
       sources: Awaited<ReturnType<typeof generateChatResponse>>['sources']
       confidence: 'high' | 'medium' | 'low'
       confidenceScore: number
+      usage?: TokenUsage
     }
 
     if (tools.length > 0) {
@@ -127,6 +128,7 @@ export async function POST(request: NextRequest) {
       const result = await generateChatResponseWithTools(context, message, history, {
         systemPrompt: chatbot.systemPrompt || undefined,
         model: chatbot.model,
+        temperature: chatbot.temperature,
         tools,
       })
       response = {
@@ -134,13 +136,18 @@ export async function POST(request: NextRequest) {
         sources: streamingContext.sources,
         confidence: streamingContext.confidence,
         confidenceScore: streamingContext.confidenceScore,
+        usage: result.usage,
       }
     } else {
       response = await generateChatResponse(chatbot.tenantId, message, history, {
         systemPrompt: chatbot.systemPrompt || undefined,
         model: chatbot.model,
+        temperature: chatbot.temperature,
       })
     }
+
+    // Replace the up-front estimate with the tokens OpenAI reported (best effort)
+    if (response.usage) void settleChatUsage(usageCheck.reservation, response.usage)
 
     // Save user message
     await prisma.message.create({

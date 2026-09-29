@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { getOpenAI } from '@/lib/openai'
 import { DEFAULT_CHAT_MODEL, chatCompletionsReasoning } from '@/lib/models'
-import { logUsage } from '@/lib/usage'
+import { logUsage, settleChatUsage } from '@/lib/usage'
 import { rateLimit } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
 import { z } from 'zod'
@@ -58,7 +58,7 @@ export async function POST(
     const { currentInstructions, template } = requestSchema.parse(body)
 
     // Check usage (~2000 tokens for the enhancement call)
-    const usage = await logUsage({
+    const usageCheck = await logUsage({
       tenantId: session.user.tenantId,
       chatbotId: id,
       type: 'chat',
@@ -66,9 +66,9 @@ export async function POST(
       model: ENHANCE_MODEL,
     })
 
-    if (!usage.allowed) {
+    if (!usageCheck.allowed) {
       return NextResponse.json(
-        { error: usage.reason || 'Usage limit exceeded' },
+        { error: usageCheck.reason || 'Usage limit exceeded' },
         { status: 429 }
       )
     }
@@ -191,6 +191,15 @@ Output ONLY the system prompt text. Do not include any preamble, explanation, or
         { error: 'AI generation failed' },
         { status: 502 }
       )
+    }
+
+    // Replace the up-front estimate with the tokens OpenAI reported (best
+    // effort) — before the empty-content check, as those tokens are billed too
+    if (completion.usage) {
+      void settleChatUsage(usageCheck.reservation, {
+        inputTokens: completion.usage.prompt_tokens,
+        outputTokens: completion.usage.completion_tokens,
+      })
     }
 
     const choice = completion.choices[0]

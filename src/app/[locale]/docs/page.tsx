@@ -1,6 +1,8 @@
 import { Link } from '@/i18n/navigation'
 import { getTranslations } from 'next-intl/server'
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://chataziendale.it'
+
 export async function generateMetadata() {
   const t = await getTranslations('metadata')
   return {
@@ -113,7 +115,7 @@ export default async function DocsPage() {
             <h2 className="text-xl font-semibold text-white mb-3">{t('embeddingTitle')}</h2>
             <p className="mb-4">{t('embeddingIntro')}</p>
             <div className="p-4 rounded-lg bg-slate-900 border border-slate-800 font-mono text-sm text-teal-400 mb-4 overflow-x-auto">
-              {`<script src="https://chataziendale.onrender.com/widget.js" data-chatbot-id="YOUR_ID"></script>`}
+              {`<script src="${APP_URL}/widget.js" data-chatbot-id="YOUR_ID"></script>`}
             </div>
             <p>{t('embeddingText')}</p>
           </section>
