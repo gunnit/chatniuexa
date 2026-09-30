@@ -24,7 +24,7 @@ This project runs on WSL with code on `/mnt/c/`. The Windows ↔ Linux filesyste
 - Use the Render dashboard/logs for real verification, not local dev server
 
 ## Render Deployment
-- **Service Name**: chataziendale
+- **Service Name**: chatniuexa
 - **Service ID**: srv-d5t62ishg0os73a32fm0
 - **Dashboard**: https://dashboard.render.com/web/srv-d5t62ishg0os73a32fm0
 - **Environment Variables**: https://dashboard.render.com/web/srv-d5t62ishg0os73a32fm0/env
@@ -33,6 +33,12 @@ This project runs on WSL with code on `/mnt/c/`. The Windows ↔ Linux filesyste
 - **Region**: Frankfurt
 - **Runtime**: Node.js (Next.js 16.1.4)
 - **Auto-deploy**: Enabled on master branch
+- **Cron job**: `iccs-weekly-refresh` (crn-d8i2lhddt1ts73esdj20) runs `npx tsx scripts/refresh-iccs-weekly.ts` every Monday 02:00 UTC — ICCS member directory + events
+
+## ICCS bot (Italian Chamber of Commerce Singapore)
+- Bot `cmn93l00d00d713vkdcnkymzn`, share token `lOLj8UA`; instructions tracked in `prompts/iccs-bot-instructions.md`, pushed live with `scripts/update-iccs-prompt.ts`
+- `node scripts/audit-bot.mjs` — live answer-quality audit (writes `audit-*` conversations, excluded from stats)
+- `node --env-file=.env scripts/iccs-stats.mjs` — read-only usage report; excludes `test-*`/`audit-*` sessions
 
 ## Tech Stack
 - Next.js with App Router
