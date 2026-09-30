@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { getSubscription } from '@/lib/paypal'
-import { applyPlanLimits, type PlanId } from '@/lib/plans'
+import { syncSubscription } from '@/lib/subscriptions'
 
 export async function POST(request: NextRequest) {
   const session = await auth()
@@ -37,28 +36,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ activated: true })
     }
 
-    // Check PayPal for actual status
-    const paypalSub = await getSubscription(subscriptionId)
+    // Check PayPal for actual status. This applies the plan and sends the
+    // confirmation email if the subscription has gone live (the webhook does
+    // the same, and whichever gets there first sends the one email).
+    const result = await syncSubscription(subscriptionId)
 
-    if (paypalSub.status === 'ACTIVE') {
-      // Activate in our database
-      await prisma.subscription.update({
-        where: { paypalSubscriptionId: subscriptionId },
-        data: {
-          status: 'ACTIVE',
-          currentPeriodStart: new Date(paypalSub.billing_info?.last_payment?.time || new Date()),
-          currentPeriodEnd: new Date(paypalSub.billing_info?.next_billing_time || new Date()),
-        },
-      })
-
-      // Apply plan limits
-      await applyPlanLimits(sub.tenantId, sub.planId as PlanId)
-
+    if (result?.status === 'ACTIVE') {
       return NextResponse.json({ activated: true })
     }
 
     // Not yet active on PayPal's side
-    return NextResponse.json({ activated: false, paypalStatus: paypalSub.status })
+    return NextResponse.json({ activated: false, paypalStatus: result?.paypalStatus })
   } catch (error) {
     console.error('Activate error:', error)
     return NextResponse.json({ error: 'Failed to activate subscription' }, { status: 500 })
