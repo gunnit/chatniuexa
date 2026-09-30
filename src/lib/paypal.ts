@@ -82,19 +82,43 @@ export async function createSubscription(
   }
 }
 
-export async function getSubscription(subscriptionId: string) {
+/** The fields of a PayPal subscription this app reads. */
+export interface PayPalSubscription {
+  id: string
+  status: string
+  billing_info?: {
+    next_billing_time?: string
+    last_payment?: { time?: string }
+  }
+}
+
+async function requestSubscription(subscriptionId: string): Promise<Response> {
   const token = await getPayPalAccessToken()
 
-  const res = await fetch(
-    `${PAYPAL_API_BASE}/v1/billing/subscriptions/${subscriptionId}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    }
-  )
+  return fetch(`${PAYPAL_API_BASE}/v1/billing/subscriptions/${subscriptionId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  })
+}
 
+export async function getSubscription(subscriptionId: string) {
+  const res = await requestSubscription(subscriptionId)
+
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`PayPal get subscription failed: ${res.status} ${text}`)
+  }
+
+  return res.json()
+}
+
+/** Like getSubscription, but resolves to null when PayPal has no subscription with this ID. */
+export async function findSubscription(subscriptionId: string): Promise<PayPalSubscription | null> {
+  const res = await requestSubscription(subscriptionId)
+
+  if (res.status === 404) return null
   if (!res.ok) {
     const text = await res.text()
     throw new Error(`PayPal get subscription failed: ${res.status} ${text}`)

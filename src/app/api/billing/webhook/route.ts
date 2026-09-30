@@ -4,6 +4,7 @@ import { verifyWebhookSignature, getSubscription } from '@/lib/paypal'
 import { applyPlanLimits, PLANS, type PlanId } from '@/lib/plans'
 import { sendBillingConfirmation } from '@/lib/email'
 import { logger } from '@/lib/logger'
+import { expireIfPaidPeriodOver, expireSubscription } from '@/lib/subscription-expiry'
 
 // PayPal sends these with every delivery, and verification needs all of them.
 const PAYPAL_SIGNATURE_HEADERS = [
@@ -56,7 +57,10 @@ export async function POST(request: NextRequest) {
           where: { paypalSubscriptionId: subscriptionId },
         })
 
-        if (existing) {
+        // PayPal can't reactivate a cancelled or expired subscription, so an
+        // ACTIVATED for one is a late or repeated delivery. Applying it would
+        // put the tenant back on a paid plan with nothing left to end it.
+        if (existing && existing.status !== 'CANCELLED' && existing.status !== 'EXPIRED') {
           // Update status
           await prisma.subscription.update({
             where: { paypalSubscriptionId: subscriptionId },
@@ -99,15 +103,16 @@ export async function POST(request: NextRequest) {
         })
 
         if (sub) {
-          await prisma.subscription.update({
-            where: { paypalSubscriptionId: subscriptionId },
+          // An expired subscription has already ended; a late CANCELLED leaves it be.
+          const { count } = await prisma.subscription.updateMany({
+            where: { id: sub.id, status: { not: 'EXPIRED' } },
             data: { status: 'CANCELLED' },
           })
 
-          // Downgrade to free at period end (or immediately if past period)
-          const now = new Date()
-          if (sub.currentPeriodEnd <= now) {
-            await applyPlanLimits(sub.tenantId, 'free')
+          // The tenant keeps its plan until the paid period ends. If that's
+          // already past, end it now; otherwise the expiry sweep does it then.
+          if (count > 0) {
+            await expireIfPaidPeriodOver({ ...sub, status: 'CANCELLED' })
           }
         }
         break
@@ -131,19 +136,17 @@ export async function POST(request: NextRequest) {
       }
 
       case 'BILLING.SUBSCRIPTION.EXPIRED': {
-        // Fires when a CANCELLED subscription reaches the end of its paid
-        // period — this is where the actual downgrade happens.
+        // Ours renew until cancelled, so this can't be relied on to end a
+        // cancelled subscription: the expiry sweep
+        // (src/lib/subscription-expiry.ts) does that. If it does arrive, the
+        // subscription is over whatever its status.
         const subscriptionId = resource.id
         const sub = await prisma.subscription.findUnique({
           where: { paypalSubscriptionId: subscriptionId },
         })
 
         if (sub) {
-          await prisma.subscription.update({
-            where: { paypalSubscriptionId: subscriptionId },
-            data: { status: 'EXPIRED' },
-          })
-          await applyPlanLimits(sub.tenantId, 'free')
+          await expireSubscription(sub, ['PENDING', 'ACTIVE', 'CANCELLED', 'SUSPENDED'])
         }
         break
       }
@@ -156,7 +159,10 @@ export async function POST(request: NextRequest) {
             where: { paypalSubscriptionId: billingAgreementId },
           })
 
-          if (sub) {
+          // A payment reported after the cancellation (deliveries can arrive
+          // late or out of order) renews nothing: the subscription still ends
+          // with its paid period, which the expiry sweep checks with PayPal.
+          if (sub && sub.status !== 'CANCELLED' && sub.status !== 'EXPIRED') {
             const paypalSub = await getSubscription(billingAgreementId)
             await prisma.subscription.update({
               where: { paypalSubscriptionId: billingAgreementId },
