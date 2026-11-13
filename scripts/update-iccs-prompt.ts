@@ -1,8 +1,12 @@
 /**
- * Update the ICCS bot's system prompt from prompts/iccs-bot-instructions.md.
+ * Update the ICCS bot's system prompt from prompts/iccs-bot-instructions.md, and
+ * switch on its clickable follow-up questions (`followUpSuggestions`).
  *
  * Extracts the fenced code block from the markdown file and writes it into the
  * `systemPrompt` field of the chatbot identified by the given shareToken.
+ *
+ * Run it AFTER the deploy that adds the followUpSuggestions column has finished
+ * (the prompt is saved either way; the switch needs the new column).
  *
  * Usage:
  *   npx tsx scripts/update-iccs-prompt.ts [shareToken] [promptMdPath]
@@ -47,6 +51,22 @@ async function main() {
   })
 
   console.log('OK — system prompt updated.')
+
+  // Separate write so an old database (column not deployed yet) still gets the prompt.
+  try {
+    await prisma.chatbot.update({
+      where: { id: chatbot.id },
+      data: { followUpSuggestions: true },
+    })
+    console.log('OK — follow-up suggestions switched on.')
+  } catch (e) {
+    console.error(
+      'Could not switch on follow-up suggestions — has the deploy with migration ' +
+        '20261113000000_add_follow_up_suggestions finished? Re-run this script after it has.',
+    )
+    console.error(e instanceof Error ? e.message : e)
+    process.exitCode = 1
+  }
 }
 
 main()
