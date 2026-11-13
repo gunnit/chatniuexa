@@ -3,7 +3,10 @@ import { prisma } from '@/lib/db'
 import { generateChatResponse, prepareStreamingContext } from '@/lib/chat/rag'
 import { buildChatbotTools } from '@/lib/chat/tools'
 import { generateChatResponseWithTools } from '@/lib/chat/responses'
-import { logUsage, settleChatUsage, type TokenUsage } from '@/lib/usage'
+import { chronologicalHistory, recentMessagesInclude } from '@/lib/chat/history'
+import { getLinkRewrite } from '@/lib/chat/member-links'
+import { generateFollowUpSuggestions } from '@/lib/chat/suggestions'
+import { logUsage, recordAuxiliaryChatUsage, settleChatUsage, type TokenUsage } from '@/lib/usage'
 import { getCorsHeaders } from '@/lib/cors'
 import { isChatbotOriginAllowed } from '@/lib/origin'
 import { rateLimit } from '@/lib/rate-limit'
@@ -83,12 +86,7 @@ export async function POST(request: NextRequest) {
         chatbotId,
         sessionId,
       },
-      include: {
-        messages: {
-          orderBy: { createdAt: 'asc' },
-          take: 20, // Last 20 messages for context
-        },
-      },
+      include: recentMessagesInclude, // the latest 20 messages, newest first
     })
 
     if (!conversation) {
@@ -103,15 +101,15 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Build conversation history
-    const history = conversation.messages.map((m) => ({
-      role: m.role.toLowerCase() as 'user' | 'assistant',
-      content: m.content,
-    }))
+    // Build conversation history (the latest messages, oldest first)
+    const history = chronologicalHistory(conversation.messages)
 
     // Decide path: bots with tools enabled answer via the Responses API; all
     // other bots use the unchanged Chat Completions RAG path.
-    const tools = await buildChatbotTools(chatbot)
+    const [tools, rewriteLink] = await Promise.all([
+      buildChatbotTools(chatbot),
+      getLinkRewrite(chatbot.tenantId, chatbot.id),
+    ])
 
     let response: {
       content: string
@@ -130,6 +128,7 @@ export async function POST(request: NextRequest) {
         model: chatbot.model,
         temperature: chatbot.temperature,
         tools,
+        rewriteLink,
       })
       response = {
         content: result.content,
@@ -143,11 +142,24 @@ export async function POST(request: NextRequest) {
         systemPrompt: chatbot.systemPrompt || undefined,
         model: chatbot.model,
         temperature: chatbot.temperature,
+        rewriteLink,
       })
     }
 
     // Replace the up-front estimate with the tokens OpenAI reported (best effort)
     if (response.usage) void settleChatUsage(usageCheck.reservation, response.usage)
+
+    // Follow-up questions (never throws; null = none), generated while the messages are saved
+    const suggestionsPromise = chatbot.followUpSuggestions
+      ? generateFollowUpSuggestions({
+          botName: chatbot.name,
+          botDescription: chatbot.description,
+          history,
+          userMessage: message,
+          answer: response.content,
+          sourceTitles: response.sources.map((s) => s.documentTitle),
+        })
+      : Promise.resolve(null)
 
     // Save user message
     await prisma.message.create({
@@ -168,6 +180,17 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    const suggestionsResult = await suggestionsPromise
+    if (suggestionsResult?.usage) {
+      void recordAuxiliaryChatUsage({
+        reservation: usageCheck.reservation,
+        chatbotId: chatbot.id,
+        type: 'suggestions',
+        model: suggestionsResult.model,
+        usage: suggestionsResult.usage,
+      })
+    }
+
     return NextResponse.json(
       {
         message: {
@@ -176,6 +199,7 @@ export async function POST(request: NextRequest) {
           sources: response.sources,
           confidence: response.confidence,
           confidenceScore: response.confidenceScore,
+          suggestions: suggestionsResult?.suggestions ?? [],
         },
       },
       { headers: corsHeaders }

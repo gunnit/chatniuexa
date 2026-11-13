@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback, useMemo, CSSProperties } from 'react'
+import { cleanSuggestionList } from '@/lib/chat/suggestion-list'
 
 interface Source {
   chunkId: string
@@ -18,7 +19,11 @@ interface Message {
   isStreaming?: boolean
   messageId?: string
   reaction?: 'up' | 'down'
+  /** Follow-up questions offered under this answer (the latest answer only is shown). */
+  suggestions?: string[]
 }
+
+const newPublicSessionId = () => `pub-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
 
 interface ChatbotConfig {
   id: string
@@ -135,9 +140,7 @@ export default function PublicChatClient({ chatbot }: { chatbot: ChatbotConfig }
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [sessionId, setSessionId] = useState(
-    () => `pub-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-  )
+  const [sessionId, setSessionId] = useState(newPublicSessionId)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [lang, setLang] = useState('EN')
@@ -188,6 +191,8 @@ export default function PublicChatClient({ chatbot }: { chatbot: ChatbotConfig }
 
   const clearChat = useCallback(() => {
     setMessages([])
+    // A cleared chat is a new conversation for the bot too, not more of the old one.
+    setSessionId(newPublicSessionId())
     setShowClearConfirm(false)
     try {
       localStorage.removeItem(storageKey)
@@ -263,6 +268,7 @@ export default function PublicChatClient({ chatbot }: { chatbot: ChatbotConfig }
               content: data.message.content,
               sources: data.message.sources,
               messageId: data.message.id,
+              suggestions: cleanSuggestionList(data.message.suggestions),
             },
           ])
           return
@@ -277,8 +283,13 @@ export default function PublicChatClient({ chatbot }: { chatbot: ChatbotConfig }
         if (!reader) throw new Error('No response body')
         const decoder = new TextDecoder()
         let buffer = ''
-        let metadata: { sources?: Source[]; messageId?: string } | null = null
+        let metadata: { sources?: Source[] } | null = null
+        const update = (patch: Partial<Message>) =>
+          setMessages((prev) => prev.map((msg) => (msg.id === assistantMsgId ? { ...msg, ...patch } : msg)))
 
+        // Event order: metadata → content × N → [DONE] → messageId → suggestions.
+        // messageId and suggestions arrive AFTER [DONE], so each is applied when it
+        // arrives (reactions need the saved message id).
         while (true) {
           const { done, value } = await reader.read()
           if (done) break
@@ -290,27 +301,17 @@ export default function PublicChatClient({ chatbot }: { chatbot: ChatbotConfig }
             if (!line.startsWith('data: ')) continue
             const data = line.slice(6)
             if (data === '[DONE]') {
-              setMessages((prev) =>
-                prev.map((msg) =>
-                  msg.id === assistantMsgId
-                    ? {
-                        ...msg,
-                        isStreaming: false,
-                        sources: metadata?.sources,
-                        messageId: metadata?.messageId,
-                      }
-                    : msg
-                )
-              )
+              update({ isStreaming: false, sources: metadata?.sources })
               continue
             }
             try {
               const parsed = JSON.parse(data)
               if (parsed.type === 'metadata') {
                 metadata = parsed
+              } else if (parsed.type === 'suggestions') {
+                update({ suggestions: cleanSuggestionList(parsed.suggestions) })
               } else if (parsed.messageId) {
-                metadata = metadata || {}
-                metadata.messageId = parsed.messageId
+                update({ messageId: parsed.messageId })
               } else if (parsed.content) {
                 setMessages((prev) =>
                   prev.map((msg) =>
@@ -323,6 +324,12 @@ export default function PublicChatClient({ chatbot }: { chatbot: ChatbotConfig }
             }
           }
         }
+        // A stream that closed without [DONE] still ends the answer.
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMsgId && msg.isStreaming ? { ...msg, isStreaming: false, sources: metadata?.sources } : msg
+          )
+        )
       } catch (err) {
         setMessages((prev) => {
           const filtered = prev.filter((m) => m.id !== assistantMsgId)
@@ -350,6 +357,10 @@ export default function PublicChatClient({ chatbot }: { chatbot: ChatbotConfig }
   }
 
   const isEmpty = messages.length === 0
+  // Follow-up chips for the latest answer, once it is complete.
+  const lastMessage = messages[messages.length - 1]
+  const followUps =
+    !loading && lastMessage?.role === 'assistant' && !lastMessage.isStreaming ? lastMessage.suggestions ?? [] : []
 
   const bgTint = `${accent}14`
   const bgTint2 = `${accent}08`
@@ -795,6 +806,25 @@ export default function PublicChatClient({ chatbot }: { chatbot: ChatbotConfig }
               >
                 {prompts.map((p, i) => (
                   <PromptChip key={i} accent={accent} onClick={() => sendMessage(p)} disabled={loading}>
+                    {p}
+                  </PromptChip>
+                ))}
+              </div>
+            )}
+
+            {followUps.length > 0 && (
+              <div
+                aria-label="Suggested follow-up questions"
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 8,
+                  justifyContent: 'center',
+                  marginBottom: 14,
+                }}
+              >
+                {followUps.map((p) => (
+                  <PromptChip key={p} accent={accent} onClick={() => sendMessage(p)} disabled={loading}>
                     {p}
                   </PromptChip>
                 ))}

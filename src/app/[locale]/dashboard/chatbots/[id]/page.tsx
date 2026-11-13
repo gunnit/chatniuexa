@@ -21,6 +21,7 @@ interface Chatbot {
   showBranding: boolean
   showSources: boolean
   suggestedPrompts: string[]
+  followUpSuggestions: boolean
   chatIconType: string | null
   chatIconPreset: string | null
   chatIconImage: string | null
@@ -246,6 +247,7 @@ export default function ChatbotConfigPage({
   const [welcomeMessage, setWelcomeMessage] = useState('')
   const [showBranding, setShowBranding] = useState(true)
   const [showSources, setShowSources] = useState(true)
+  const [followUpSuggestions, setFollowUpSuggestions] = useState(false)
   const [webSearchEnabled, setWebSearchEnabled] = useState(false)
   const [voiceEnabled, setVoiceEnabled] = useState(false)
   const [voiceName, setVoiceName] = useState('marin')
@@ -303,6 +305,7 @@ export default function ChatbotConfigPage({
           setWelcomeMessage(c.welcomeMessage || 'Hello! How can I help you?')
           setShowBranding(c.showBranding)
           setShowSources(c.showSources ?? true)
+          setFollowUpSuggestions(c.followUpSuggestions ?? false)
           setWebSearchEnabled(c.webSearchEnabled ?? false)
           setVoiceEnabled(c.voiceEnabled ?? false)
           setVoiceName(c.voiceName ?? 'marin')
@@ -357,6 +360,7 @@ export default function ChatbotConfigPage({
           welcomeMessage: welcomeMessage || undefined,
           showBranding,
           showSources,
+          followUpSuggestions,
           webSearchEnabled,
           voiceEnabled,
           voiceName,
@@ -967,6 +971,14 @@ export default function ChatbotConfigPage({
                 <label htmlFor="showSources" className="text-sm text-slate-700">
                   <div className="font-medium">{t('showSources')}</div>
                   <div className="text-xs text-slate-500 mt-0.5">{t('showSourcesDesc')}</div>
+                </label>
+              </div>
+
+              <div className="flex items-start gap-3 p-4 rounded-xl bg-slate-50">
+                <input type="checkbox" id="followUpSuggestions" checked={followUpSuggestions} onChange={(e) => setFollowUpSuggestions(e.target.checked)} className="w-5 h-5 mt-0.5 rounded text-teal-600 focus:ring-teal-500" />
+                <label htmlFor="followUpSuggestions" className="text-sm text-slate-700">
+                  <div className="font-medium">{t('followUpSuggestions')}</div>
+                  <div className="text-xs text-slate-500 mt-0.5">{t('followUpSuggestionsDesc')}</div>
                 </label>
               </div>
 

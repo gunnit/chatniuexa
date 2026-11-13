@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, use } from 'react'
 import { Link } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
+import { cleanSuggestionList } from '@/lib/chat/suggestion-list'
 
 interface Source {
   chunkId: string
@@ -25,6 +26,7 @@ interface Message {
   messageId?: string
   reaction?: 'up' | 'down'
   feedbackHint?: string
+  suggestions?: string[]
 }
 
 interface Chatbot {
@@ -353,6 +355,7 @@ export default function ChatbotTestPage({
         confidence?: Confidence
         messageId?: string
       } | null = null
+      let suggestions: string[] = []
 
       while (true) {
         const { done, value } = await reader.read()
@@ -374,6 +377,8 @@ export default function ChatbotTestPage({
                 sources: parsed.sources,
                 confidence: parsed.confidence,
               }
+            } else if (parsed.type === 'suggestions') {
+              suggestions = cleanSuggestionList(parsed.suggestions)
             } else if (parsed.messageId) {
               metadata = metadata || {}
               metadata.messageId = parsed.messageId
@@ -401,6 +406,7 @@ export default function ChatbotTestPage({
                 sources: metadata?.sources,
                 confidence: metadata?.confidence,
                 messageId: metadata?.messageId,
+                suggestions,
               }
             : msg
         )
@@ -620,7 +626,7 @@ export default function ChatbotTestPage({
             </div>
           )}
 
-          {messages.map((message) => {
+          {messages.map((message, index) => {
             if (message.role === 'user') {
               return (
                 <div key={message.id} className="flex justify-end">
@@ -767,6 +773,33 @@ export default function ChatbotTestPage({
                           {message.feedbackHint}
                         </span>
                       )}
+                    </div>
+                  )}
+
+                  {/* Follow-up suggestions — latest answer only */}
+                  {index === messages.length - 1 && !loading && message.suggestions && message.suggestions.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pl-1" aria-label="Suggested follow-up questions">
+                      {message.suggestions.map((q) => (
+                        <button
+                          key={q}
+                          type="button"
+                          onClick={() => sendMessage(q)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-left text-[13px] text-slate-700 bg-white border border-slate-200 rounded-xl transition-colors"
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = accent
+                            e.currentTarget.style.color = accent
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = ''
+                            e.currentTarget.style.color = ''
+                          }}
+                        >
+                          <span>{q}</span>
+                          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: accent }}>
+                            <path d="M3 7h8M7 3l4 4-4 4" />
+                          </svg>
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>

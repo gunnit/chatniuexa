@@ -7,6 +7,8 @@
     "build": "prisma generate && node scripts/pre-migrate.js && prisma migrate deploy && node scripts/setup-database.js && npm run lint:articles && next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "node --import tsx --test \"src/**/*.test.ts\" \"scripts/**/*.test.mjs\"",
+    "test:widget": "node tests/widget-e2e.mjs",
     "lint:articles": "tsx scripts/lint-articles.ts",
     "aeo:ping": "tsx scripts/indexnow-ping.ts",
     "aeo:baseline": "tsx scripts/analyze-crawler-logs.ts"
