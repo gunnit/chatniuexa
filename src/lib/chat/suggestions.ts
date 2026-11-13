@@ -48,7 +48,7 @@ const SYSTEM_PROMPT = `You write the follow-up questions shown as clickable butt
 Return exactly ${MAX_SUGGESTIONS} questions the visitor is most likely to want to ask next.
 - Write each one as the visitor would type it to the assistant, in the language of the visitor's last message.
 - Move the conversation forward: go one step deeper into the answer (details about something it named, how to contact them, how to join or register, a related member, event or topic) or take the natural next step. Never repeat or rephrase the visitor's question, and never ask for something the answer already gives in full.
-- Only suggest questions this assistant can answer, given what it covers (described below). Never suggest something the answer said it cannot help with.
+- Only suggest questions this assistant can answer, given what it covers (described below). Never suggest something the answer said it cannot help with, personal help it cannot give (writing an email or CV, career, legal or business advice), other organisations, or a private person's contact details.
 - Use names exactly as they appear in the answer. Do not introduce facts, prices or dates that are not in the conversation.
 - Each question at most 60 characters, a single question ending with "?", no numbering, quotes or emojis.
 - The ${MAX_SUGGESTIONS} questions must be clearly different from each other.`
