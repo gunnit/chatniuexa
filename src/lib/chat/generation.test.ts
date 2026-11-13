@@ -30,6 +30,7 @@ let generateChatResponse: typeof import('./rag').generateChatResponse
 let CHAT_MAX_COMPLETION_TOKENS: number
 let generateStreamingChatResponseWithTools: typeof import('./responses').generateStreamingChatResponseWithTools
 let generateChatResponseWithTools: typeof import('./responses').generateChatResponseWithTools
+let partSeparator: typeof import('./responses').partSeparator
 let generateFollowUpSuggestions: typeof import('./suggestions').generateFollowUpSuggestions
 let SUGGESTIONS_MODEL: string
 let createLinkRewrite: typeof import('./links').createLinkRewrite
@@ -37,7 +38,7 @@ let index: MemberLinkIndex | null
 
 before(async () => {
   ;({ generateStreamingChatResponse, generateChatResponse, CHAT_MAX_COMPLETION_TOKENS } = await import('./rag'))
-  ;({ generateStreamingChatResponseWithTools, generateChatResponseWithTools } = await import('./responses'))
+  ;({ generateStreamingChatResponseWithTools, generateChatResponseWithTools, partSeparator } = await import('./responses'))
   ;({ generateFollowUpSuggestions, SUGGESTIONS_MODEL } = await import('./suggestions'))
   const links = await import('./links')
   createLinkRewrite = links.createLinkRewrite
@@ -147,6 +148,45 @@ test('responses stream: an upstream error event is surfaced as a cut-off notice'
     ])
   const { content } = await readSse(await generateStreamingChatResponseWithTools('ctx', 'what events are coming up?', [], { model: 'gpt-6-luna', tools: [{ type: 'web_search' }] }))
   assert.equal(content, 'Partial answer\n\n_(Answer cut short: type “continue” for the rest.)_')
+})
+
+test('responses: separate message parts never run together', async () => {
+  assert.equal(partSeparator('Here are the brands:', '- [Gucci](x)'), '\n\n')
+  assert.equal(partSeparator('Here are the brands:\n', '- [Gucci](x)'), '\n')
+  assert.equal(partSeparator('Here are the brands:', '\n- [Gucci](x)'), '\n')
+  assert.equal(partSeparator('Done.\n\n', 'Next'), '')
+  assert.equal(partSeparator('', 'First part'), '')
+
+  // A preamble before a web search and the answer after it arrive as two message items.
+  const delta = (d: string, item: string) => ({ event: 'response.output_text.delta', data: { type: 'response.output_text.delta', delta: d, item_id: item, output_index: 0, content_index: 0, sequence_number: 1 } })
+  handler = () =>
+    sse([
+      delta('Here are the Italian ', 'm1'),
+      delta('fashion brands:', 'm1'),
+      delta('', 'm2'),
+      delta('- [Gucci](https://www.italchamber.org.sg/x?utm_source=openai)', 'm2'),
+      delta('\n- Prada', 'm2'),
+      { event: 'response.completed', data: { type: 'response.completed', sequence_number: 9, response: { id: 'r', status: 'completed', usage: { input_tokens: 5, output_tokens: 5, total_tokens: 10 } } } },
+    ])
+  const streamed = await readSse(await generateStreamingChatResponseWithTools('ctx', 'which italian fashion brands are members?', [], { model: 'gpt-6-luna', tools: [{ type: 'web_search' }] }))
+  assert.equal(streamed.content, 'Here are the Italian fashion brands:\n\n- [Gucci](https://www.italchamber.org.sg/x)\n- Prada')
+
+  const message = (id: string, text: string) => ({ type: 'message', id, role: 'assistant', status: 'completed', content: [{ type: 'output_text', annotations: [], text }] })
+  handler = () =>
+    new Response(
+      JSON.stringify({
+        id: 'r',
+        object: 'response',
+        created_at: 1,
+        status: 'completed',
+        model: 'gpt-6-luna',
+        output: [message('m1', 'Here are the Italian fashion brands:'), { type: 'web_search_call', id: 'ws', status: 'completed' }, message('m2', '- Gucci\n- Prada')],
+        usage: { input_tokens: 5, output_tokens: 5, total_tokens: 10 },
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    )
+  const whole = await generateChatResponseWithTools('ctx', 'which italian fashion brands are members?', [], { model: 'gpt-6-luna', tools: [{ type: 'web_search' }] })
+  assert.equal(whole.content, 'Here are the Italian fashion brands:\n\n- Gucci\n- Prada')
 })
 
 test('non-streaming tool answer (WhatsApp, /api/chat): same link clean-up and cut-off notice', async () => {

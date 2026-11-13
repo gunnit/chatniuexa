@@ -45,6 +45,33 @@ export interface ToolChatResult {
   usage?: TokenUsage
 }
 
+/**
+ * Newlines to put between two separately generated parts of one answer, e.g. a
+ * short preamble the model writes before a web search and the answer it writes
+ * after it. Both the SDK's `output_text` and a plain concatenation of the deltas
+ * join such parts with nothing ("…fashion brands:- [Bottega"), and the widget only
+ * renders a list that starts after a blank line. Returns what makes the blank line.
+ * Exported for tests.
+ */
+export function partSeparator(before: string, next: string): string {
+  if (!before || !next) return ''
+  const trailing = before.length - before.replace(/\n+$/, '').length
+  const leading = next.length - next.replace(/^\n+/, '').length
+  return '\n'.repeat(Math.max(0, 2 - trailing - leading))
+}
+
+/** The answer text of a Responses API result, with its message parts kept apart. */
+function outputText(response: OpenAI.Responses.Response): string {
+  let text = ''
+  for (const item of response.output ?? []) {
+    if (item.type !== 'message') continue
+    for (const part of item.content) {
+      if (part.type === 'output_text' && part.text) text += partSeparator(text, part.text) + part.text
+    }
+  }
+  return text
+}
+
 function buildInstructions(systemPrompt: string, context: string): string {
   const base = systemPrompt && systemPrompt.trim().length > 0 ? systemPrompt : DEFAULT_SYSTEM_PROMPT
   const withFormatting =
@@ -92,7 +119,7 @@ export async function generateChatResponseWithTools(
     ...temperatureParam(model, temperature),
   })
 
-  let content = rewriteMarkdownLinks(response.output_text?.trim() || '', rewriteLink)
+  let content = rewriteMarkdownLinks(outputText(response).trim(), rewriteLink)
   if (!content.trim()) {
     content = failureNotice(userMessage)
   } else if (response.status === 'incomplete' || response.status === 'failed') {
@@ -161,9 +188,18 @@ export async function generateStreamingChatResponseWithTools(
         let sent = ''
         // Why the answer ended early, if it did (token limit, filter, upstream failure).
         let cutOff: string | null = null
+        // The text part the last delta belonged to, and the last characters of the
+        // answer so far: a new part (message item) starts after a blank line.
+        let part: string | null = null
+        let lastChars = ''
         for await (const event of stream) {
           if (event.type === 'response.output_text.delta') {
-            const out = links.push(event.delta)
+            if (!event.delta) continue
+            const key = `${event.item_id}:${event.content_index}`
+            const text = (part !== null && key !== part ? partSeparator(lastChars, event.delta) : '') + event.delta
+            part = key
+            lastChars = (lastChars + text).slice(-2)
+            const out = links.push(text)
             sent += out
             send(controller, out)
           } else if (
