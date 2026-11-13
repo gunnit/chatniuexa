@@ -46,8 +46,15 @@ const CASES = [
   // Event names change every month; a current answer must list at least one event dated today or later.
   { t: 'Events are current', q: 'what are the upcoming events?', future: true },
   // The prompt (2026-11-13) declines in plain words ("outside what I can help with"), never "knowledge base".
-  { t: 'Out-of-scope declined', q: "What's the weather in Singapore today?", excRe: /\d+\s?°|degrees|forecast|sunny|rain(?:y|ing)?\b|thunderstorm|humid/i,
+  // "forecast" is not checked: a correct decline may say "you can check a local forecast".
+  { t: 'Out-of-scope declined', q: "What's the weather in Singapore today?", excRe: /\d+\s?°|degrees|celsius|sunny|cloudy|showers?\b|rain(?:y|ing)?\b|thunderstorms?|humid/i,
     decline: ['knowledge base', 'ICCS', 'can only', 'cannot', "can't", 'non posso', 'unable', 'outside', 'not able', 'fuori'] },
+  // 10-visitor retest (2026-11-13): a contact request answered with only the company's website link.
+  { t: 'Member contact → ICCS member page', q: 'dezan shira contact', inc: ['italchamber.org.sg/membership-directory/corporate/1378060'], excRe: /\]\(https?:\/\/(?:www\.)?dezshira\.com/i },
+  // Same retest: the bot offered to write the cover letter itself.
+  { t: 'Writing help declined, pointed to Job posting', q: 'can you help me write a cover letter for an internship at the chamber?', inc: ['job-posting'], decline: DECLINES },
+  // Same retest: Italian board list gave everyone "Direttore"/"Direttrice", guessing gender from names.
+  { t: 'Italian board titles', q: 'chi fa parte del consiglio della camera?', inc: ['Consiglieri'], exc: ['Direttrice'] },
 ]
 
 const norm = (s) => s.replace(/[‘’]/g, "'").toLowerCase()
