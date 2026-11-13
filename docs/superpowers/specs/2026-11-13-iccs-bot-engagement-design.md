@@ -17,8 +17,10 @@ answer itself; changes that make other tenants' bots worse.
 **Approaches considered**
 
 1. *Separate small model call after the answer (chosen).* Runs while the answer is
-   saved, sent as a trailing `suggestions` SSE event; the widget releases the composer on
-   `[DONE]` and attaches the chips when they arrive. Never delays or changes the answer;
+   saved, sent as a trailing `suggestions` SSE event; the clients show the answer on
+   `[DONE]`, release the composer when the `messageId` event confirms the answer is saved
+   (so the next question always has it in its history) and attach the chips when they
+   arrive. Never delays or changes the answer;
    works for both the Chat Completions and the web-search (Responses) path; failure just
    means no chips.
 2. Same call, answer plus a delimited JSON tail. One call fewer, but the stream has to
@@ -41,8 +43,11 @@ and in the dashboard test chat. Not on WhatsApp or voice.
 - Markdown link rewriter on every answer, streaming-safe (holds text back only inside an
   open `[...](...)`): strips `utm_source=openai`; for tenants with a `[Sector: …]`
   member directory, repairs member-page links with unknown ids from the member's name or
-  un-links them, and fixes a member name linked to another member's page. Directory
-  index cached 10 minutes per tenant.
+  un-links them, and fixes a member name linked to another member's page. A member page
+  must end in a numeric id and its path pattern must be shared by at least 3 directory
+  entries, so one odd entry cannot widen the guard to a whole site. Directory index
+  cached 10 minutes per tenant; it reads every complete `[Sector:` document, like the
+  RAG directory retrieval does.
 - Cut-off answers (`finish_reason` length / content_filter, Responses incomplete /
   failed / error events) are logged and end with a short notice in the visitor's
   language (Italian or English guess); an empty answer becomes an apology. Output budget
@@ -81,6 +86,12 @@ Playbook: `docs/iccs-visitor-simulation.md`.
 ## Left open
 
 - Fuzzy member-name matching in retrieval ("belluzo").
+- Not covered by the link guard: bare URLs (tracking parameters stay there too),
+  reference-style links, links with a title, invented URLs outside the member-page
+  pattern.
+- A suggestions call that times out (8 s) is not metered (under-billing only).
+- Browser tabs share the widget's stored session (as they already shared the stored
+  transcript); on a shared computer the next visitor within 24 h continues it.
 - Whether the simulation should run against a separate staging bot to spare the
   Chamber's token allowance.
 - Click-through tracking for the chips (not measured yet).

@@ -134,11 +134,38 @@ test('checkMemberLink classifies member links', () => {
 
 test('ambiguous member names are never used for repairs', () => {
   const dup = buildMemberLinkIndex(
-    `[Sector: A] **[Twin Co Pte Ltd](${M('1')})** — a\n[Sector: B] **[Twin Co](${M('2')})** — b`,
+    `[Sector: A] **[Twin Co Pte Ltd](${M('1')})** — a\n[Sector: B] **[Twin Co](${M('2')})** — b\n[Sector: C] **[Other Srl](${M('4')})** — c`,
   )!
   assert.equal(dup.names.get(normalizeMemberName('Twin Co')), null)
   assert.deepEqual(checkMemberLink(dup, 'Twin Co', M('3')), { kind: 'invalid' })
   assert.deepEqual(checkMemberLink(dup, 'Twin Co', M('2')), { kind: 'valid', url: M('2') })
+})
+
+test('one odd directory entry cannot turn the rest of a site into member links', () => {
+  const odd = buildMemberLinkIndex(
+    DIRECTORY +
+      '\n[Sector: X] **[Odd Member](https://www.italchamber.org.sg/odd-member)** — slug page' +
+      '\n[Sector: X] **[Acme Pte Ltd](https://acme.com/en/)** — own website' +
+      '\n[Sector: X] **[Numbered](https://acme.com/products/123)** — a lone numeric page',
+  )!
+  assert.deepEqual(odd.prefixes, ['italchamber.org.sg/membership-directory/corporate/'])
+  assert.deepEqual(checkMemberLink(odd, 'membership fees', 'https://www.italchamber.org.sg/become-member'), { kind: 'not-member' })
+  assert.deepEqual(checkMemberLink(odd, 'Acme', 'https://acme.com/en/contact'), { kind: 'not-member' })
+  assert.deepEqual(checkMemberLink(odd, 'a product', 'https://acme.com/products/456'), { kind: 'not-member' })
+  // Fewer than 3 entries sharing a member-page pattern → no guard at all
+  assert.equal(buildMemberLinkIndex(`[Sector: A] **[One](${M('1')})** — a\n[Sector: B] **[Two](${M('2')})** — b`), null)
+})
+
+test('a 300-character link text closes the same way streamed or whole', () => {
+  const rw: LinkRewrite = (t, u) => `<${t.length}|${u}>`
+  const text = `[${'x'.repeat(300)}](https://a.sg/?utm_source=openai) tail`
+  const whole = rewriteMarkdownLinks(text, rw)
+  assert.equal(whole, '<300|https://a.sg/?utm_source=openai> tail')
+  const s = createMarkdownLinkStream(rw)
+  const split = 301 // the chunk ends right before the closing "]"
+  assert.equal(s.push(text.slice(0, split)) + s.push(text.slice(split)) + s.flush(), whole)
+  const over = `[${'x'.repeat(302)}](https://a.sg)`
+  assert.equal(rewriteMarkdownLinks(over, rw), over, 'longer link texts are left alone')
 })
 
 test('the broken links from the 2026-11-13 audit answer are repaired', () => {

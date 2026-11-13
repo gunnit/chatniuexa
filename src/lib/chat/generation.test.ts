@@ -41,7 +41,11 @@ before(async () => {
   ;({ generateFollowUpSuggestions, SUGGESTIONS_MODEL } = await import('./suggestions'))
   const links = await import('./links')
   createLinkRewrite = links.createLinkRewrite
-  index = links.buildMemberLinkIndex(`[Sector: X] **[Belluzzo & Partners Pte Ltd](${M('247536')})** — tax`)
+  index = links.buildMemberLinkIndex(
+    `[Sector: X] **[Belluzzo & Partners Pte Ltd](${M('247536')})** — tax\n` +
+      `[Sector: X] **[Alifood s.r.l.](${M('990482')})** — food\n` +
+      `[Sector: X] **[GIORGETTI Asia Pte Ltd](${M('232421')})** — design`,
+  )
 })
 
 const sse = (events: Array<{ event?: string; data: unknown }>) =>

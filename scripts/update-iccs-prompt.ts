@@ -45,9 +45,12 @@ async function main() {
   console.log(`Previous prompt length: ${chatbot.systemPrompt?.length ?? 0} chars`)
   console.log(`New prompt length:      ${prompt.length} chars`)
 
+  // `select` keeps Prisma from reading back every column: on a database without
+  // the followUpSuggestions column yet, returning it would fail the whole update.
   await prisma.chatbot.update({
     where: { id: chatbot.id },
     data: { systemPrompt: prompt },
+    select: { id: true },
   })
 
   console.log('OK — system prompt updated.')
@@ -57,6 +60,7 @@ async function main() {
     await prisma.chatbot.update({
       where: { id: chatbot.id },
       data: { followUpSuggestions: true },
+      select: { id: true },
     })
     console.log('OK — follow-up suggestions switched on.')
   } catch (e) {

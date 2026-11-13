@@ -146,6 +146,7 @@ export default function PublicChatClient({ chatbot }: { chatbot: ChatbotConfig }
   const [lang, setLang] = useState('EN')
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const turnRef = useRef(0)
 
   useEffect(() => {
     try {
@@ -193,6 +194,8 @@ export default function PublicChatClient({ chatbot }: { chatbot: ChatbotConfig }
     setMessages([])
     // A cleared chat is a new conversation for the bot too, not more of the old one.
     setSessionId(newPublicSessionId())
+    turnRef.current++ // an answer still streaming belongs to the old conversation
+    setLoading(false)
     setShowClearConfirm(false)
     try {
       localStorage.removeItem(storageKey)
@@ -234,6 +237,13 @@ export default function PublicChatClient({ chatbot }: { chatbot: ChatbotConfig }
   const sendMessage = useCallback(
     async (text: string) => {
       if (!text.trim() || loading) return
+      // Each send is a turn; only the latest turn may touch the loading state or the
+      // message list (a cleared chat makes an answer still in flight stale).
+      const turn = ++turnRef.current
+      const stale = () => turnRef.current !== turn
+      const release = () => {
+        if (!stale()) setLoading(false)
+      }
       setInput('')
       setLoading(true)
       const assistantMsgId = `assistant-${Date.now()}`
@@ -241,6 +251,8 @@ export default function PublicChatClient({ chatbot }: { chatbot: ChatbotConfig }
         ...prev,
         { id: `user-${Date.now()}`, role: 'user', content: text.trim() },
       ])
+      // True once [DONE] arrived: the answer is complete on screen.
+      let answered = false
 
       try {
         const res = await fetch('/api/chat/stream', {
@@ -248,6 +260,7 @@ export default function PublicChatClient({ chatbot }: { chatbot: ChatbotConfig }
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ chatbotId: chatbot.id, sessionId, message: text.trim() }),
         })
+        if (stale()) return
 
         if (!res.ok) {
           const fallbackRes = await fetch('/api/chat', {
@@ -260,6 +273,7 @@ export default function PublicChatClient({ chatbot }: { chatbot: ChatbotConfig }
             throw new Error(data.error || 'Failed to send message')
           }
           const data = await fallbackRes.json()
+          if (stale()) return
           setMessages((prev) => [
             ...prev,
             {
@@ -288,8 +302,9 @@ export default function PublicChatClient({ chatbot }: { chatbot: ChatbotConfig }
           setMessages((prev) => prev.map((msg) => (msg.id === assistantMsgId ? { ...msg, ...patch } : msg)))
 
         // Event order: metadata → content × N → [DONE] → messageId → suggestions.
-        // messageId and suggestions arrive AFTER [DONE], so each is applied when it
-        // arrives (reactions need the saved message id).
+        // The answer is shown complete on [DONE]; the composer is released when the
+        // message id arrives (the answer is saved, so the next question has it in
+        // its history); reactions need that id; the chips come last.
         while (true) {
           const { done, value } = await reader.read()
           if (done) break
@@ -301,6 +316,7 @@ export default function PublicChatClient({ chatbot }: { chatbot: ChatbotConfig }
             if (!line.startsWith('data: ')) continue
             const data = line.slice(6)
             if (data === '[DONE]') {
+              answered = true
               update({ isStreaming: false, sources: metadata?.sources })
               continue
             }
@@ -312,6 +328,7 @@ export default function PublicChatClient({ chatbot }: { chatbot: ChatbotConfig }
                 update({ suggestions: cleanSuggestionList(parsed.suggestions) })
               } else if (parsed.messageId) {
                 update({ messageId: parsed.messageId })
+                release()
               } else if (parsed.content) {
                 setMessages((prev) =>
                   prev.map((msg) =>
@@ -331,6 +348,12 @@ export default function PublicChatClient({ chatbot }: { chatbot: ChatbotConfig }
           )
         )
       } catch (err) {
+        if (stale()) return
+        if (answered) {
+          // Only the trailing events (message id, suggestions) were lost: keep the answer.
+          setMessages((prev) => prev.map((msg) => (msg.id === assistantMsgId ? { ...msg, isStreaming: false } : msg)))
+          return
+        }
         setMessages((prev) => {
           const filtered = prev.filter((m) => m.id !== assistantMsgId)
           return [
@@ -343,8 +366,8 @@ export default function PublicChatClient({ chatbot }: { chatbot: ChatbotConfig }
           ]
         })
       } finally {
-        setLoading(false)
-        inputRef.current?.focus()
+        release()
+        if (!stale()) inputRef.current?.focus()
       }
     },
     [loading, chatbot.id, sessionId]
@@ -786,7 +809,7 @@ export default function PublicChatClient({ chatbot }: { chatbot: ChatbotConfig }
                 </BotRow>
               )
             )}
-            {loading && !messages.some((m) => m.isStreaming) && (
+            {loading && lastMessage?.role === 'user' && (
               <BotRow accent={accent} initials={initials}>
                 <Typing accent={accent} />
               </BotRow>

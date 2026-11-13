@@ -40,7 +40,9 @@ function matchLinkAt(s: string): LinkMatch {
     }
     if (j > MAX_LINK_TEXT_CHARS) return { status: 'none' }
   }
-  if (textEnd === -1) return s.length > MAX_LINK_TEXT_CHARS ? { status: 'none' } : { status: 'incomplete' }
+  // Every index scanned was within the limit, so the next character may still
+  // close the text: wait (deciding "none" here would make streamed output differ).
+  if (textEnd === -1) return { status: 'incomplete' }
   if (textEnd + 1 >= s.length) return { status: 'incomplete' }
   if (s[textEnd + 1] !== '(') return { status: 'none' }
 
@@ -162,27 +164,41 @@ export function normalizeMemberName(name: string): string {
 // `[Sector: X] [Also relevant to: A; B] **[Name](url)**` — same member line the RAG roster reads.
 const MEMBER_ENTRY = /\[Sector:[^\]]*\]\s*(?:\[Also relevant to:[^\]]*\]\s*)?\*\*\[([^\]]+?)\]\((https?:\/\/[^)\s]+)\)\*\*/g
 
-/** Build the member index from directory text; null when the text has no member entries. */
+/**
+ * Member pages must look like `<host>/<path>/<numeric id>`, and a path prefix only
+ * counts once several entries share it, so one odd entry (a member's own website,
+ * a slug page) can never turn other pages of a site into "member links".
+ */
+const MIN_ENTRIES_PER_PREFIX = 3
+
+/** Build the member index from directory text; null when the text has no usable member pages. */
 export function buildMemberLinkIndex(directoryText: string): MemberLinkIndex | null {
-  const urls = new Map<string, string>()
-  const names = new Map<string, string | null>()
-  const prefixes = new Set<string>()
+  const entries: Array<{ name: string; url: string; key: string; prefix: string }> = []
+  const prefixCount = new Map<string, number>()
   for (const m of directoryText.matchAll(MEMBER_ENTRY)) {
-    const name = m[1].trim()
     const url = m[2]
     const key = urlKey(url)
     if (!key) continue
     const slash = key.lastIndexOf('/')
-    if (slash <= 0) continue
-    prefixes.add(key.slice(0, slash + 1))
-    if (!urls.has(key)) urls.set(key, url)
-    const n = normalizeMemberName(name)
-    if (!n) continue
-    if (!names.has(n)) names.set(n, url)
-    else if (names.get(n) !== null && urlKey(names.get(n)!) !== key) names.set(n, null) // ambiguous
+    if (slash <= 0 || !/^\d+$/.test(key.slice(slash + 1)) || key.indexOf('/') === slash) continue
+    const prefix = key.slice(0, slash + 1)
+    entries.push({ name: m[1].trim(), url, key, prefix })
+    prefixCount.set(prefix, (prefixCount.get(prefix) ?? 0) + 1)
   }
-  if (urls.size === 0) return null
-  return { urls, names, prefixes: [...prefixes] }
+  const prefixes = [...prefixCount].filter(([, n]) => n >= MIN_ENTRIES_PER_PREFIX).map(([p]) => p)
+  if (prefixes.length === 0) return null
+
+  const urls = new Map<string, string>()
+  const names = new Map<string, string | null>()
+  for (const e of entries) {
+    if (!prefixes.includes(e.prefix)) continue
+    if (!urls.has(e.key)) urls.set(e.key, e.url)
+    const n = normalizeMemberName(e.name)
+    if (!n) continue
+    if (!names.has(n)) names.set(n, e.url)
+    else if (names.get(n) !== null && urlKey(names.get(n)!) !== e.key) names.set(n, null) // ambiguous
+  }
+  return { urls, names, prefixes }
 }
 
 export type MemberLinkVerdict =

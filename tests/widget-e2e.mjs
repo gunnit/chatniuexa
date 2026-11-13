@@ -72,7 +72,7 @@ const server = http.createServer(async (req, res) => {
       await sleep(40)
     }
     send('[DONE]')
-    await sleep(300)
+    await sleep(600) // the answer is saved
     send({ messageId: `m-${n}` })
     await sleep(900) // suggestions are generated after the answer
     send({ type: 'suggestions', suggestions: [`First chip ${n}?`, `Second chip ${n}?`, `Third chip ${n}?`] })
@@ -119,16 +119,17 @@ try {
     await page.locator('.prompt-card').filter({ hasText: 'Starter question?' }).waitFor()
   })
 
-  await step('answer renders and the composer is released on [DONE], before the chips arrive', async () => {
+  await step('answer renders on [DONE]; the composer waits until the answer is saved', async () => {
     await ask('hello there')
     await page.locator('.bot-bubble strong', { hasText: 'bold' }).waitFor()
     assert.equal(await page.locator('.bot-bubble a[href="https://example.org/x"]').count(), 1)
-    assert.equal(await input.isDisabled(), false, 'composer still disabled after [DONE]')
-    assert.equal(await chips.count(), 0, 'chips should not be there yet')
+    assert.equal(await input.isDisabled(), true, 'composer must stay locked until the message id (answer saved)')
   })
 
-  await step('message id attaches the reactions row, then 3 chips appear', async () => {
+  await step('the message id attaches the reactions row and frees the composer, before the chips', async () => {
     await page.locator('.actions').first().waitFor()
+    assert.equal(await input.isDisabled(), false, 'composer still locked after the message id')
+    assert.equal(await chips.count(), 0, 'chips should not be there yet')
     await chips.nth(2).waitFor()
     assert.deepEqual(await chips.allInnerTexts(), ['First chip 1?', 'Second chip 1?', 'Third chip 1?'])
   })

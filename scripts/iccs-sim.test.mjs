@@ -3,8 +3,9 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { newSessionId, parseSse, PERSONAS, personasForDay, SESSION_PREFIX } from './iccs-sim-chat.mjs'
-import { checkTurn, isEmptyMemberPage, loadSessions } from './iccs-sim-report.mjs'
+import { pathToFileURL } from 'node:url'
+import { isEntryPoint, newSessionId, parseSse, PERSONAS, personasForDay, SESSION_PREFIX } from './iccs-sim-chat.mjs'
+import { checkTurn, isEmptyMemberPage, loadSessions, profileTemplate } from './iccs-sim-report.mjs'
 
 test('session ids are tagged sim- (excluded from visitor stats) and readable', () => {
   const id = newSessionId('Hotel F&B buyer', new Date('2026-11-13T03:00:00Z'))
@@ -82,8 +83,19 @@ test('loadSessions groups turns per session from files and directories', () => {
 })
 
 test('an empty member profile is told apart by comparing with the empty template', () => {
-  const page = (id, body) => `Membership Directory ${id} Corporate ${body} footer +65 6223 0356`
-  const template = page('987654321', '').split('987654321').join('{id}')
+  // The footer phone number contains "0270": a short id must still be matched only as a whole number
+  const page = (id, body) => `Membership Directory ${id} Corporate ${body} footer +65 6223 0270 © 2026`
+  const template = profileTemplate(page('987654321', ''), '987654321')
   assert.equal(isEmptyMemberPage(page('270', ''), '270', template), true)
+  assert.equal(isEmptyMemberPage(page('2026', ''), '2026', template), false, 'an id equal to another number on the page is never reported dead')
   assert.equal(isEmptyMemberPage(page('2473514', 'SILAT SRL – Il Giardino di Legno'), '2473514', template), false)
+})
+
+test('the scripts recognise being run directly, also from a path with a space', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sim dir '))
+  const file = path.join(dir, 'x.mjs')
+  fs.writeFileSync(file, '')
+  assert.equal(isEntryPoint(pathToFileURL(file).href, file), true)
+  assert.equal(isEntryPoint(pathToFileURL(file).href, path.join(dir, 'other.mjs')), false)
+  assert.equal(isEntryPoint(pathToFileURL(file).href, undefined), false)
 })

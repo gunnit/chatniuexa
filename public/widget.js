@@ -1202,12 +1202,12 @@
       }
 
       // The server emits: metadata → content × N → [DONE] → messageId → suggestions.
-      // The answer is rendered (and the composer released) on [DONE]; the message id
-      // and the follow-up chips are attached when they arrive.
+      // The answer is rendered on [DONE]. The composer is released when the message
+      // id arrives, i.e. once the answer is saved, so the next question always has
+      // it in its history; the follow-up chips are attached when they arrive.
       const finalize = () => {
         if (finalized || !streamingState || stale()) return;
         finalized = finalizeStreaming(buffer, metadata && metadata.sources, metadata && metadata.confidence, messageId);
-        release();
       };
       let chipsShown = false;
       const showSuggestions = () => {
@@ -1240,6 +1240,7 @@
           } else if (parsed.messageId) {
             messageId = parsed.messageId;
             attachActions(finalized, messageId);
+            release();
           } else if (parsed.content) {
             if (finalized || stale()) continue;
             if (!streamingState) streamingState = addStreamingBubble();

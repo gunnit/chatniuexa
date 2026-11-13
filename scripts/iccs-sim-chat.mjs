@@ -21,6 +21,7 @@
  */
 import fs from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const BASE = process.env.BOT_BASE || 'https://chatniuexa.onrender.com'
 const CHATBOT_ID = process.env.BOT_ID || 'cmn93l00d00d713vkdcnkymzn'
@@ -156,7 +157,16 @@ async function main() {
   console.log(`first token ${turn.firstTokenMs ?? '-'} ms · total ${turn.totalMs} ms · ${entry.sources} sources · confidence ${entry.confidence} · messageId ${turn.messageId ?? 'MISSING'}${turn.done ? '' : ' · NO [DONE]'}`)
 }
 
-// Run only when executed directly, so tests can import the helpers.
-if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname)) {
+// Run only when executed directly, so tests can import the helpers. (fileURLToPath +
+// realpath: correct for paths with spaces, symlinks and Windows drive letters.)
+export function isEntryPoint(metaUrl, argv1 = process.argv[1]) {
+  if (!argv1) return false
+  try {
+    return fs.realpathSync(path.resolve(argv1)) === fs.realpathSync(fileURLToPath(metaUrl))
+  } catch {
+    return false
+  }
+}
+if (isEntryPoint(import.meta.url)) {
   main().catch((e) => { console.error('FATAL', e instanceof Error ? e.message : e); process.exit(1) })
 }

@@ -16,6 +16,7 @@
  */
 import fs from 'node:fs'
 import path from 'node:path'
+import { isEntryPoint } from './iccs-sim-chat.mjs'
 
 const SITE_UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
@@ -98,12 +99,19 @@ export const htmlToText = (html) =>
     .replace(/\s+/g, ' ')
     .trim()
 
+/** Page text with the profile id (as a whole number only) replaced by a placeholder. */
+export function profileTemplate(text, id) {
+  return text.replace(new RegExp(`(?<![0-9])${id}(?![0-9])`, 'g'), '{id}')
+}
+
 /**
- * A member page that shows no member is byte-for-byte the empty template apart
- * from the id in the URL, so compare against a profile id that cannot exist.
+ * A member page that shows no member is the empty template apart from the id in
+ * the URL, so compare against a profile id that cannot exist. Any other
+ * difference counts as a real page: this check can miss a dead link, but never
+ * reports a working one as dead.
  */
 export function isEmptyMemberPage(text, id, emptyTemplate) {
-  return text.split(id).join('{id}') === emptyTemplate
+  return profileTemplate(text, id) === emptyTemplate
 }
 
 async function fetchText(url) {
@@ -120,7 +128,7 @@ async function checkMemberLinks(urls) {
   if (!urls.length) return results
   const EMPTY_ID = EMPTY_PROFILE_ID
   const empty = await fetchText(`https://italchamber.org.sg/membership-directory/corporate/${EMPTY_ID}`)
-  const template = challenged(empty.text) ? null : empty.text.split(EMPTY_ID).join('{id}')
+  const template = challenged(empty.text) ? null : profileTemplate(empty.text, EMPTY_ID)
   for (const url of urls) {
     const id = url.match(/corporate\/(\d+)/)[1]
     try {
@@ -199,6 +207,6 @@ async function main() {
   process.exit(summary.fails > 0 ? 1 : 0)
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname)) {
+if (isEntryPoint(import.meta.url)) {
   main().catch((e) => { console.error('FATAL', e instanceof Error ? e.message : e); process.exit(1) })
 }
