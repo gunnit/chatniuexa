@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, use } from 'react'
 import { Link } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
+import { cleanSuggestionList } from '@/lib/chat/suggestion-list'
 
 interface Source {
   chunkId: string
@@ -25,6 +26,7 @@ interface Message {
   messageId?: string
   reaction?: 'up' | 'down'
   feedbackHint?: string
+  suggestions?: string[]
 }
 
 interface Chatbot {
@@ -242,6 +244,7 @@ export default function ChatbotTestPage({
     () => `test-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
   )
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const turnRef = useRef(0)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
@@ -311,6 +314,8 @@ export default function ChatbotTestPage({
 
   const resetConversation = () => {
     if (messages.length === 0 || confirm('Start a new conversation?')) {
+      turnRef.current++ // an answer still streaming belongs to the old conversation
+      setLoading(false)
       setMessages([])
       setSessionId(`test-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`)
     }
@@ -318,10 +323,20 @@ export default function ChatbotTestPage({
 
   const sendMessage = async (userMessage: string) => {
     if (!userMessage.trim() || loading) return
+    // Each send is a turn; only the latest may touch the loading state or the messages.
+    const turn = ++turnRef.current
+    const stale = () => turnRef.current !== turn
+    const release = () => {
+      if (!stale()) setLoading(false)
+    }
     setLoading(true)
 
     const userMsgId = `user-${Date.now()}`
     const assistantMsgId = `assistant-${Date.now()}`
+    const update = (patch: Partial<Message>) =>
+      setMessages((prev) => prev.map((msg) => (msg.id === assistantMsgId ? { ...msg, ...patch } : msg)))
+    // True once [DONE] arrived: the answer is complete on screen.
+    let answered = false
 
     setMessages((prev) => [
       ...prev,
@@ -339,6 +354,7 @@ export default function ChatbotTestPage({
         const data = await res.json().catch(() => ({}))
         throw new Error(data.error || 'Failed to send message')
       }
+      if (stale()) return
 
       setMessages((prev) => [
         ...prev,
@@ -351,9 +367,10 @@ export default function ChatbotTestPage({
       let metadata: {
         sources?: Source[]
         confidence?: Confidence
-        messageId?: string
       } | null = null
 
+      // Event order: metadata → content × N → [DONE] → messageId → suggestions.
+      // Shown complete on [DONE]; released once the message id says it is saved.
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
@@ -365,7 +382,11 @@ export default function ChatbotTestPage({
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue
           const payload = line.slice(6)
-          if (payload === '[DONE]') continue
+          if (payload === '[DONE]') {
+            answered = true
+            update({ isStreaming: false, sources: metadata?.sources, confidence: metadata?.confidence })
+            continue
+          }
 
           try {
             const parsed = JSON.parse(payload)
@@ -374,9 +395,11 @@ export default function ChatbotTestPage({
                 sources: parsed.sources,
                 confidence: parsed.confidence,
               }
+            } else if (parsed.type === 'suggestions') {
+              update({ suggestions: cleanSuggestionList(parsed.suggestions) })
             } else if (parsed.messageId) {
-              metadata = metadata || {}
-              metadata.messageId = parsed.messageId
+              update({ messageId: parsed.messageId })
+              release()
             } else if (parsed.content) {
               setMessages((prev) =>
                 prev.map((msg) =>
@@ -392,20 +415,15 @@ export default function ChatbotTestPage({
         }
       }
 
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === assistantMsgId
-            ? {
-                ...msg,
-                isStreaming: false,
-                sources: metadata?.sources,
-                confidence: metadata?.confidence,
-                messageId: metadata?.messageId,
-              }
-            : msg
-        )
-      )
+      // A stream that closed without [DONE] still ends the answer.
+      if (!answered) update({ isStreaming: false, sources: metadata?.sources, confidence: metadata?.confidence })
     } catch (err) {
+      if (stale()) return
+      if (answered) {
+        // Only the trailing events (message id, suggestions) were lost: keep the answer.
+        update({ isStreaming: false })
+        return
+      }
       setMessages((prev) => {
         const filtered = prev.filter((m) => m.id !== assistantMsgId)
         return [
@@ -418,8 +436,8 @@ export default function ChatbotTestPage({
         ]
       })
     } finally {
-      setLoading(false)
-      setTimeout(() => inputRef.current?.focus(), 50)
+      release()
+      if (!stale()) setTimeout(() => inputRef.current?.focus(), 50)
     }
   }
 
@@ -620,7 +638,7 @@ export default function ChatbotTestPage({
             </div>
           )}
 
-          {messages.map((message) => {
+          {messages.map((message, index) => {
             if (message.role === 'user') {
               return (
                 <div key={message.id} className="flex justify-end">
@@ -769,12 +787,39 @@ export default function ChatbotTestPage({
                       )}
                     </div>
                   )}
+
+                  {/* Follow-up suggestions — latest answer only */}
+                  {index === messages.length - 1 && !loading && message.suggestions && message.suggestions.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pl-1" aria-label="Suggested follow-up questions">
+                      {message.suggestions.map((q) => (
+                        <button
+                          key={q}
+                          type="button"
+                          onClick={() => sendMessage(q)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-left text-[13px] text-slate-700 bg-white border border-slate-200 rounded-xl transition-colors"
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = accent
+                            e.currentTarget.style.color = accent
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = ''
+                            e.currentTarget.style.color = ''
+                          }}
+                        >
+                          <span>{q}</span>
+                          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: accent }}>
+                            <path d="M3 7h8M7 3l4 4-4 4" />
+                          </svg>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )
           })}
 
-          {loading && !messages.some((m) => m.isStreaming) && (
+          {loading && messages[messages.length - 1]?.role === 'user' && (
             <div className="flex justify-start gap-2.5">
               <div
                 className="w-7 h-7 mt-1 rounded-lg flex items-center justify-center text-white shadow-sm overflow-hidden shrink-0"

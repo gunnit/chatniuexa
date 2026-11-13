@@ -291,6 +291,7 @@ model Chatbot {
   showBranding     Boolean  @default(true)
   showSources      Boolean  @default(true)  // Show "Sources:" citations on public chat/widget
   suggestedPrompts String[] @default([])  // Quick reply suggestions
+  followUpSuggestions Boolean @default(false)  // After each answer, offer clickable next questions (extra small model call)
 
   // Chat icon customization
   chatIconType   String?  @default("default")  // "default" | "preset" | "custom"

@@ -204,6 +204,48 @@ export async function settleChatUsage(reservation: UsageReservation, usage: Toke
 }
 
 /**
+ * Record an extra model call made for an already-reserved chat request (e.g.
+ * follow-up suggestions): adds its tokens and cost to the month's counters and
+ * writes its own usage_logs row of the given type, so `chat` request counts
+ * stay one row per visitor message. Like `settleChatUsage` it is not capped
+ * (the tokens are spent) and leaves counters alone once they were reset for a
+ * newer month. Best effort: never throws.
+ */
+export async function recordAuxiliaryChatUsage(params: {
+  reservation: UsageReservation
+  chatbotId?: string
+  type: 'suggestions'
+  model: string
+  usage: TokenUsage
+}): Promise<void> {
+  const { reservation, chatbotId, type, model, usage } = params
+  const { tenantId, monthEnd } = reservation
+  try {
+    if (!isTokenCount(usage.inputTokens) || !isTokenCount(usage.outputTokens)) {
+      logger.warn('Ignoring malformed token usage', { tenantId, type, usage })
+      return
+    }
+    const prices = chatModelPrices(model)
+    const tokens = usage.inputTokens + usage.outputTokens
+    const cost = (usage.inputTokens * prices.inputPer1M + usage.outputTokens * prices.outputPer1M) / 1_000_000
+
+    await prisma.$transaction([
+      prisma.$executeRaw`
+        UPDATE usage_limits SET
+          "currentMonthTokens" = "currentMonthTokens" + ${tokens},
+          "currentMonthCost" = "currentMonthCost" + ${cost},
+          "updatedAt" = NOW()
+        WHERE "tenantId" = ${tenantId}
+          AND "lastMonthReset" < ${monthEnd}
+      `,
+      prisma.usageLog.create({ data: { tenantId, chatbotId, type, tokens, cost } }),
+    ])
+  } catch (error) {
+    logger.error('Failed to record auxiliary chat usage', { tenantId, type, error: String(error) })
+  }
+}
+
+/**
  * Get usage statistics for a tenant
  */
 export async function getUsageStats(tenantId: string) {

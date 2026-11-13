@@ -38,7 +38,13 @@ This project runs on WSL with code on `/mnt/c/`. The Windows ↔ Linux filesyste
 ## ICCS bot (Italian Chamber of Commerce Singapore)
 - Bot `cmn93l00d00d713vkdcnkymzn`, share token `lOLj8UA`; instructions tracked in `prompts/iccs-bot-instructions.md`, pushed live with `scripts/update-iccs-prompt.ts`
 - `node scripts/audit-bot.mjs` — live answer-quality audit (writes `audit-*` conversations, excluded from stats)
-- `node --env-file=.env scripts/iccs-stats.mjs` — read-only usage report; excludes `test-*`/`audit-*` sessions
+- `node --env-file=.env scripts/iccs-stats.mjs` — read-only usage report; excludes `test-*`/`audit-*`/`sim-*` sessions
+- Daily simulated visitors (scheduled Claude Code session): playbook `docs/iccs-visitor-simulation.md`, one turn per `node scripts/iccs-sim-chat.mjs --session <sim-…> "message"`, checks with `node scripts/iccs-sim-report.mjs sim-logs --check-links`. Session ids MUST start with `sim-` (never `widget-`/`pub-`: those count as real visitors)
+- Follow-up question chips: per-bot `followUpSuggestions` flag (on for ICCS via `scripts/update-iccs-prompt.ts`); latest audit `docs/iccs/2026-11-13-bot-audit.md`
+
+## Tests
+- `npm test` — unit tests (node:test + tsx): link guard, generators against a fake OpenAI layer, suggestions, simulation tooling
+- `npm run test:widget` — Playwright test of `public/widget.js` against a local fake API (needs Chromium; no Spline/WebGL involved)
 
 ## Tech Stack
 - Next.js with App Router

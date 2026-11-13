@@ -4,6 +4,17 @@ import { getOpenAI, EMBEDDING_MODEL } from '@/lib/openai'
 import { DEFAULT_CHAT_MODEL, chatCompletionsReasoning, temperatureParam } from '@/lib/models'
 import type { TokenUsage } from '@/lib/usage'
 import { getDirectoryChunks, searchChunksByKeywords, searchSimilarChunks } from '@/lib/documents/processor'
+import { createLinkRewrite, createMarkdownLinkStream, rewriteMarkdownLinks, type LinkRewrite } from '@/lib/chat/links'
+import { failureNotice, truncationNotice } from '@/lib/chat/notices'
+
+/**
+ * Output budget per answer. Full sector listings run to ~1,500 tokens; the
+ * headroom keeps them from being cut off, and a cut-off answer gets a notice.
+ */
+export const CHAT_MAX_COMPLETION_TOKENS = 4096
+
+/** finish_reason values that mean the model stopped before finishing the answer. */
+const CUT_OFF_FINISH_REASONS = new Set(['length', 'content_filter'])
 
 interface Source {
   chunkId: string
@@ -160,6 +171,8 @@ export async function generateChatResponse(
     temperature?: number
     maxSources?: number
     minSimilarity?: number
+    /** Link clean-up for the answer (default: strip tracking parameters only). */
+    rewriteLink?: LinkRewrite
   } = {}
 ): Promise<ChatResponse> {
   const {
@@ -167,6 +180,7 @@ export async function generateChatResponse(
     model = DEFAULT_CHAT_MODEL,
     temperature,
     minSimilarity = 0.2, // Lowered to 0.2 for multilingual content recall
+    rewriteLink = createLinkRewrite(null),
   } = options
   const openai = getOpenAI()
 
@@ -269,12 +283,19 @@ export async function generateChatResponse(
   const completion = await openai.chat.completions.create({
     model,
     messages,
-    max_completion_tokens: 2048,
+    max_completion_tokens: CHAT_MAX_COMPLETION_TOKENS,
     ...chatCompletionsReasoning(model),
     ...temperatureParam(model, temperature),
   })
 
-  const responseContent = completion.choices[0]?.message?.content || 'I apologize, but I was unable to generate a response.'
+  const choice = completion.choices[0]
+  let responseContent = rewriteMarkdownLinks(choice?.message?.content || '', rewriteLink)
+  if (!responseContent.trim()) {
+    responseContent = failureNotice(userMessage)
+  } else if (choice?.finish_reason && CUT_OFF_FINISH_REASONS.has(choice.finish_reason)) {
+    logger.warn('Answer cut off', { finishReason: choice.finish_reason, model })
+    responseContent += truncationNotice(userMessage)
+  }
 
   // Calculate confidence based on source quality
   const confidenceScore = calculateConfidence(deduplicatedSources)
@@ -643,6 +664,8 @@ export async function generateStreamingChatResponse(
     temperature?: number
     /** Called with the request's token usage when OpenAI reports it at the end of the stream. */
     onUsage?: (usage: TokenUsage) => void
+    /** Link clean-up for the answer (default: strip tracking parameters only). */
+    rewriteLink?: LinkRewrite
   } = {}
 ): Promise<ReadableStream<Uint8Array>> {
   const {
@@ -650,6 +673,7 @@ export async function generateStreamingChatResponse(
     model = DEFAULT_CHAT_MODEL,
     temperature,
     onUsage,
+    rewriteLink = createLinkRewrite(null),
   } = options
 
   const openai = getOpenAI()
@@ -689,23 +713,32 @@ export async function generateStreamingChatResponse(
     messages,
     stream: true,
     stream_options: { include_usage: true },
-    max_completion_tokens: 2048,
+    max_completion_tokens: CHAT_MAX_COMPLETION_TOKENS,
     ...chatCompletionsReasoning(model),
     ...temperatureParam(model, temperature),
   })
 
   // Convert OpenAI stream to web ReadableStream
   const encoder = new TextEncoder()
+  const send = (controller: ReadableStreamDefaultController<Uint8Array>, content: string) => {
+    // Send as Server-Sent Event format
+    if (content) controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`))
+  }
 
   return new ReadableStream({
     async start(controller) {
       try {
+        const links = createMarkdownLinkStream(rewriteLink)
+        let sent = ''
+        let finishReason: string | null = null
         for await (const chunk of stream) {
-          const content = chunk.choices[0]?.delta?.content
-          if (content) {
-            // Send as Server-Sent Event format
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`))
+          const delta = chunk.choices[0]?.delta?.content
+          if (delta) {
+            const out = links.push(delta)
+            sent += out
+            send(controller, out)
           }
+          if (chunk.choices[0]?.finish_reason) finishReason = chunk.choices[0].finish_reason
           // include_usage adds a last chunk, with no choices, carrying the request's usage
           if (chunk.usage && onUsage) {
             try {
@@ -715,6 +748,15 @@ export async function generateStreamingChatResponse(
               logger.error('Failed to report streamed token usage', { error: String(error) })
             }
           }
+        }
+        const tail = links.flush()
+        sent += tail
+        send(controller, tail)
+        if (!sent.trim()) {
+          send(controller, failureNotice(userMessage))
+        } else if (finishReason && CUT_OFF_FINISH_REASONS.has(finishReason)) {
+          logger.warn('Streamed answer cut off', { finishReason, model })
+          send(controller, truncationNotice(userMessage))
         }
         // Signal end of stream
         controller.enqueue(encoder.encode('data: [DONE]\n\n'))

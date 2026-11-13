@@ -43,7 +43,9 @@ const CASES = [
   { t: 'No fabricated figure — not in the knowledge base', q: 'How many members does the Italian Chamber of Commerce in Hong Kong have?', excRe: /\b\d{2,4}\s*(?:members|soci|companies|aziende|imprese)\b/i, decline: DECLINES },
   // Event names change every month; a current answer must list at least one event dated today or later.
   { t: 'Events are current', q: 'what are the upcoming events?', future: true },
-  { t: 'Out-of-scope declined', q: "What's the weather in Singapore today?", decline: ['knowledge base', 'ICCS', 'can only', 'cannot', 'non posso', 'unable'] },
+  // The prompt (2026-11-13) declines in plain words ("outside what I can help with"), never "knowledge base".
+  { t: 'Out-of-scope declined', q: "What's the weather in Singapore today?", excRe: /\d+\s?°|degrees|forecast|sunny|rain(?:y|ing)?\b|thunderstorm|humid/i,
+    decline: ['knowledge base', 'ICCS', 'can only', 'cannot', "can't", 'non posso', 'unable', 'outside', 'not able', 'fuori'] },
 ]
 
 const norm = (s) => s.replace(/[‘’]/g, "'").toLowerCase()

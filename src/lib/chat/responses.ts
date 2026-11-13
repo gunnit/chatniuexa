@@ -3,8 +3,10 @@ import { logger } from '@/lib/logger'
 import { getOpenAI } from '@/lib/openai'
 import { DEFAULT_CHAT_MODEL, responsesReasoning, temperatureParam } from '@/lib/models'
 import type { TokenUsage } from '@/lib/usage'
-import { DEFAULT_SYSTEM_PROMPT, FORMATTING_ADDENDUM, PII_GUARDRAIL } from '@/lib/chat/rag'
+import { CHAT_MAX_COMPLETION_TOKENS, DEFAULT_SYSTEM_PROMPT, FORMATTING_ADDENDUM, PII_GUARDRAIL } from '@/lib/chat/rag'
 import type { ResponsesTool } from '@/lib/chat/tools'
+import { createLinkRewrite, createMarkdownLinkStream, rewriteMarkdownLinks, type LinkRewrite } from '@/lib/chat/links'
+import { failureNotice, truncationNotice } from '@/lib/chat/notices'
 
 /**
  * Tool-enabled chat generation via the OpenAI Responses API.
@@ -23,9 +25,10 @@ import type { ResponsesTool } from '@/lib/chat/tools'
 // For tool-enabled bots the strict "only the knowledge base" scope rule is
 // replaced with one that also permits the connected tools, while keeping the
 // anti-hallucination posture.
-const TOOL_SCOPE_GUARDRAIL = `\n\nYou have access to the knowledge base context above AND the external tools provided to you (such as web search or connected MCP servers). Use the knowledge base for organization-specific information; use your tools to look up live, external, or up-to-date information that the knowledge base does not contain. When you use a tool result, incorporate it accurately and concisely, and prefer citing the source. If neither the knowledge base nor your tools can answer the question, say so plainly — never invent facts.`
+const TOOL_SCOPE_GUARDRAIL = `\n\nYou have access to the knowledge base context above AND the external tools provided to you (such as web search or connected MCP servers). Use the knowledge base for organization-specific information; use your tools to look up live, external, or up-to-date information that the knowledge base does not contain. When you use a tool result, incorporate it accurately and concisely, and link the page you used inline in the sentence (e.g. [page title](url)) instead of appending bare domain citations. If neither the knowledge base nor your tools can answer the question, say so plainly — never invent facts.`
 
-const MAX_OUTPUT_TOKENS = 2048
+// Web-search calls spend output tokens too, so tool answers share the chat budget.
+const MAX_OUTPUT_TOKENS = CHAT_MAX_COMPLETION_TOKENS
 
 export interface ToolGenerationOptions {
   systemPrompt?: string
@@ -33,6 +36,8 @@ export interface ToolGenerationOptions {
   /** The bot's temperature; not sent to models that don't accept it. */
   temperature?: number
   tools: ResponsesTool[]
+  /** Link clean-up for the answer (default: strip tracking parameters only). */
+  rewriteLink?: LinkRewrite
 }
 
 export interface ToolChatResult {
@@ -68,7 +73,13 @@ export async function generateChatResponseWithTools(
   history: Array<{ role: 'user' | 'assistant'; content: string }>,
   options: ToolGenerationOptions,
 ): Promise<ToolChatResult> {
-  const { systemPrompt = DEFAULT_SYSTEM_PROMPT, model = DEFAULT_CHAT_MODEL, temperature, tools } = options
+  const {
+    systemPrompt = DEFAULT_SYSTEM_PROMPT,
+    model = DEFAULT_CHAT_MODEL,
+    temperature,
+    tools,
+    rewriteLink = createLinkRewrite(null),
+  } = options
   const openai = getOpenAI()
 
   const response = await openai.responses.create({
@@ -81,8 +92,17 @@ export async function generateChatResponseWithTools(
     ...temperatureParam(model, temperature),
   })
 
-  const content =
-    response.output_text?.trim() || 'I apologize, but I was unable to generate a response.'
+  let content = rewriteMarkdownLinks(response.output_text?.trim() || '', rewriteLink)
+  if (!content.trim()) {
+    content = failureNotice(userMessage)
+  } else if (response.status === 'incomplete' || response.status === 'failed') {
+    logger.warn('Tool answer cut off', {
+      status: response.status,
+      reason: response.incomplete_details?.reason ?? response.error?.message ?? null,
+      model,
+    })
+    content += truncationNotice(userMessage)
+  }
 
   const usage = response.usage
     ? {
@@ -108,7 +128,14 @@ export async function generateStreamingChatResponseWithTools(
     onUsage?: (usage: TokenUsage) => void
   },
 ): Promise<ReadableStream<Uint8Array>> {
-  const { systemPrompt = DEFAULT_SYSTEM_PROMPT, model = DEFAULT_CHAT_MODEL, temperature, tools, onUsage } = options
+  const {
+    systemPrompt = DEFAULT_SYSTEM_PROMPT,
+    model = DEFAULT_CHAT_MODEL,
+    temperature,
+    tools,
+    onUsage,
+    rewriteLink = createLinkRewrite(null),
+  } = options
   const openai = getOpenAI()
 
   const stream = await openai.responses.create({
@@ -123,20 +150,32 @@ export async function generateStreamingChatResponseWithTools(
   })
 
   const encoder = new TextEncoder()
+  const send = (controller: ReadableStreamDefaultController<Uint8Array>, content: string) => {
+    if (content) controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`))
+  }
 
   return new ReadableStream({
     async start(controller) {
       try {
+        const links = createMarkdownLinkStream(rewriteLink)
+        let sent = ''
+        // Why the answer ended early, if it did (token limit, filter, upstream failure).
+        let cutOff: string | null = null
         for await (const event of stream) {
           if (event.type === 'response.output_text.delta') {
-            controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify({ content: event.delta })}\n\n`),
-            )
+            const out = links.push(event.delta)
+            sent += out
+            send(controller, out)
           } else if (
             event.type === 'response.completed' ||
             event.type === 'response.incomplete' ||
             event.type === 'response.failed'
           ) {
+            if (event.type === 'response.incomplete') {
+              cutOff = `incomplete: ${event.response.incomplete_details?.reason ?? 'unknown'}`
+            } else if (event.type === 'response.failed') {
+              cutOff = `failed: ${event.response.error?.message ?? 'unknown'}`
+            }
             // The terminal event carries the token usage for the whole response
             const usage = event.response.usage
             if (usage && onUsage) {
@@ -147,8 +186,16 @@ export async function generateStreamingChatResponseWithTools(
                 logger.error('Failed to report streamed token usage', { error: String(error) })
               }
             }
+          } else if (event.type === 'error') {
+            cutOff = `error: ${event.message}`
           }
         }
+        const tail = links.flush()
+        sent += tail
+        send(controller, tail)
+        if (cutOff) logger.warn('Streamed tool answer cut off', { cutOff, model })
+        if (!sent.trim()) send(controller, failureNotice(userMessage))
+        else if (cutOff) send(controller, truncationNotice(userMessage))
         controller.enqueue(encoder.encode('data: [DONE]\n\n'))
         controller.close()
       } catch (error) {

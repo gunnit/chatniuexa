@@ -267,6 +267,8 @@
     "showBranding": "Mostra branding ChatAziendale.it",
     "showSources": "Mostra fonti dalla knowledge base",
     "showSourcesDesc": "Visualizza il nome del documento usato per rispondere a ogni messaggio. Deseleziona per nascondere le fonti se i nomi dei file non sono adatti agli utenti.",
+    "followUpSuggestions": "Suggerisci domande di approfondimento",
+    "followUpSuggestionsDesc": "Dopo ogni risposta mostra 3 domande cliccabili per continuare la conversazione. Aggiunge una piccola chiamata al modello per ogni risposta.",
     "saving": "Salvataggio...",
     "saveChanges": "Salva Modifiche",
     "embedTitle": "Incorpora nel Tuo Sito Web",

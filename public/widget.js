@@ -7,7 +7,11 @@
   const chatbotId = script.getAttribute('data-chatbot-id');
   if (!chatbotId) { console.error('ChatAziendale.it widget: Missing data-chatbot-id'); return; }
   const baseUrl = (script.src || '').replace(/\/widget\.js.*$/, '') || window.location.origin;
-  const sessionId = 'widget-' + Date.now() + '-' + Math.random().toString(36).slice(2, 11);
+  function newSessionId() { return 'widget-' + Date.now() + '-' + Math.random().toString(36).slice(2, 11); }
+  // Restored from storage with the conversation (see loadChatbot), so moving to
+  // another page of the host site continues the same chat instead of a new one
+  // the bot knows nothing about. "New conversation" starts a fresh session.
+  let sessionId = newSessionId();
 
   // ── Color helpers ───────────────────────────────────────────────
   function hexToRgb(hex) {
@@ -353,6 +357,19 @@
     .feedback { font-size: 10.5px; color: var(--fg-mute); margin-left: 4px; opacity: 0; transition: opacity 0.3s; white-space: nowrap; }
     .feedback.visible { opacity: 1; }
 
+    /* ── Follow-up suggestions ──────────────────────────────── */
+    .followups { display: flex; flex-wrap: wrap; gap: 6px; padding-left: 2px; animation: cw-in 0.28s ease-out; }
+    .followup {
+      display: inline-flex; align-items: center; gap: 7px; max-width: 100%;
+      padding: 7px 11px; border: 1px solid var(--line-hi); border-radius: 12px;
+      background: var(--paper); color: var(--fg);
+      font-family: inherit; font-size: 12.5px; line-height: 1.35; text-align: left;
+      cursor: pointer; transition: border-color 0.15s, background-color 0.15s, color 0.15s;
+    }
+    .followup:hover, .followup:focus-visible { border-color: var(--accent); color: var(--accent); background: var(--paper-hi); outline: none; }
+    .followup .label { overflow-wrap: anywhere; }
+    .followup .arrow { color: var(--accent); display: flex; flex-shrink: 0; }
+
     .confidence {
       display: inline-flex; align-items: center; gap: 4px;
       font-size: 9.5px; font-weight: 700; padding: 3px 8px; border-radius: 6px;
@@ -678,10 +695,15 @@
           if (t && t.textContent.trim()) stored.push({ role: 'user', content: t.textContent });
         } else if (m.classList.contains('bot')) {
           const text = m.dataset.text || '';
-          if (text.trim()) stored.push({ role: 'assistant', content: text });
+          if (!text.trim()) return;
+          const entry = { role: 'assistant', content: text };
+          if (m.dataset.suggestions) {
+            try { entry.suggestions = JSON.parse(m.dataset.suggestions); } catch {}
+          }
+          stored.push(entry);
         }
       });
-      localStorage.setItem(storageKey, JSON.stringify({ messages: stored, timestamp: Date.now() }));
+      localStorage.setItem(storageKey, JSON.stringify({ messages: stored, sessionId, timestamp: Date.now() }));
     } catch {}
   }
   function clearStored() { try { localStorage.removeItem(storageKey); } catch {} }
@@ -998,11 +1020,12 @@
     body.scrollTop = body.scrollHeight;
     return { el, bubble, col };
   }
+  // Renders the finished answer and returns its element. Called on [DONE]; the
+  // message id and follow-up suggestions arrive just after and are attached then.
   function finalizeStreaming(buffer, sources, confidence, messageId) {
     const el = $('streaming');
-    if (!el) return;
+    if (!el) return null;
     el.removeAttribute('id');
-    if (messageId) el.dataset.messageId = messageId;
     el.dataset.text = buffer || '';
 
     const bubble = el.querySelector('.bot-bubble');
@@ -1016,11 +1039,69 @@
     const col = el.querySelector('.bot-col');
     const conf = buildConfidenceEl(confidence);
     if (conf) col.appendChild(conf);
-    if (messageId) col.appendChild(buildActionsEl(messageId, buffer || ''));
+    attachActions(el, messageId);
 
     saveStored();
     body.scrollTop = body.scrollHeight;
     messageCount++;
+    return el;
+  }
+
+  // Thumbs / copy row, once the server has confirmed the saved message id.
+  function attachActions(el, messageId) {
+    if (!el || !messageId || el.querySelector('.actions')) return;
+    el.dataset.messageId = messageId;
+    const col = el.querySelector('.bot-col');
+    if (!col) return;
+    const actions = buildActionsEl(messageId, el.dataset.text || '');
+    const followups = col.querySelector('.followups');
+    if (followups) col.insertBefore(actions, followups); else col.appendChild(actions);
+  }
+
+  // ── Follow-up suggestions ───────────────────────────────────────
+  function cleanSuggestions(list) {
+    if (!Array.isArray(list)) return [];
+    const out = [];
+    for (const s of list) {
+      if (typeof s !== 'string') continue;
+      const t = s.trim();
+      if (t && t.length <= 120 && out.indexOf(t) === -1) out.push(t);
+      if (out.length === 3) break;
+    }
+    return out;
+  }
+  function removeFollowups() {
+    body.querySelectorAll('.followups').forEach(el => el.remove());
+  }
+  // Chips under the latest answer only; clicking one asks it.
+  function renderFollowups(msgEl, list) {
+    const items = cleanSuggestions(list);
+    if (!msgEl || !msgEl.isConnected || !items.length) return;
+    const col = msgEl.querySelector('.bot-col');
+    if (!col) return;
+    removeFollowups();
+    msgEl.dataset.suggestions = JSON.stringify(items);
+    const nearBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 160;
+    const wrap = document.createElement('div');
+    wrap.className = 'followups';
+    items.forEach(q => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'followup';
+      const label = document.createElement('span');
+      label.className = 'label';
+      label.textContent = q;
+      const arrow = document.createElement('span');
+      arrow.className = 'arrow';
+      arrow.innerHTML = ICONS.arrow;
+      btn.appendChild(label);
+      btn.appendChild(arrow);
+      btn.addEventListener('click', () => sendMessage(q));
+      wrap.appendChild(btn);
+    });
+    col.appendChild(wrap);
+    // Keep the chips in view, without yanking a reader who scrolled up.
+    if (nearBottom) body.scrollTop = body.scrollHeight;
   }
 
   // ── Actions (reactions + copy) ──────────────────────────────────
@@ -1061,12 +1142,29 @@
   }
 
   // ── Send ────────────────────────────────────────────────────────
+  // Each send is a "turn". Only the latest turn may change the busy state or show
+  // follow-up chips; a turn superseded by a newer message or a "New conversation"
+  // still finishes quietly in the background (so the server saves it).
+  let turnSeq = 0;
+  function setBusy(busy) {
+    isLoading = busy;
+    input.disabled = busy;
+    if (busy) {
+      sendBtn.disabled = true;
+      sendBtn.classList.remove('active');
+    } else {
+      try { input.focus(); } catch {}
+      updateSendState();
+    }
+  }
+
   async function sendMessage(text) {
     if (!text || !text.trim() || isLoading || !chatbot) return;
-    isLoading = true;
-    input.disabled = true;
-    sendBtn.disabled = true;
-    sendBtn.classList.remove('active');
+    const turn = ++turnSeq;
+    const stale = () => turn !== turnSeq;
+    const release = () => { if (!stale() && isLoading) setBusy(false); };
+    setBusy(true);
+    removeFollowups();
 
     renderUserMessage(text);
     saveStored();
@@ -1075,6 +1173,9 @@
     let streamingState = null;
     let buffer = '';
     let metadata = null;
+    let messageId = null;
+    let suggestions = null;
+    let finalized = null; // the rendered answer element, once [DONE] arrived
 
     try {
       const res = await fetch(baseUrl + '/api/chat/stream', {
@@ -1082,6 +1183,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chatbotId, sessionId, message: text }),
       });
+      if (stale()) return;
       hideThinking();
 
       if (!res.ok || !res.body) {
@@ -1092,13 +1194,28 @@
         });
         if (!fb.ok) throw new Error('Failed to send message');
         const data = await fb.json();
-        renderBotMessage(data.message.content, data.message.sources, data.message.confidence, data.message.id);
+        if (stale()) return;
+        const rendered = renderBotMessage(data.message.content, data.message.sources, data.message.confidence, data.message.id);
+        renderFollowups(rendered.el, data.message.suggestions);
         saveStored();
         return;
       }
 
-      // The server emits events in this order: metadata → content × N → [DONE] → messageId.
-      // We defer finalization until the stream actually closes so messageId is captured.
+      // The server emits: metadata → content × N → [DONE] → messageId → suggestions.
+      // The answer is rendered on [DONE]. The composer is released when the message
+      // id arrives, i.e. once the answer is saved, so the next question always has
+      // it in its history; the follow-up chips are attached when they arrive.
+      const finalize = () => {
+        if (finalized || !streamingState || stale()) return;
+        finalized = finalizeStreaming(buffer, metadata && metadata.sources, metadata && metadata.confidence, messageId);
+      };
+      let chipsShown = false;
+      const showSuggestions = () => {
+        if (chipsShown || !finalized || !suggestions || stale()) return;
+        chipsShown = true;
+        renderFollowups(finalized, suggestions);
+        saveStored();
+      };
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let raw = '';
@@ -1111,36 +1228,41 @@
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue;
           const payload = line.slice(6);
-          if (payload === '[DONE]') continue;
-          try {
-            const parsed = JSON.parse(payload);
-            if (parsed.type === 'metadata') {
-              metadata = parsed;
-            } else if (parsed.messageId) {
-              metadata = metadata || {};
-              metadata.messageId = parsed.messageId;
-            } else if (parsed.content) {
-              if (!streamingState) streamingState = addStreamingBubble();
-              buffer += parsed.content;
-              streamingState.bubble.textContent = buffer;
-              body.scrollTop = body.scrollHeight;
-            }
-          } catch {}
+          if (payload === '[DONE]') { finalize(); continue; }
+          let parsed;
+          try { parsed = JSON.parse(payload); } catch { continue; }
+          if (!parsed || typeof parsed !== 'object') continue;
+          if (parsed.type === 'metadata') {
+            metadata = parsed;
+          } else if (parsed.type === 'suggestions') {
+            suggestions = parsed.suggestions;
+            showSuggestions();
+          } else if (parsed.messageId) {
+            messageId = parsed.messageId;
+            attachActions(finalized, messageId);
+            release();
+          } else if (parsed.content) {
+            if (finalized || stale()) continue;
+            if (!streamingState) streamingState = addStreamingBubble();
+            buffer += parsed.content;
+            streamingState.bubble.textContent = buffer;
+            body.scrollTop = body.scrollHeight;
+          }
         }
       }
-      if (streamingState) {
-        finalizeStreaming(buffer, metadata && metadata.sources, metadata && metadata.confidence, metadata && metadata.messageId);
-      }
-    } catch (err) {
+      // Stream closed without [DONE] (older server or dropped connection): finish anyway.
+      finalize();
+      attachActions(finalized, messageId);
+      showSuggestions();
+    } catch {
+      if (stale()) return;
       hideThinking();
+      if (finalized) return; // the answer is already on screen; only the trailing events were lost
       const orphan = $('streaming');
       if (orphan) orphan.remove();
       renderBotMessage('Sorry, something went wrong. Please try again.', null, null, null);
     } finally {
-      isLoading = false;
-      input.disabled = false;
-      try { input.focus(); } catch {}
-      updateSendState();
+      release();
     }
   }
 
@@ -1176,6 +1298,9 @@
     if (messageCount === 0 || confirm('Start a new conversation?')) {
       clearStored();
       messageCount = 0;
+      sessionId = newSessionId();
+      turnSeq++; // an answer still streaming belongs to the old conversation: stop drawing it
+      setBusy(false);
       renderEmptyState();
     }
   });
@@ -1463,12 +1588,18 @@
 
       const stored = loadStored();
       if (stored && Array.isArray(stored.messages) && stored.messages.length) {
+        // Continue the same server-side conversation, so the bot remembers it.
+        if (typeof stored.sessionId === 'string' && /^widget-[\w-]{1,80}$/.test(stored.sessionId)) {
+          sessionId = stored.sessionId;
+        }
         body.classList.remove('empty');
         body.innerHTML = '';
+        let last = null;
         stored.messages.forEach(m => {
-          if (m.role === 'user') renderUserMessage(m.content);
-          else if (m.role === 'assistant') renderBotMessage(m.content, null, null, null);
+          if (m.role === 'user') { renderUserMessage(m.content); last = null; }
+          else if (m.role === 'assistant') last = { el: renderBotMessage(m.content, null, null, null).el, suggestions: m.suggestions };
         });
+        if (last && last.suggestions) renderFollowups(last.el, last.suggestions);
       } else {
         renderEmptyState();
       }

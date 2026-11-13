@@ -3,6 +3,8 @@ import { prisma } from '@/lib/db'
 import { generateChatResponse, prepareStreamingContext } from '@/lib/chat/rag'
 import { buildChatbotTools } from '@/lib/chat/tools'
 import { generateChatResponseWithTools } from '@/lib/chat/responses'
+import { chronologicalHistory, recentMessagesInclude } from '@/lib/chat/history'
+import { getLinkRewrite } from '@/lib/chat/member-links'
 import { logUsage, settleChatUsage, type TokenUsage } from '@/lib/usage'
 import { logger } from '@/lib/logger'
 import {
@@ -170,12 +172,9 @@ async function processWhatsAppMessage(msg: {
       sessionId: msg.from,
       channel: 'whatsapp',
     },
-    include: {
-      messages: {
-        orderBy: { createdAt: 'asc' },
-        take: 20,
-      },
-    },
+    // The latest 20 messages: a phone number is one conversation forever, so the
+    // oldest 20 would freeze the bot's memory at the first exchanges.
+    include: recentMessagesInclude,
   })
 
   if (!conversation) {
@@ -189,15 +188,15 @@ async function processWhatsAppMessage(msg: {
     })
   }
 
-  // Build conversation history
-  const history = conversation.messages.map((m) => ({
-    role: m.role.toLowerCase() as 'user' | 'assistant',
-    content: m.content,
-  }))
+  // Build conversation history (the latest messages, oldest first)
+  const history = chronologicalHistory(conversation.messages)
 
   // Generate response — tool-enabled bots answer via the Responses API (web
   // search / MCP); all others use the unchanged RAG path.
-  const tools = await buildChatbotTools(chatbot)
+  const [tools, rewriteLink] = await Promise.all([
+    buildChatbotTools(chatbot),
+    getLinkRewrite(chatbot.tenantId, chatbot.id),
+  ])
   let response: {
     content: string
     sources: Awaited<ReturnType<typeof generateChatResponse>>['sources']
@@ -211,6 +210,7 @@ async function processWhatsAppMessage(msg: {
       model: chatbot.model,
       temperature: chatbot.temperature,
       tools,
+      rewriteLink,
     })
     response = {
       content: result.content,
@@ -223,6 +223,7 @@ async function processWhatsAppMessage(msg: {
       systemPrompt: chatbot.systemPrompt || undefined,
       model: chatbot.model,
       temperature: chatbot.temperature,
+      rewriteLink,
     })
   }
 

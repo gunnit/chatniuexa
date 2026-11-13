@@ -267,6 +267,8 @@
     "showBranding": "Show ChatAziendale.it branding",
     "showSources": "Show knowledge base sources",
     "showSourcesDesc": "Display the document name used to answer each message. Uncheck to hide if filenames aren't user-friendly.",
+    "followUpSuggestions": "Suggest follow-up questions",
+    "followUpSuggestionsDesc": "After each answer, show 3 clickable next questions so visitors keep the conversation going. Adds a small model call per answer.",
     "saving": "Saving...",
     "saveChanges": "Save Changes",
     "embedTitle": "Embed on Your Website",

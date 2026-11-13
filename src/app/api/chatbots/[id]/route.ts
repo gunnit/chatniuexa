@@ -46,6 +46,7 @@ const updateChatbotSchema = z.object({
   showBranding: z.boolean().optional(),
   showSources: z.boolean().optional(),
   suggestedPrompts: z.array(z.string()).max(4).optional(),
+  followUpSuggestions: z.boolean().optional(),
   chatIconType: z.enum(['default', 'preset', 'custom']).optional(),
   chatIconPreset: z.string().max(30).nullish(),
   chatIconImage: z.string().max(50000).nullish(),

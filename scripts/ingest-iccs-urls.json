@@ -1,5 +1,5 @@
 {
-  "comment": "ICCS supplementary pages — committees overview, all 9 committee sub-pages, ISBC about + board, events landing pages (past + upcoming).",
+  "comment": "ICCS supplementary pages — committees overview, all 9 committee sub-pages, ISBC about + board, events landing pages (past + upcoming). Added 2026-11-13 (bot audit): membership levels/fees, benefits, privilege program, contact, about, ICCS board 2025-2028, team, services, GoAsia 2026, IFBS, job posting — the bot was answering these from web search (slow, inconsistent contacts, ICCS board confused with ISBC). Re-run is safe: URLs already ingested are skipped.",
   "urls": [
     "https://www.italchamber.org.sg/iccs-committees",
     "https://www.italchamber.org.sg/iccs-committees/finance-committee",
@@ -15,6 +15,19 @@
     "https://www.italchamber.org.sg/board-directors-isbc",
     "https://www.italchamber.org.sg/events",
     "https://www.italchamber.org.sg/events?type=upcoming",
-    "https://www.italchamber.org.sg/events?type=past"
+    "https://www.italchamber.org.sg/events?type=past",
+    "https://www.italchamber.org.sg/become-member",
+    "https://www.italchamber.org.sg/membership-benefits",
+    "https://www.italchamber.org.sg/iccs-privilege-program",
+    "https://www.italchamber.org.sg/contact",
+    "https://www.italchamber.org.sg/about-chamber",
+    "https://www.italchamber.org.sg/board-directors",
+    "https://www.italchamber.org.sg/iccs-team",
+    "https://www.italchamber.org.sg/business-services",
+    "https://www.italchamber.org.sg/information-training-and-promotion",
+    "https://www.italchamber.org.sg/your-office-iccs",
+    "https://www.italchamber.org.sg/goasia-2026",
+    "https://www.italchamber.org.sg/italian-food-beverage-singapore-ifbs",
+    "https://www.italchamber.org.sg/job-posting"
   ]
 }

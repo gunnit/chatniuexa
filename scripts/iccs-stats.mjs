@@ -13,7 +13,10 @@
  *   channel=whatsapp  WhatsApp Cloud API                              → visitor
  *   test-*            dashboard "test chat" page                      → internal, excluded
  *   audit-*           scripts/audit-bot.mjs QA runs                   → internal, excluded
+ *   sim-*             daily simulated visitors (scripts/iccs-sim-chat.mjs) → internal, excluded
  *   anything else     reported separately as "other", not in the headline numbers
+ * Token totals come from usage_logs, which has no session id, so they include
+ * internal traffic (audits and simulations) as well.
  *
  * Usage (local, same .env as the other ICCS scripts):
  *   node --env-file=.env scripts/iccs-stats.mjs [--share=lOLj8UA] [--bot=<chatbotId>]
@@ -34,7 +37,7 @@ const TZ = 'Asia/Singapore' // UTC+8 all year, no DST
 const TZ_OFFSET_MS = 8 * 3600 * 1000
 
 export const VISITOR_SEGMENTS = ['widget', 'public_link', 'whatsapp']
-const INTERNAL_SEGMENTS = ['internal_test', 'internal_audit']
+const INTERNAL_SEGMENTS = ['internal_test', 'internal_audit', 'internal_sim']
 
 // ---------------------------------------------------------------------------
 // SQL — timestamps are TIMESTAMP(3) holding UTC; convert to Singapore wall-clock
@@ -46,6 +49,7 @@ const SEG = `CASE
     WHEN c."sessionId" LIKE 'pub-%' THEN 'public_link'
     WHEN c."sessionId" LIKE 'test-%' THEN 'internal_test'
     WHEN c."sessionId" LIKE 'audit-%' THEN 'internal_audit'
+    WHEN c."sessionId" LIKE 'sim-%' THEN 'internal_sim'
     ELSE 'other'
   END`
 const sgt = (col) => `to_char((${col} AT TIME ZONE 'UTC') AT TIME ZONE '${TZ}', 'YYYY-MM-DD"T"HH24:MI:SS')`
@@ -107,7 +111,7 @@ SELECT m."conversationId" AS "conversationId", ${SEG} AS seg, m.role::text AS ro
 FROM messages m
 JOIN conversations c ON c.id = m."conversationId"
 WHERE c."chatbotId" = $1 AND c."createdAt" >= ${SINCE}
-  AND (${SEG}) NOT IN ('internal_test', 'internal_audit')
+  AND (${SEG}) NOT IN (${INTERNAL_SEGMENTS.map((s) => `'${s}'`).join(', ')})
 ORDER BY m."conversationId", m."createdAt", (m.role = 'ASSISTANT'), m.id`,
   },
   voice: {

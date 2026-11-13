@@ -3,7 +3,10 @@ import { prisma } from '@/lib/db'
 import { generateQueryEmbedding, prepareStreamingContextWithEmbedding, generateStreamingChatResponse } from '@/lib/chat/rag'
 import { buildChatbotTools } from '@/lib/chat/tools'
 import { generateStreamingChatResponseWithTools } from '@/lib/chat/responses'
-import { logUsage, settleChatUsage, type TokenUsage } from '@/lib/usage'
+import { chronologicalHistory, recentMessagesInclude } from '@/lib/chat/history'
+import { getLinkRewrite } from '@/lib/chat/member-links'
+import { generateFollowUpSuggestions } from '@/lib/chat/suggestions'
+import { logUsage, recordAuxiliaryChatUsage, settleChatUsage, type TokenUsage } from '@/lib/usage'
 import { getCorsHeaders } from '@/lib/cors'
 import { isChatbotOriginAllowed } from '@/lib/origin'
 import { rateLimit } from '@/lib/rate-limit'
@@ -68,12 +71,15 @@ export async function POST(request: NextRequest) {
     )
     // Build the bot's tool set (web search / MCP) in parallel; [] for non-tool bots.
     const toolsPromise = buildChatbotTools(chatbot)
+    // Link clean-up for the answer (tracking params, member-directory links); cached per tenant.
+    const linkRewritePromise = getLinkRewrite(chatbot.tenantId, chatbot.id)
 
-    const [conversation, usageCheck, ragResult, tools] = await Promise.all([
+    const [conversation, usageCheck, ragResult, tools, rewriteLink] = await Promise.all([
       conversationPromise,
       usagePromise,
       ragPromise,
       toolsPromise,
+      linkRewritePromise,
     ])
 
     if (!usageCheck?.allowed) {
@@ -85,11 +91,8 @@ export async function POST(request: NextRequest) {
 
     const { context, streamingContext } = ragResult
 
-    // Build conversation history
-    const history = conversation.messages.map((m) => ({
-      role: m.role.toLowerCase() as 'user' | 'assistant',
-      content: m.content,
-    }))
+    // Build conversation history (the latest messages, oldest first)
+    const history = chronologicalHistory(conversation.messages)
 
     // Fire-and-forget user message save (don't block streaming)
     prisma.message.create({
@@ -117,12 +120,14 @@ export async function POST(request: NextRequest) {
           temperature: chatbot.temperature,
           tools,
           onUsage,
+          rewriteLink,
         })
       : await generateStreamingChatResponse(context, message, history, {
           systemPrompt: chatbot.systemPrompt || undefined,
           model: chatbot.model,
           temperature: chatbot.temperature,
           onUsage,
+          rewriteLink,
         })
 
     // Create a TransformStream to capture the full response for saving
@@ -155,6 +160,19 @@ export async function POST(request: NextRequest) {
         // already received the streamed content; failing the stream now would
         // leave them with a rendered answer that's missing from history.
         if (!fullContent) return
+        const encoder = new TextEncoder()
+        // Follow-up questions are generated while the message is saved; both
+        // trail the answer, so neither delays it. Never throws (null = no chips).
+        const suggestionsPromise = chatbot.followUpSuggestions
+          ? generateFollowUpSuggestions({
+              botName: chatbot.name,
+              botDescription: chatbot.description,
+              history,
+              userMessage: message,
+              answer: fullContent,
+              sourceTitles: streamingContext.sources.map((s) => s.documentTitle),
+            })
+          : null
         try {
           const savedMessage = await prisma.message.create({
             data: {
@@ -165,10 +183,26 @@ export async function POST(request: NextRequest) {
             },
           })
           savedMessageId = savedMessage.id
-          const encoder = new TextEncoder()
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ messageId: savedMessageId })}\n\n`))
         } catch (err) {
           logger.error('Failed to persist assistant message', { error: String(err) })
+        }
+        if (suggestionsPromise) {
+          const result = await suggestionsPromise
+          if (result?.usage) {
+            void recordAuxiliaryChatUsage({
+              reservation: usageCheck.reservation,
+              chatbotId: chatbot.id,
+              type: 'suggestions',
+              model: result.model,
+              usage: result.usage,
+            })
+          }
+          if (result?.suggestions.length) {
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ type: 'suggestions', suggestions: result.suggestions })}\n\n`),
+            )
+          }
         }
       },
     })
@@ -242,12 +276,7 @@ export async function POST(request: NextRequest) {
 async function getOrCreateConversation(chatbotId: string, sessionId: string) {
   const existing = await prisma.conversation.findFirst({
     where: { chatbotId, sessionId },
-    include: {
-      messages: {
-        orderBy: { createdAt: 'asc' as const },
-        take: 20,
-      },
-    },
+    include: recentMessagesInclude,
   })
   if (existing) return existing
 
