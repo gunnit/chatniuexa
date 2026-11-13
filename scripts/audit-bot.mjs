@@ -20,8 +20,10 @@ async function ask(message, attempt = 1) {
 
 // Phrases that show the bot declined or said the knowledge base lacks the answer (matched after
 // curly apostrophes are normalized, since newer models write "don’t" / "isn’t").
+// The 2026-11-13 prompt declines in plain words ("that's outside what I can help with").
 const DECLINES = ['knowledge base', 'non ho', 'non dispongo', "don't have", 'do not have', "isn't", 'not stated', 'not included',
-  'only have information', 'information available to me', 'cannot', 'unable', 'can only', 'non posso', 'posso aiutarti solo', 'materiale']
+  'only have information', 'information available to me', 'cannot', "can't", 'unable', 'can only', 'non posso', 'posso aiutarti solo',
+  'materiale', 'outside', 'fuori']
 
 // inc: all must appear | inc1: at least one must appear | exc: none may appear
 // excRe: must not match | decline: any one must appear
