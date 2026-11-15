@@ -41,6 +41,8 @@ This project runs on WSL with code on `/mnt/c/`. The Windows ↔ Linux filesyste
 - `node --env-file=.env scripts/iccs-stats.mjs` — read-only usage report; excludes `test-*`/`audit-*`/`sim-*` sessions
 - Daily simulated visitors (scheduled Claude Code session): playbook `docs/iccs-visitor-simulation.md`, one turn per `node scripts/iccs-sim-chat.mjs --session <sim-…> "message"`, checks with `node scripts/iccs-sim-report.mjs sim-logs --check-links`. Session ids MUST start with `sim-` (never `widget-`/`pub-`: those count as real visitors)
 - Follow-up question chips: per-bot `followUpSuggestions` flag (on for ICCS via `scripts/update-iccs-prompt.ts`); latest audit `docs/iccs/2026-11-13-bot-audit.md`
+- Member-list completeness: for a question that maps to one directory sector, `src/lib/chat/completeness.ts` appends the members a list left out (only when the answer already names ≥75% of the sector; logged as "Completed a member list the answer left short")
+- Wrong cross-sector tags (`[Also relevant to: …]`): add them to `ICCS_TAG_CORRECTIONS` in `src/lib/documents/directory-tags.ts`, then on Render `npx tsx scripts/fix-directory-tags.ts --dry-run`, then without `--dry-run` (re-embeds the directory, about a minute)
 
 ## Tests
 - `npm test` — unit tests (node:test + tsx): link guard, generators against a fake OpenAI layer, suggestions, simulation tooling

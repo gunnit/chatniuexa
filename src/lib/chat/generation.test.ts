@@ -189,6 +189,44 @@ test('responses: separate message parts never run together', async () => {
   assert.equal(whole.content, 'Here are the Italian fashion brands:\n\n- Gucci\n- Prada')
 })
 
+test('member lists: every generator appends the members a finished sector list left out, never after a cut-off', async () => {
+  const names = ['Alpha', 'Bravo', 'Charlie', 'Delta']
+  const completeness = { sector: 'S', members: names.map((n, i) => ({ name: `${n} Pte Ltd`, url: M(String(500 + i)) })) }
+  const listed = names.slice(0, 3).map((n, i) => `- [${n} Pte Ltd](${M(String(500 + i))})`).join('\n')
+  const expected = `Our members:\n\n${listed}\n\nAlso in this category:\n\n- [Delta Pte Ltd](${M('503')})`
+
+  handler = () => sse([{ data: chunk(`Our members:\n\n${listed}`) }, { data: chunk(null, 'stop') }, { data: '[DONE]' }])
+  const chat = await readSse(await generateStreamingChatResponse('ctx', 'which members are in this sector?', [], { model: 'gpt-6-luna', completeness }))
+  assert.equal(chat.content, expected)
+
+  handler = () => sse([{ data: chunk(`Our members:\n\n${listed}`) }, { data: chunk(null, 'length') }, { data: '[DONE]' }])
+  const cut = await readSse(await generateStreamingChatResponse('ctx', 'which members are in this sector?', [], { model: 'gpt-6-luna', completeness }))
+  assert.equal(cut.content, `Our members:\n\n${listed}\n\n_(Answer cut short: type “continue” for the rest.)_`)
+
+  handler = () =>
+    sse([
+      { event: 'response.output_text.delta', data: { type: 'response.output_text.delta', delta: `Our members:\n\n${listed}`, item_id: 'm', output_index: 0, content_index: 0, sequence_number: 1 } },
+      { event: 'response.completed', data: { type: 'response.completed', sequence_number: 2, response: { id: 'r', status: 'completed' } } },
+    ])
+  const tools = await readSse(await generateStreamingChatResponseWithTools('ctx', 'which members are in this sector?', [], { model: 'gpt-6-luna', tools: [{ type: 'web_search' }], completeness }))
+  assert.equal(tools.content, expected)
+
+  handler = () =>
+    new Response(
+      JSON.stringify({
+        id: 'r',
+        object: 'response',
+        created_at: 1,
+        status: 'completed',
+        model: 'gpt-6-luna',
+        output: [{ type: 'message', id: 'm', role: 'assistant', status: 'completed', content: [{ type: 'output_text', annotations: [], text: `Our members:\n\n${listed}` }] }],
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    )
+  const whole = await generateChatResponseWithTools('ctx', 'which members are in this sector?', [], { model: 'gpt-6-luna', tools: [{ type: 'web_search' }], completeness })
+  assert.equal(whole.content, expected)
+})
+
 test('non-streaming tool answer (WhatsApp, /api/chat): same link clean-up and cut-off notice', async () => {
   handler = () =>
     new Response(

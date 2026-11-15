@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { context, streamingContext } = ragResult
+    const { context, streamingContext, completeness } = ragResult
 
     // Build conversation history (the latest messages, oldest first)
     const history = chronologicalHistory(conversation.messages)
@@ -121,6 +121,7 @@ export async function POST(request: NextRequest) {
           tools,
           onUsage,
           rewriteLink,
+          completeness,
         })
       : await generateStreamingChatResponse(context, message, history, {
           systemPrompt: chatbot.systemPrompt || undefined,
@@ -128,6 +129,7 @@ export async function POST(request: NextRequest) {
           temperature: chatbot.temperature,
           onUsage,
           rewriteLink,
+          completeness,
         })
 
     // Create a TransformStream to capture the full response for saving

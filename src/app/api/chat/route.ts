@@ -122,13 +122,14 @@ export async function POST(request: NextRequest) {
     if (tools.length > 0) {
       // Reuse the RAG retrieval to ground the bot, then let the model also reach
       // its tools (web search / MCP).
-      const { context, streamingContext } = await prepareStreamingContext(chatbot.tenantId, message, {})
+      const { context, streamingContext, completeness } = await prepareStreamingContext(chatbot.tenantId, message, {})
       const result = await generateChatResponseWithTools(context, message, history, {
         systemPrompt: chatbot.systemPrompt || undefined,
         model: chatbot.model,
         temperature: chatbot.temperature,
         tools,
         rewriteLink,
+        completeness,
       })
       response = {
         content: result.content,

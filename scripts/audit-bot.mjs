@@ -55,6 +55,9 @@ const CASES = [
   { t: 'Writing help declined, pointed to Job posting', q: 'can you help me write a cover letter for an internship at the chamber?', inc: ['job-posting'], decline: DECLINES },
   // Same retest: Italian board list gave everyone "Direttore"/"Direttrice", guessing gender from names.
   { t: 'Italian board titles', q: 'chi fa parte del consiglio della camera?', inc: ['Consiglieri'], exc: ['Direttrice'] },
+  // 14 Nov test: answered from an old member PDF found by web search — no member links, a bare citation.
+  { t: 'Members from the directory, not web search', q: 'which italian fashion brands are members?',
+    inc: ['membership-directory/corporate/2677154'], excRe: /sites\/default\/files|\(\[italchamber\.org\.sg\]/i },
 ]
 
 const norm = (s) => s.replace(/[‘’]/g, "'").toLowerCase()
