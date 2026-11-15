@@ -198,6 +198,7 @@ test('member lists: every generator appends the members a finished sector list l
   handler = () => sse([{ data: chunk(`Our members:\n\n${listed}`) }, { data: chunk(null, 'stop') }, { data: '[DONE]' }])
   const chat = await readSse(await generateStreamingChatResponse('ctx', 'which members are in this sector?', [], { model: 'gpt-6-luna', completeness }))
   assert.equal(chat.content, expected)
+  assert.ok(chat.done, 'the appended members arrive before [DONE]')
 
   handler = () => sse([{ data: chunk(`Our members:\n\n${listed}`) }, { data: chunk(null, 'length') }, { data: '[DONE]' }])
   const cut = await readSse(await generateStreamingChatResponse('ctx', 'which members are in this sector?', [], { model: 'gpt-6-luna', completeness }))
@@ -210,6 +211,7 @@ test('member lists: every generator appends the members a finished sector list l
     ])
   const tools = await readSse(await generateStreamingChatResponseWithTools('ctx', 'which members are in this sector?', [], { model: 'gpt-6-luna', tools: [{ type: 'web_search' }], completeness }))
   assert.equal(tools.content, expected)
+  assert.ok(tools.done, 'the appended members arrive before [DONE]')
 
   handler = () =>
     new Response(

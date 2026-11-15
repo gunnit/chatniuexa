@@ -32,8 +32,36 @@ export const COMPLETENESS_MIN_SHARE = 0.75
 /** ...and never fewer than this many: a short answer about one or two firms is left alone. */
 export const COMPLETENESS_MIN_PRESENT = 3
 
+// "&" and "and" are the same word in member names ("Dezan Shira & Associates" / "… and Associates").
+const ampersands = (s: string) => s.replace(/&/g, ' and ')
+
+/** Text in the form names are compared in: lower case, no accents or punctuation, padded with spaces. */
 const normalizeText = (s: string) =>
-  ` ${s.toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9&]+/g, ' ').trim()} `
+  ` ${ampersands(s).toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim()} `
+
+/**
+ * First words that do not identify a member on their own ("Asian Tax Advisory",
+ * "The Executive Home Store", "New Value Gate"): such names are matched on their
+ * first two words instead.
+ */
+const GENERIC_FIRST_WORDS = new Set([
+  'the', 'new', 'asian', 'asia', 'global', 'international', 'italian', 'italia', 'italy', 'euro', 'european',
+  'executive', 'studio', 'first', 'grand', 'royal', 'best', 'top', 'singapore', 'group', 'general', 'united',
+  'smart', 'green', 'blue', 'red', 'golden', 'de', 'la', 'il', 'le', 'san', 'santa', 'st',
+])
+
+/**
+ * How a member is recognised in free text: its full name, and its distinctive
+ * lead (first word, or first two when the first is short or generic), so that
+ * "Dentons Rodyk" or "Consea is not included" count as naming the member.
+ */
+function nameKeys(name: string): string[] {
+  const full = normalizeMemberName(ampersands(name)).replace(/\s+and$/, '')
+  const words = full.split(' ').filter(Boolean)
+  if (words.length === 0) return []
+  const lead = words[0].length < 3 || GENERIC_FIRST_WORDS.has(words[0]) ? words.slice(0, 2).join(' ') : words[0]
+  return [...new Set([full, lead])]
+}
 
 const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
@@ -48,18 +76,28 @@ function memberPath(url: string | undefined): string | null {
   }
 }
 
-/** Whether the answer names the member: its page link, or its name (legal suffixes ignored). */
-function mentions(answer: string, normalizedAnswer: string, member: RosterMember): boolean {
+/**
+ * Whether the text names the member: its page link, its name (legal suffixes
+ * ignored) or its distinctive lead. Lenient on purpose: a false match only means
+ * a member is not appended, while a missed match would list a member twice.
+ */
+function mentions(text: string, normalizedText: string, member: RosterMember): boolean {
   const path = memberPath(member.url)
-  if (path && new RegExp(`${escapeRegExp(path)}(?![\\w-])`, 'i').test(answer)) return true
-  const name = normalizeMemberName(member.name)
-  return name.length > 0 && normalizedAnswer.includes(` ${name} `)
+  if (path && new RegExp(`${escapeRegExp(path)}(?![\\w-])`, 'i').test(text)) return true
+  return nameKeys(member.name).some((key) => normalizedText.includes(` ${key} `))
 }
 
-/** Roster members the answer does not name. Exported for tests. */
-export function missingMembers(answer: string, roster: CompletenessRoster): RosterMember[] {
+/**
+ * Roster members the answer does not name. Members the visitor named are never
+ * missing: "other than Belluzzo, which members handle tax?" leaves Belluzzo out
+ * on purpose. Exported for tests.
+ */
+export function missingMembers(answer: string, roster: CompletenessRoster, userMessage = ''): RosterMember[] {
   const normalizedAnswer = normalizeText(answer)
-  return roster.members.filter((m) => !mentions(answer, normalizedAnswer, m))
+  const normalizedQuestion = normalizeText(userMessage)
+  return roster.members.filter(
+    (m) => !mentions(answer, normalizedAnswer, m) && !mentions(userMessage, normalizedQuestion, m),
+  )
 }
 
 /**
@@ -74,12 +112,16 @@ export function completenessAppendix(
 ): { text: string; added: RosterMember[] } {
   const none = { text: '', added: [] }
   if (!roster || roster.members.length === 0 || !answer.trim()) return none
-  const missing = missingMembers(answer, roster)
+  const missing = missingMembers(answer, roster, userMessage)
   const present = roster.members.length - missing.length
   if (missing.length === 0) return none
   if (present < COMPLETENESS_MIN_PRESENT || present < roster.members.length * COMPLETENESS_MIN_SHARE) return none
 
-  const label = looksItalian(userMessage) ? 'Nella stessa categoria anche:' : 'Also in this category:'
+  // The label continues the answer: judge its language on the answer too, not
+  // only on a short question ("commercialisti a Singapore?"). Link URLs are left
+  // out, since every member link ends in "page-member-ajax" (an English word).
+  const prose = answer.replace(/\]\([^)\s]*\)/g, ']').replace(/https?:\/\/\S+/g, ' ')
+  const label = looksItalian(`${userMessage}\n${prose}`) ? 'Nella stessa categoria anche:' : 'Also in this category:'
   const lines = missing.map((m) => (m.url ? `- [${m.name}](${m.url})` : `- **${m.name}**`))
   const separator = answer.endsWith('\n\n') ? '' : answer.endsWith('\n') ? '\n' : '\n\n'
   // The widget renders a list only as its own block, after a blank line.

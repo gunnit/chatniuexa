@@ -48,17 +48,35 @@ test('a list that skipped two firms gets them appended, with their directory lin
   )
 })
 
-test('Italian questions get an Italian label', () => {
-  const answer = listOf(NAMES.slice(1))
-  const { text } = completenessAppendix(answer, roster, 'quali soci si occupano di fiscalità e adempimenti societari?')
+// An Italian answer: member links and English descriptions, as the live bot writes them.
+const italianListOf = (names: string[]) =>
+  `Ecco i soci che si occupano di fiscalità e adempimenti:\n\n${listOf(names).split('\n\n')[1]}\n\nPer scegliere, può scriverci a singapore@italchamber.org.sg.`
+
+test('Italian answers get an Italian label', () => {
+  const { text } = completenessAppendix(italianListOf(NAMES.slice(1)), roster, 'quali soci si occupano di fiscalità e adempimenti societari?')
   assert.match(text, /^\n\nNella stessa categoria anche:\n\n- \[Algebra Pte Ltd\]/)
 })
 
 test('a member named without its link, or in other words, counts as present', () => {
-  // "Also in this sector: **Dentons Rodyk & Davidson LLP**" (bold, no link) and a mistyped-case name.
-  const linked = NAMES.filter((n) => !/Dentons|dMTV|RCLT/.test(n))
-  const answer = `${listOf(linked)}\n\nAlso in this sector: **Dentons Rodyk & Davidson LLP**, and dmtv global.`
+  // Short form, "&" for "and", lower case, and a member mentioned only to say it is left out.
+  const linked = NAMES.filter((n) => !/Dentons|Dezan|dMTV|Consea|RCLT/.test(n))
+  const answer =
+    `${listOf(linked)}\n\nAlso in this sector: **Dentons Rodyk**, **Dezan Shira & Associates** and dmtv global. ` +
+    'Consea is an executive search firm, so it is not included.'
   assert.deepEqual(missingMembers(answer, roster).map((m) => m.name), ['RCLT Law Corporation'])
+})
+
+test('members the visitor named are never added back', () => {
+  const ask = 'Other than Belluzzo, which members handle tax?'
+  const answer = listOf(NAMES.filter((n) => !n.startsWith('Belluzzo')))
+  assert.deepEqual(completenessAppendix(answer, roster, ask), { text: '', added: [] })
+})
+
+test('the label follows the language of the answer when the question is too short to tell', () => {
+  const { text } = completenessAppendix(italianListOf(NAMES.slice(1)), roster, 'commercialisti a Singapore?')
+  assert.match(text, /^\n\nNella stessa categoria anche:/)
+  // ...and an English answer to the same short question keeps the English label.
+  assert.match(completenessAppendix(listOf(NAMES.slice(1)), roster, 'commercialisti a Singapore?').text, /^\n\nAlso in this category:/)
 })
 
 test('a member page id is matched whole: /corporate/23241 is not /corporate/232410', () => {
