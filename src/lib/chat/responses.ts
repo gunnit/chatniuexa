@@ -7,6 +7,7 @@ import { CHAT_MAX_COMPLETION_TOKENS, DEFAULT_SYSTEM_PROMPT, FORMATTING_ADDENDUM,
 import type { ResponsesTool } from '@/lib/chat/tools'
 import { createLinkRewrite, createMarkdownLinkStream, rewriteMarkdownLinks, type LinkRewrite } from '@/lib/chat/links'
 import { failureNotice, truncationNotice } from '@/lib/chat/notices'
+import { memberListAppendix, type CompletenessRoster } from '@/lib/chat/completeness'
 
 /**
  * Tool-enabled chat generation via the OpenAI Responses API.
@@ -38,6 +39,8 @@ export interface ToolGenerationOptions {
   tools: ResponsesTool[]
   /** Link clean-up for the answer (default: strip tracking parameters only). */
   rewriteLink?: LinkRewrite
+  /** Sector roster from prepareStreamingContext: members a list left out are appended. */
+  completeness?: CompletenessRoster | null
 }
 
 export interface ToolChatResult {
@@ -106,6 +109,7 @@ export async function generateChatResponseWithTools(
     temperature,
     tools,
     rewriteLink = createLinkRewrite(null),
+    completeness = null,
   } = options
   const openai = getOpenAI()
 
@@ -129,6 +133,8 @@ export async function generateChatResponseWithTools(
       model,
     })
     content += truncationNotice(userMessage)
+  } else {
+    content += memberListAppendix(content, completeness, userMessage)
   }
 
   const usage = response.usage
@@ -162,6 +168,7 @@ export async function generateStreamingChatResponseWithTools(
     tools,
     onUsage,
     rewriteLink = createLinkRewrite(null),
+    completeness = null,
   } = options
   const openai = getOpenAI()
 
@@ -232,6 +239,7 @@ export async function generateStreamingChatResponseWithTools(
         if (cutOff) logger.warn('Streamed tool answer cut off', { cutOff, model })
         if (!sent.trim()) send(controller, failureNotice(userMessage))
         else if (cutOff) send(controller, truncationNotice(userMessage))
+        else send(controller, memberListAppendix(sent, completeness, userMessage))
         controller.enqueue(encoder.encode('data: [DONE]\n\n'))
         controller.close()
       } catch (error) {

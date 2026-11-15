@@ -6,6 +6,7 @@ import type { TokenUsage } from '@/lib/usage'
 import { getDirectoryChunks, searchChunksByKeywords, searchSimilarChunks } from '@/lib/documents/processor'
 import { createLinkRewrite, createMarkdownLinkStream, rewriteMarkdownLinks, type LinkRewrite } from '@/lib/chat/links'
 import { failureNotice, truncationNotice } from '@/lib/chat/notices'
+import { memberListAppendix, type CompletenessRoster } from '@/lib/chat/completeness'
 
 /**
  * Output budget per answer. Full sector listings run to ~1,500 tokens; the
@@ -38,6 +39,14 @@ interface StreamingChatContext {
   sources: Source[]
   confidence: 'high' | 'medium' | 'low'
   confidenceScore: number
+}
+
+/** Retrieval result the routes hand to a generator. */
+export interface PreparedContext {
+  context: string
+  streamingContext: StreamingChatContext
+  /** Roster for the member-list completeness check (one-sector directory queries), else null. */
+  completeness: CompletenessRoster | null
 }
 
 export const DEFAULT_SYSTEM_PROMPT = `You are a helpful assistant that ONLY answers questions using the provided context from the knowledge base.
@@ -247,8 +256,8 @@ export async function generateChatResponse(
 
   // For directory/category queries, append an explicit must-list roster so no
   // member (incl. cross-sector ones) can be dropped from the answer.
-  const rosterDirective = buildDirectoryRosterDirective(relevantChunks, userMessage)
-  if (rosterDirective) context += `\n\n${rosterDirective}`
+  const roster = buildDirectoryRoster(relevantChunks, userMessage)
+  if (roster.directive) context += `\n\n${roster.directive}`
 
   // Append formatting instructions if custom prompt doesn't already mention markdown/bold
   const promptWithFormatting = systemPrompt === DEFAULT_SYSTEM_PROMPT || /\*\*bold\*\*|markdown/i.test(systemPrompt)
@@ -295,6 +304,8 @@ export async function generateChatResponse(
   } else if (choice?.finish_reason && CUT_OFF_FINISH_REASONS.has(choice.finish_reason)) {
     logger.warn('Answer cut off', { finishReason: choice.finish_reason, model })
     responseContent += truncationNotice(userMessage)
+  } else {
+    responseContent += memberListAppendix(responseContent, roster.completeness, userMessage)
   }
 
   // Calculate confidence based on source quality
@@ -449,19 +460,26 @@ function buildNameRosterDirective(text: string, msgLower: string): string | null
  * membership for category nouns. An explicit per-query roster takes that
  * decision away from the model and is obeyed reliably.
  *
- * Returns null when no full directory is present or the query maps to no sector,
- * so non-directory tenants/queries are unaffected. Driven entirely by the
- * directory's own content, so it stays generic across tenants.
+ * The directive is null when no full directory is present or the query maps to
+ * no sector, so non-directory tenants/queries are unaffected. Driven entirely by
+ * the directory's own content, so it stays generic across tenants.
+ *
+ * When the query maps to exactly ONE sector, the same roster (with each
+ * member's link) is also returned for the completeness check that runs after
+ * the answer (completeness.ts): models still skip an entry of a long list now
+ * and then. Multi-sector queries get no check, because the prompt lets the
+ * model leave out companies another word of the question picked up.
  */
-function buildDirectoryRosterDirective(
-  chunks: Awaited<ReturnType<typeof searchSimilarChunks>>,
+export function buildDirectoryRoster(
+  chunks: Array<{ content: string }>,
   userMessage: string | undefined,
-): string | null {
+): { directive: string | null; completeness: CompletenessRoster | null } {
+  const none = { directive: null, completeness: null }
   // Only meaningful when the FULL directory was injected (directory queries);
   // otherwise a roster built from partial chunks would be incomplete.
-  if (!userMessage || !isDirectoryQuery(userMessage)) return null
+  if (!userMessage || !isDirectoryQuery(userMessage)) return none
   const text = chunks.map((c) => c.content).join('\n')
-  if (!text.includes('[Sector:')) return null
+  if (!text.includes('[Sector:')) return none
 
   const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
@@ -477,7 +495,7 @@ function buildDirectoryRosterDirective(
       if (!kwToSector.has(kw)) kwToSector.set(kw, sector)
     }
   }
-  if (sectorNames.size === 0) return null
+  if (sectorNames.size === 0) return none
 
   // Which sector(s) does the user's message map to?
   const msg = userMessage.toLowerCase()
@@ -490,32 +508,42 @@ function buildDirectoryRosterDirective(
   }
   // No sector matched → the query likely names a member ("Ferrari", "Belluzzo").
   // List every member whose name matches so multi-match names never drop one.
-  if (targets.size === 0) return buildNameRosterDirective(text, msg)
+  if (targets.size === 0) return { directive: buildNameRosterDirective(text, msg), completeness: null }
 
-  // Collect every member tagged with a target sector (primary OR also-relevant).
-  const rosters = new Map<string, Set<string>>()
-  for (const t of targets) rosters.set(t, new Set())
-  const memberRe = /\[Sector:\s*([^\]]+?)\]\s*(?:\[Also relevant to:\s*([^\]]+?)\]\s*)?\*\*\[([^\]]+?)\]/g
+  // Collect every member tagged with a target sector (primary OR also-relevant),
+  // with its directory link: sector → member name → url.
+  const rosters = new Map<string, Map<string, string | undefined>>()
+  for (const t of targets) rosters.set(t, new Map())
+  const memberRe = /\[Sector:\s*([^\]]+?)\]\s*(?:\[Also relevant to:\s*([^\]]+?)\]\s*)?\*\*\[([^\]]+?)\](?:\((https?:\/\/[^)\s]+)\))?/g
   let m: RegExpExecArray | null
   while ((m = memberRe.exec(text)) !== null) {
     const memberSectors = new Set<string>([m[1].trim()])
     if (m[2]) for (const s of m[2].split(';').map((x) => x.trim()).filter(Boolean)) memberSectors.add(s)
     const name = m[3].trim()
-    for (const t of targets) if (memberSectors.has(t)) rosters.get(t)!.add(name)
+    const url = m[4]
+    for (const t of targets) {
+      if (!memberSectors.has(t)) continue
+      const roster = rosters.get(t)!
+      if (!roster.get(name)) roster.set(name, url)
+    }
   }
 
   const parts: string[] = []
   for (const [sector, names] of rosters) {
     if (names.size === 0) continue
-    parts.push(`Sector "${sector}" (${names.size} members — list every one): ${[...names].join('; ')}`)
+    parts.push(`Sector "${sector}" (${names.size} members — list every one): ${[...names.keys()].join('; ')}`)
   }
-  if (parts.length === 0) return null
+  if (parts.length === 0) return none
 
-  return (
+  const directive =
     '### MANDATORY DIRECTORY COMPLETENESS\n' +
     'The question maps to the sector(s) below. Your answer MUST include EVERY member company listed here, each with its markdown link and one-line description taken from the directory above. Do NOT omit, skip, filter, summarise, or recategorise ANY of them — even if a company\'s primary sector is different, if it appears below it is part of this category for the user.\n' +
     parts.join('\n')
-  )
+  const [only] = targets.size === 1 ? [...rosters] : []
+  const completeness = only
+    ? { sector: only[0], members: [...only[1]].map(([name, url]) => (url ? { name, url } : { name })) }
+    : null
+  return { directive, completeness }
 }
 
 /**
@@ -558,7 +586,7 @@ export async function prepareStreamingContextWithEmbedding(
     minSimilarity?: number
     userMessage?: string
   } = {}
-): Promise<{ context: string; streamingContext: StreamingChatContext }> {
+): Promise<PreparedContext> {
   const { minSimilarity = 0.2, userMessage } = options
 
   // Search for relevant chunks — directory/category queries get the complete
@@ -618,8 +646,8 @@ export async function prepareStreamingContextWithEmbedding(
 
   // For directory/category queries, append an explicit must-list roster so no
   // member (incl. cross-sector ones) can be dropped from the answer.
-  const rosterDirective = buildDirectoryRosterDirective(relevantChunks, userMessage)
-  if (rosterDirective) context += `\n\n${rosterDirective}`
+  const roster = buildDirectoryRoster(relevantChunks, userMessage)
+  if (roster.directive) context += `\n\n${roster.directive}`
 
   // Calculate confidence
   const confidenceScore = calculateConfidence(deduplicatedSources)
@@ -632,6 +660,7 @@ export async function prepareStreamingContextWithEmbedding(
       confidence,
       confidenceScore,
     },
+    completeness: roster.completeness,
   }
 }
 
@@ -645,7 +674,7 @@ export async function prepareStreamingContext(
     maxSources?: number
     minSimilarity?: number
   } = {}
-): Promise<{ context: string; streamingContext: StreamingChatContext }> {
+): Promise<PreparedContext> {
   const queryEmbedding = await generateQueryEmbedding(userMessage)
   return prepareStreamingContextWithEmbedding(tenantId, queryEmbedding, { ...options, userMessage })
 }
@@ -666,6 +695,8 @@ export async function generateStreamingChatResponse(
     onUsage?: (usage: TokenUsage) => void
     /** Link clean-up for the answer (default: strip tracking parameters only). */
     rewriteLink?: LinkRewrite
+    /** Sector roster from prepareStreamingContext: members a list left out are appended. */
+    completeness?: CompletenessRoster | null
   } = {}
 ): Promise<ReadableStream<Uint8Array>> {
   const {
@@ -674,6 +705,7 @@ export async function generateStreamingChatResponse(
     temperature,
     onUsage,
     rewriteLink = createLinkRewrite(null),
+    completeness = null,
   } = options
 
   const openai = getOpenAI()
@@ -757,6 +789,8 @@ export async function generateStreamingChatResponse(
         } else if (finishReason && CUT_OFF_FINISH_REASONS.has(finishReason)) {
           logger.warn('Streamed answer cut off', { finishReason, model })
           send(controller, truncationNotice(userMessage))
+        } else {
+          send(controller, memberListAppendix(sent, completeness, userMessage))
         }
         // Signal end of stream
         controller.enqueue(encoder.encode('data: [DONE]\n\n'))

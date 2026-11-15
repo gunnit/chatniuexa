@@ -204,13 +204,14 @@ async function processWhatsAppMessage(msg: {
     usage?: TokenUsage
   }
   if (tools.length > 0) {
-    const { context, streamingContext } = await prepareStreamingContext(chatbot.tenantId, msg.text, {})
+    const { context, streamingContext, completeness } = await prepareStreamingContext(chatbot.tenantId, msg.text, {})
     const result = await generateChatResponseWithTools(context, msg.text, history, {
       systemPrompt: chatbot.systemPrompt || undefined,
       model: chatbot.model,
       temperature: chatbot.temperature,
       tools,
       rewriteLink,
+      completeness,
     })
     response = {
       content: result.content,
